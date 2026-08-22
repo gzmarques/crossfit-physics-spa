@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { movimentosDB } from './data/movements';
 import { supabase } from './lib/supabase';
+import type { Session } from '@supabase/supabase-js'; 
 import type { 
   AtletaPerfil, ItemLousa, Modalidade, 
   ResultadoProcessamento, TimelineStateItem, WodDatabaseRecord 
@@ -8,8 +9,12 @@ import type {
 import { calcularFisica, parseClockTime } from './utils/physicsEngine';
 
 export default function App() {
+  // === ESTADO DE AUTENTICAÇÃO ===
+  const [session, setSession] = useState<Session | null>(null);
+  const [loadingAuth, setLoadingAuth] = useState(true);
+
+  // === ESTADOS DO APP ===
   const [activeTab, setActiveTab] = useState<'prescricao' | 'analise'>('prescricao');
-  
   const [tipoTreino, setTipoTreino] = useState<Modalidade>('FOR_TIME');
   const [tempoAlvo, setTempoAlvo] = useState('05:00');
   const [roundsPrescritos, setRoundsPrescritos] = useState(3);
@@ -18,13 +23,7 @@ export default function App() {
   const [tempoDescanso, setTempoDescanso] = useState(0);
 
   const [atleta, setAtleta] = useState<AtletaPerfil>({
-    estatura: 1.75,
-    peso: 80,
-    sexo: 'M',
-    nivelTecnico: 'intermediario',
-    envergadura: 1.75,
-    perna: 0.85,
-    bf: 15
+    estatura: 1.75, peso: 80, sexo: 'M', nivelTecnico: 'intermediario', envergadura: 1.75, perna: 0.85, bf: 15
   });
 
   const [lousa, setLousa] = useState<ItemLousa[]>([
@@ -36,10 +35,38 @@ export default function App() {
   const [jsonInOut, setJsonInOut] = useState('');
   const [savedWods, setSavedWods] = useState<WodDatabaseRecord[]>([]);
 
+  // === EFEITOS DE SESSÃO ===
   useEffect(() => {
-    fetchWodsFromSupabase();
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setLoadingAuth(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
+  useEffect(() => {
+    if (session) fetchWodsFromSupabase();
+  }, [session]);
+
+  // === FUNÇÕES DE LOGIN/LOGOUT ===
+  const signInWithGoogle = async () => {
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.origin }
+    });
+  };
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    setSavedWods([]);
+  };
+
+  // === LÓGICA DO APP ===
   const fetchWodsFromSupabase = async () => {
     const { data, error } = await supabase.from('wods').select('*').order('created_at', { ascending: false });
     if (!error && data) setSavedWods(data as WodDatabaseRecord[]);
@@ -47,21 +74,11 @@ export default function App() {
 
   const addMovimento = (baseId: string | null = null) => {
     const newId = crypto.randomUUID();
-    let newItem: ItemLousa = {
-      originalId: newId,
-      movId: 'air_squat',
-      phase: 'round',
-      reps: 10,
-      carga: 0,
-      tecnica: 'tng',
-      extraVal: ''
-    };
-
+    let newItem: ItemLousa = { originalId: newId, movId: 'air_squat', phase: 'round', reps: 10, carga: 0, tecnica: 'tng', extraVal: '' };
     if (baseId) {
       const idx = lousa.findIndex(m => m.originalId === baseId);
       if (idx !== -1) {
-        const target = lousa[idx];
-        newItem = { ...target, originalId: newId };
+        newItem = { ...lousa[idx], originalId: newId };
         const updated = [...lousa];
         updated.splice(idx + 1, 0, newItem);
         setLousa(updated);
@@ -71,32 +88,12 @@ export default function App() {
     setLousa([...lousa, newItem]);
   };
 
-  const removeMovimento = (id: string) => {
-    setLousa(lousa.filter(m => m.originalId !== id));
-  };
+  const removeMovimento = (id: string) => setLousa(lousa.filter(m => m.originalId !== id));
+  const updateMovimento = (id: string, field: keyof ItemLousa, val: any) => setLousa(lousa.map(item => item.originalId === id ? { ...item, [field]: val } : item));
+  const handleTimelineChange = (rowId: string, field: keyof TimelineStateItem, val: any) => setTimelineState(prev => ({ ...prev, [rowId]: { ...(prev[rowId] || { reps: 0, start: '', end: '' }), [field]: val } }));
 
-  const updateMovimento = (id: string, field: keyof ItemLousa, val: any) => {
-    setLousa(lousa.map(item => item.originalId === id ? { ...item, [field]: val } : item));
-  };
-
-  const handleTimelineChange = (rowId: string, field: keyof TimelineStateItem, val: any) => {
-    setTimelineState(prev => ({
-      ...prev,
-      [rowId]: {
-        ...(prev[rowId] || { reps: 0, start: '', end: '' }),
-        [field]: val
-      }
-    }));
-  };
-
-  const exportarJSON = () => {
-    const wod = {
-      tipoTreino, tempoAlvo, roundsPrescritos,
-      atleta, movimentos: lousa, timeline: timelineState
-    };
-    setJsonInOut(JSON.stringify(wod, null, 2));
-  };
-
+  const exportarJSON = () => setJsonInOut(JSON.stringify({ tipoTreino, tempoAlvo, roundsPrescritos, atleta, movimentos: lousa, timeline: timelineState }, null, 2));
+  
   const importarJSON = () => {
     try {
       const wod = JSON.parse(jsonInOut);
@@ -107,38 +104,25 @@ export default function App() {
       if (wod.movimentos) setLousa(wod.movimentos);
       if (wod.timeline) setTimelineState(wod.timeline);
       alert('WOD Importado com sucesso!');
-    } catch (e) {
-      alert('JSON Inválido');
-    }
+    } catch (e) { alert('JSON Inválido'); }
   };
 
   const salvarNoSupabase = async () => {
+    if (!session) return;
     const wodPayload: WodDatabaseRecord = {
       title: `Treino ${tipoTreino} - ${new Date().toLocaleDateString('pt-BR')}`,
-      tipo_treino: tipoTreino,
-      tempo_alvo: tempoAlvo,
-      rounds_prescritos: roundsPrescritos,
-      rounds_real: roundsReal,
-      tempo_real: tempoReal,
-      tempo_descanso: tempoDescanso,
-      atleta,
-      movimentos: lousa,
-      timeline: timelineState
+      tipo_treino: tipoTreino, tempo_alvo: tempoAlvo, rounds_prescritos: roundsPrescritos,
+      rounds_real: roundsReal, tempo_real: tempoReal, tempo_descanso: tempoDescanso,
+      atleta, movimentos: lousa, timeline: timelineState
     };
-
+    
     const { error } = await supabase.from('wods').insert([wodPayload]);
-    if (error) {
-      alert('Erro ao salvar no Supabase: ' + error.message);
-    } else {
-      alert('Treino salvo no Supabase!');
-      fetchWodsFromSupabase();
-    }
+    if (error) alert('Erro ao salvar no Supabase: ' + error.message);
+    else { alert('Treino salvo na sua conta!'); fetchWodsFromSupabase(); }
   };
 
   const carregarDoSupabase = (rec: WodDatabaseRecord) => {
-    setTipoTreino(rec.tipo_treino);
-    setTempoAlvo(rec.tempo_alvo);
-    setRoundsPrescritos(rec.rounds_prescritos);
+    setTipoTreino(rec.tipo_treino); setTempoAlvo(rec.tempo_alvo); setRoundsPrescritos(rec.rounds_prescritos);
     if (rec.rounds_real !== undefined) setRoundsReal(rec.rounds_real);
     if (rec.tempo_real) setTempoReal(rec.tempo_real);
     if (rec.tempo_descanso) setTempoDescanso(rec.tempo_descanso);
@@ -162,78 +146,44 @@ export default function App() {
       const cfg = movimentosDB[m.movId];
       if (!cfg) return;
       const mult = (m.phase === 'round') ? roundsPrescritos : 1;
-      const calc = calcularFisica(m.movId, cfg, m.reps, m.carga, m.extraVal, atleta, m.tecnica, 0);
-      trabalhoMechTotalEsp += calc.trabMech * mult;
+      trabalhoMechTotalEsp += calcularFisica(m.movId, cfg, m.reps, m.carga, m.extraVal, atleta, m.tecnica, 0).trabMech * mult;
     });
 
     let roundsTimeline = (tipoTreino === 'FOR_TIME') ? roundsPrescritos : Math.ceil(roundsReal);
     if (roundsTimeline < 1) roundsTimeline = 1;
 
-    const flatItems: Array<{
-      rowId: string; movId: string; reps: number; carga: number; extraVal: string;
-      phase: string; tecnica: string; badgeText: string; badgeClass: string;
-    }> = [];
+    const flatItems: any[] = [];
+    lousa.filter(m => m.phase === 'buyin').forEach(m => flatItems.push({ rowId: `${m.originalId}-R0`, movId: m.movId, reps: m.reps, carga: m.carga, extraVal: m.extraVal, phase: 'buyin', tecnica: m.tecnica, badgeText: 'Buy-in', badgeClass: 'badge-buyin' }));
+    for (let r = 1; r <= roundsTimeline; r++) lousa.filter(m => m.phase === 'round').forEach(m => flatItems.push({ rowId: `${m.originalId}-R${r}`, movId: m.movId, reps: m.reps, carga: m.carga, extraVal: m.extraVal, phase: 'round', tecnica: m.tecnica, badgeText: `R ${r}`, badgeClass: '' }));
+    lousa.filter(m => m.phase === 'cashout').forEach(m => flatItems.push({ rowId: `${m.originalId}-R99`, movId: m.movId, reps: m.reps, carga: m.carga, extraVal: m.extraVal, phase: 'cashout', tecnica: m.tecnica, badgeText: 'Cash-out', badgeClass: 'badge-cashout' }));
 
-    lousa.filter(m => m.phase === 'buyin').forEach(m => {
-      flatItems.push({ rowId: `${m.originalId}-R0`, movId: m.movId, reps: m.reps, carga: m.carga, extraVal: m.extraVal, phase: 'buyin', tecnica: m.tecnica, badgeText: 'Buy-in', badgeClass: 'badge-buyin' });
-    });
-
-    for (let r = 1; r <= roundsTimeline; r++) {
-      lousa.filter(m => m.phase === 'round').forEach(m => {
-        flatItems.push({ rowId: `${m.originalId}-R${r}`, movId: m.movId, reps: m.reps, carga: m.carga, extraVal: m.extraVal, phase: 'round', tecnica: m.tecnica, badgeText: `R ${r}`, badgeClass: '' });
-      });
-    }
-
-    lousa.filter(m => m.phase === 'cashout').forEach(m => {
-      flatItems.push({ rowId: `${m.originalId}-R99`, movId: m.movId, reps: m.reps, carga: m.carga, extraVal: m.extraVal, phase: 'cashout', tecnica: m.tecnica, badgeText: 'Cash-out', badgeClass: 'badge-cashout' });
-    });
-
-    let somaTempoDeterminadoGlobal = 0, totalTransicaoGlobal = 0;
-    let trabalhoMechTotalReal = 0, gastoMetabolicoLiquidoTotal = 0, metabolicoRestanteGlobal = 0;
-    let itemsProcessados: any[] = [];
-    let lastEndSec = -1;
+    let somaTempoDeterminadoGlobal = 0, totalTransicaoGlobal = 0, trabalhoMechTotalReal = 0, gastoMetabolicoLiquidoTotal = 0, metabolicoRestanteGlobal = 0, lastEndSec = -1;
+    const itemsProcessados: any[] = [];
 
     flatItems.forEach(row => {
       const config = movimentosDB[row.movId];
       const state = timelineState[row.rowId] || { reps: row.reps, start: '', end: '' };
       const repsEffective = state.reps !== undefined ? Number(state.reps) : row.reps;
-      
       const startSec = parseClockTime(state.start);
       const endSec = parseClockTime(state.end);
-      
       const tempoDefinitivoTemp = (startSec >= 0 && endSec > startSec) ? (endSec - startSec) : 0;
+      
       const calc = calcularFisica(row.movId, config, repsEffective, row.carga, row.extraVal, atleta, row.tecnica, tempoDefinitivoTemp);
 
       let transicaoEspecifica = 0;
       if (tempoDefinitivoTemp > 0) {
-        if (lastEndSec >= 0 && startSec >= lastEndSec) {
-          transicaoEspecifica = startSec - lastEndSec;
-          totalTransicaoGlobal += transicaoEspecifica;
-        }
-        lastEndSec = endSec;
-        somaTempoDeterminadoGlobal += tempoDefinitivoTemp;
-        gastoMetabolicoLiquidoTotal += calc.trabMetabolicoWork;
-      } else {
-        lastEndSec = -1;
-        metabolicoRestanteGlobal += calc.trabMetabolicoConcIsom;
-      }
-
+        if (lastEndSec >= 0 && startSec >= lastEndSec) { transicaoEspecifica = startSec - lastEndSec; totalTransicaoGlobal += transicaoEspecifica; }
+        lastEndSec = endSec; somaTempoDeterminadoGlobal += tempoDefinitivoTemp; gastoMetabolicoLiquidoTotal += calc.trabMetabolicoWork;
+      } else { lastEndSec = -1; metabolicoRestanteGlobal += calc.trabMetabolicoConcIsom; }
+      
       trabalhoMechTotalReal += calc.trabMech;
-
-      itemsProcessados.push({
-        nome: config.nome, reps: repsEffective, labelRounds: row.badgeText,
-        infoExtraLog: calc.infoExtraLog, trabMechLinha: calc.trabMech, 
-        trabMetabolicoWork: calc.trabMetabolicoWork, trabMetabolicoConcIsom: calc.trabMetabolicoConcIsom,
-        isErgo: calc.isErgo, isCalorieErgo: calc.isCalorieErgo, ergTime: calc.ergTime,
-        tempoDefinitivo: tempoDefinitivoTemp, transicaoEspecifica: transicaoEspecifica, phase: row.phase
-      });
+      itemsProcessados.push({ ...calc, nome: config.nome, reps: repsEffective, labelRounds: row.badgeText, tempoDefinitivo: tempoDefinitivoTemp, transicaoEspecifica, phase: row.phase });
     });
 
     const tempoTotalReferencia = (tipoTreino === 'FOR_TIME' && tRealSec > 0) ? tRealSec : tAlvoSec;
     const tempoDisponivel = Math.max(0, tempoTotalReferencia - somaTempoDeterminadoGlobal - totalTransicaoGlobal - tempoDescanso);
     
-    let logDetalhes = ""; 
-    let lastPhase: string | null = null;
+    let logDetalhes = "", lastPhase: string | null = null;
     const fatorEPOC = 1.15;
     let tempoTotalExecucaoEfetiva = 0;
 
@@ -244,27 +194,17 @@ export default function App() {
         else if (item.phase === 'cashout') logDetalhes += `<div style="margin-top:15px; padding:5px 10px; background:#2a2a2a; border-left:3px solid #2196f3;"><strong>⏹ CASH-OUT</strong></div>`;
         lastPhase = item.phase;
       }
-
       let tempoParaPotencia = item.tempoDefinitivo; 
-
-      if (item.transicaoEspecifica > 0) {
-        logDetalhes += `<span class="color-transition">&nbsp;&nbsp;↳ 🚶 Transição: ${item.transicaoEspecifica.toFixed(0)}s</span><br/>`;
-      }
-
+      if (item.transicaoEspecifica > 0) logDetalhes += `<span class="color-transition">&nbsp;&nbsp;↳ 🚶 Transição: ${item.transicaoEspecifica.toFixed(0)}s</span><br/>`;
       if (tempoParaPotencia === 0) {
-        if (metabolicoRestanteGlobal > 0 && tempoDisponivel > 0) {
-          tempoParaPotencia = (item.trabMetabolicoConcIsom / metabolicoRestanteGlobal) * tempoDisponivel; 
-        } else if (item.isErgo) {
-          tempoParaPotencia = item.ergTime;
-        }
+        if (metabolicoRestanteGlobal > 0 && tempoDisponivel > 0) tempoParaPotencia = (item.trabMetabolicoConcIsom / metabolicoRestanteGlobal) * tempoDisponivel; 
+        else if (item.isErgo) tempoParaPotencia = item.ergTime;
         gastoMetabolicoLiquidoTotal += item.trabMetabolicoWork;
       }
-
       tempoTotalExecucaoEfetiva += tempoParaPotencia;
 
       const gastoBasalLinha = item.isCalorieErgo ? 0 : (bmrSec * tempoParaPotencia);
       const totalKcalLinha = (item.trabMetabolicoWork * fatorEPOC) + gastoBasalLinha;
-
       let strPot = "", strTmp = "";
       if (tempoParaPotencia > 0) {
         strTmp = ` | 🕒 ${tempoParaPotencia.toFixed(0)}s`; 
@@ -275,26 +215,40 @@ export default function App() {
 
     const tempoLiquidoEsp = tAlvoSec - tempoDescanso - totalTransicaoGlobal;
     const potEsp = tempoLiquidoEsp > 0 ? (trabalhoMechTotalEsp / tempoLiquidoEsp) : 0;
-
     const tempoLiquidoReal = (tempoTotalReferencia > 0 ? tempoTotalReferencia : tempoTotalExecucaoEfetiva) - tempoDescanso - totalTransicaoGlobal;
     const potReal = tempoLiquidoReal > 0 ? (trabalhoMechTotalReal / tempoLiquidoReal) : 0;
-
     const gastoBasalSessao = bmrSec * (tempoTotalReferencia > 0 ? tempoTotalReferencia : (tempoTotalExecucaoEfetiva + totalTransicaoGlobal + tempoDescanso));
     const gastoMetabolicoFinal = (gastoMetabolicoLiquidoTotal * fatorEPOC) + gastoBasalSessao;
 
-    setResultado({
-      trabalhoReal: trabalhoMechTotalReal,
-      gastoMetabolico: gastoMetabolicoFinal,
-      potenciaEsp: potEsp,
-      potenciaReal: potReal,
-      logDetalhesHTML: logDetalhes
-    });
+    setResultado({ trabalhoReal: trabalhoMechTotalReal, gastoMetabolico: gastoMetabolicoFinal, potenciaEsp: potEsp, potenciaReal: potReal, logDetalhesHTML: logDetalhes });
   };
 
+  // === TELA DE LOGIN ===
+  if (loadingAuth) return <div style={{textAlign: 'center', marginTop: '50px'}}>Carregando ambiente...</div>;
+
+  if (!session) {
+    return (
+      <div className="container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '80vh' }}>
+        <div className="panel" style={{ textAlign: 'center', maxWidth: '400px', width: '100%', padding: '40px 20px' }}>
+          <h1 style={{ border: 'none', marginBottom: '10px' }}>Functional Engine</h1>
+          <p style={{ color: '#aaa', marginBottom: '30px' }}>Faça login para gerenciar seus treinos e acessar a análise biomecânica.</p>
+          <button onClick={signInWithGoogle} style={{ backgroundColor: '#fff', color: '#333', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', fontSize: '1rem' }}>
+            <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/><path fill="none" d="M1 1h22v22H1z"/></svg>
+            Entrar com Conta Google
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // === APLICAÇÃO PRINCIPAL LOGADA ===
   return (
     <div className="container">
-      <h1>CrossFit & Hyrox - Advanced Physics Engine (SPA Version)</h1>
-
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+        <h1 style={{ margin: 0, border: 'none', paddingBottom: 0 }}>CrossFit Engine</h1>
+        <button onClick={signOut} style={{ width: 'auto', backgroundColor: '#333', padding: '8px 15px', fontSize: '0.85rem' }}>Sair</button>
+      </div>
+      
       <div className="grid">
         <div className="panel" style={{ marginBottom: 0 }}>
           <h2>Estrutura Base (Domínio)</h2>
@@ -330,7 +284,7 @@ export default function App() {
         </div>
 
         <div className="panel" style={{ marginBottom: 0 }}>
-          <h2>Perfil do Atleta (Modelo Antropométrico Segmentar)</h2>
+          <h2>Perfil do Atleta</h2>
           <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', marginBottom: 0 }}>
             <div className="form-group">
               <label>Estatura (m)</label>
@@ -471,14 +425,11 @@ export default function App() {
             {(() => {
               let rTimeline = (tipoTreino === 'FOR_TIME') ? roundsPrescritos : Math.ceil(roundsReal);
               if (rTimeline < 1) rTimeline = 1;
-
               const rows: any[] = [];
-
               const renderRow = (m: ItemLousa, badgeClass: string, badgeText: string, rIdx: number) => {
                 const rowId = `${m.originalId}-R${rIdx}`;
                 const cfg = movimentosDB[m.movId];
                 const st = timelineState[rowId] || { reps: m.reps, start: '', end: '' };
-
                 rows.push(
                   <div key={rowId} className="wod-item-analise">
                     <div className={`badge-round ${badgeClass}`}>{badgeText}</div>
@@ -503,13 +454,9 @@ export default function App() {
                   </div>
                 );
               };
-
               lousa.filter(m => m.phase === 'buyin').forEach(m => renderRow(m, 'badge-buyin', 'Buy-in', 0));
-              for (let r = 1; r <= rTimeline; r++) {
-                lousa.filter(m => m.phase === 'round').forEach(m => renderRow(m, '', `R ${r}`, r));
-              }
+              for (let r = 1; r <= rTimeline; r++) lousa.filter(m => m.phase === 'round').forEach(m => renderRow(m, '', `R ${r}`, r));
               lousa.filter(m => m.phase === 'cashout').forEach(m => renderRow(m, 'badge-cashout', 'Cash-out', 99));
-
               return rows;
             })()}
           </div>
