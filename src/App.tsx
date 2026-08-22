@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { movimentosDB } from './data/movements';
 import { supabase } from './lib/supabase';
-import { 
+import type { 
   AtletaPerfil, ItemLousa, Modalidade, 
   ResultadoProcessamento, TimelineStateItem, WodDatabaseRecord 
 } from './types';
@@ -10,7 +10,6 @@ import { calcularFisica, parseClockTime } from './utils/physicsEngine';
 export default function App() {
   const [activeTab, setActiveTab] = useState<'prescricao' | 'analise'>('prescricao');
   
-  // Configuração do Domínio
   const [tipoTreino, setTipoTreino] = useState<Modalidade>('FOR_TIME');
   const [tempoAlvo, setTempoAlvo] = useState('05:00');
   const [roundsPrescritos, setRoundsPrescritos] = useState(3);
@@ -18,7 +17,6 @@ export default function App() {
   const [tempoReal, setTempoReal] = useState('');
   const [tempoDescanso, setTempoDescanso] = useState(0);
 
-  // Perfil do Atleta
   const [atleta, setAtleta] = useState<AtletaPerfil>({
     estatura: 1.75,
     peso: 80,
@@ -29,19 +27,13 @@ export default function App() {
     bf: 15
   });
 
-  // Lousa e Timeline
   const [lousa, setLousa] = useState<ItemLousa[]>([
     { originalId: crypto.randomUUID(), movId: 'thruster', phase: 'round', reps: 21, carga: 43, tecnica: 'tng', extraVal: '' }
   ]);
   const [timelineState, setTimelineState] = useState<Record<string, TimelineStateItem>>({});
   
-  // Resultados e JSON
   const [resultado, setResultado] = useState<ResultadoProcessamento | null>(null);
   const [jsonInOut, setJsonInOut] = useState('');
-  const [dropdownSearch, setDropdownSearch] = useState<Record<string, string>>({});
-  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
-
-  // Histórico Supabase
   const [savedWods, setSavedWods] = useState<WodDatabaseRecord[]>([]);
 
   useEffect(() => {
@@ -241,7 +233,7 @@ export default function App() {
     const tempoDisponivel = Math.max(0, tempoTotalReferencia - somaTempoDeterminadoGlobal - totalTransicaoGlobal - tempoDescanso);
     
     let logDetalhes = ""; 
-    let lastPhase = null;
+    let lastPhase: string | null = null;
     const fatorEPOC = 1.15;
     let tempoTotalExecucaoEfetiva = 0;
 
@@ -304,7 +296,6 @@ export default function App() {
       <h1>CrossFit & Hyrox - Advanced Physics Engine (SPA Version)</h1>
 
       <div className="grid">
-        {/* Painel Estrutura Base */}
         <div className="panel" style={{ marginBottom: 0 }}>
           <h2>Estrutura Base (Domínio)</h2>
           <div className="form-group">
@@ -338,7 +329,6 @@ export default function App() {
           </div>
         </div>
 
-        {/* Painel Perfil do Atleta */}
         <div className="panel" style={{ marginBottom: 0 }}>
           <h2>Perfil do Atleta (Modelo Antropométrico Segmentar)</h2>
           <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', marginBottom: 0 }}>
@@ -389,13 +379,11 @@ export default function App() {
         </div>
       </div>
 
-      {/* Navegação entre Abas */}
       <div className="tabs">
         <button className={`tab-btn ${activeTab === 'prescricao' ? 'active' : ''}`} onClick={() => setActiveTab('prescricao')}>1. Lousa (Prescrição)</button>
         <button className={`tab-btn ${activeTab === 'analise' ? 'active' : ''}`} onClick={() => setActiveTab('analise')}>2. Execução (Análise)</button>
       </div>
 
-      {/* Aba Prescrição */}
       {activeTab === 'prescricao' && (
         <div className="panel">
           <h2>Quadro de Movimentos (O que foi prescrito)</h2>
@@ -476,7 +464,6 @@ export default function App() {
         </div>
       )}
 
-      {/* Aba Análise */}
       {activeTab === 'analise' && (
         <div className="panel">
           <h2>Timeline Expandida (O que foi executado)</h2>
@@ -485,7 +472,7 @@ export default function App() {
               let rTimeline = (tipoTreino === 'FOR_TIME') ? roundsPrescritos : Math.ceil(roundsReal);
               if (rTimeline < 1) rTimeline = 1;
 
-              const rows: JSX.Element[] = [];
+              const rows: any[] = [];
 
               const renderRow = (m: ItemLousa, badgeClass: string, badgeText: string, rIdx: number) => {
                 const rowId = `${m.originalId}-R${rIdx}`;

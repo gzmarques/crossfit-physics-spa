@@ -1,4 +1,4 @@
-import { MovimentoConfig } from '../types';
+import type { MovimentoConfig } from '../types';
 
 export const movimentosDB: Record<string, MovimentoConfig> = {
   'pushup': { nome: 'Push-ups', grupo: 'Empurrada BW', categoria: 'alavanca_parcial', usaCarga: false },

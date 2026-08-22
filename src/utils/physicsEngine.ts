@@ -1,4 +1,4 @@
-import { AtletaPerfil, MovimentoConfig } from '../types';
+import type { AtletaPerfil, MovimentoConfig } from '../types';
 
 const G = 9.81;
 
@@ -43,7 +43,6 @@ export function calcularFisica(
 
   const isM = (atleta.sexo === 'M');
   
-  // Parâmetros antropométricos segmentares (De Leva, 1996)
   const L_arm = atleta.envergadura * 0.45; 
   const L_perna = atleta.perna;
   const L_thigh = L_perna * 0.50;
