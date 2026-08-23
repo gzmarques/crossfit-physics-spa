@@ -67,4 +67,6 @@ export interface WodDatabaseRecord {
   atleta: AtletaPerfil;
   movimentos: ItemLousa[];
   timeline?: Record<string, TimelineStateItem>;
+  score_watts?: number;
+  score_kcal?: number;
 }

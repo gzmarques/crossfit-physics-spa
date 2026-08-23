@@ -477,10 +477,17 @@ export default function App() {
                 <ResponsiveContainer>
                   <LineChart data={[...savedWods].reverse()} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#444" />
-                    <XAxis dataKey="created_at" tickFormatter={(tick) => new Date(tick).toLocaleDateString('pt-BR')} stroke="#aaa" />
+                    <XAxis 
+                      dataKey="created_at" 
+                      tickFormatter={(tick) => new Date(tick as string).toLocaleDateString('pt-BR')} 
+                      stroke="#aaa" 
+                    />
                     <YAxis yAxisId="left" stroke="#4caf50" />
                     <YAxis yAxisId="right" orientation="right" stroke="#ff9800" />
-                    <Tooltip labelFormatter={(label) => new Date(label).toLocaleDateString('pt-BR')} contentStyle={{ backgroundColor: '#1e1e1e', border: 'none' }} />
+                    <Tooltip 
+                      labelFormatter={(label) => new Date(label as string).toLocaleDateString('pt-BR')} 
+                      contentStyle={{ backgroundColor: '#1e1e1e', border: 'none' }} 
+                    />
                     <Legend />
                     <Line yAxisId="left" type="monotone" dataKey="score_watts" name="Potência (Watts)" stroke="#4caf50" strokeWidth={3} activeDot={{ r: 8 }} />
                     <Line yAxisId="right" type="monotone" dataKey="score_kcal" name="Gasto (kCal)" stroke="#ff9800" strokeWidth={3} />
