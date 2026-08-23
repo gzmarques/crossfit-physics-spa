@@ -70,6 +70,7 @@ export interface WodDatabaseRecord {
   score_watts?: number;
   score_kcal?: number;
   athlete_id?: string;
+  user_id?: string;
 }
 
 export interface UserProfile {
