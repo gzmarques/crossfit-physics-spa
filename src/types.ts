@@ -69,4 +69,19 @@ export interface WodDatabaseRecord {
   timeline?: Record<string, TimelineStateItem>;
   score_watts?: number;
   score_kcal?: number;
+  athlete_id?: string;
+}
+
+export interface UserProfile {
+  id: string;
+  is_coach: boolean;
+  full_name: string;
+  coach_id?: string;
+  estatura: number;
+  peso: number;
+  sexo: 'M' | 'F';
+  nivel_tecnico: string;
+  envergadura: number;
+  perna: number;
+  bf: number;
 }

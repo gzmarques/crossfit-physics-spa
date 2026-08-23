@@ -5,14 +5,23 @@ import { supabase } from './lib/supabase';
 import type { Session } from '@supabase/supabase-js'; 
 import type { 
   AtletaPerfil, ItemLousa, Modalidade, 
-  ResultadoProcessamento, TimelineStateItem, WodDatabaseRecord 
+  ResultadoProcessamento, TimelineStateItem, WodDatabaseRecord, UserProfile
 } from './types';
 import { calcularFisica, parseClockTime } from './utils/physicsEngine';
 
 export default function App() {
+  // === AUTENTICAÇÃO E PERFIL ===
   const [session, setSession] = useState<Session | null>(null);
   const [loadingAuth, setLoadingAuth] = useState(true);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [isNewUser, setIsNewUser] = useState(false);
+  
+  // === GESTÃO DE COACH E ATLETAS ===
+  const [myAthletes, setMyAthletes] = useState<UserProfile[]>([]);
+  const [selectedAthleteId, setSelectedAthleteId] = useState<string>('me');
+  const [coachIdInput, setCoachIdInput] = useState('');
 
+  // === ESTADOS DO MOTOR ===
   const [activeTab, setActiveTab] = useState<'prescricao' | 'analise' | 'historico'>('prescricao');
   const [tipoTreino, setTipoTreino] = useState<Modalidade>('FOR_TIME');
   const [tempoAlvo, setTempoAlvo] = useState('05:00');
@@ -21,6 +30,7 @@ export default function App() {
   const [tempoReal, setTempoReal] = useState('');
   const [tempoDescanso, setTempoDescanso] = useState(0);
 
+  // Atleta base que alimenta o motor de física
   const [atleta, setAtleta] = useState<AtletaPerfil>({
     estatura: 1.75, peso: 80, sexo: 'M', nivelTecnico: 'intermediario', envergadura: 1.75, perna: 0.85, bf: 15
   });
@@ -34,37 +44,135 @@ export default function App() {
   const [jsonInOut, setJsonInOut] = useState('');
   const [savedWods, setSavedWods] = useState<WodDatabaseRecord[]>([]);
 
+  // Formato do Perfil para o Onboarding
+  const [onboardForm, setOnboardForm] = useState({
+    full_name: '', is_coach: false, estatura: 1.75, peso: 80, sexo: 'M', 
+    nivel_tecnico: 'intermediario', envergadura: 1.75, perna: 0.85, bf: 15
+  });
+
+  // === EFEITOS ===
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      setLoadingAuth(false);
+      if (session) loadProfile(session.user.id);
+      else setLoadingAuth(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
+      if (session) loadProfile(session.user.id);
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
-    if (session) fetchWodsFromSupabase();
-  }, [session]);
+    if (session && userProfile && !isNewUser) fetchWodsFromSupabase();
+  }, [session, userProfile, isNewUser, selectedAthleteId]); // Refetch se mudar o atleta selecionado
 
+  // === FUNÇÕES DE LOGIN / PERFIL ===
   const signInWithGoogle = async () => {
     await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
   };
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    setUserProfile(null);
     setSavedWods([]);
   };
 
+  const loadProfile = async (userId: string) => {
+    const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single();
+    
+    if (error || !data) {
+      setIsNewUser(true); // Se não achou perfil, vai pro Onboarding
+      setLoadingAuth(false);
+      return;
+    }
+
+    setUserProfile(data as UserProfile);
+    syncAtletaState(data);
+    
+    if (data.is_coach) {
+      const { data: athletes } = await supabase.from('profiles').select('*').eq('coach_id', userId);
+      if (athletes) setMyAthletes(athletes as UserProfile[]);
+    }
+    
+    setIsNewUser(false);
+    setLoadingAuth(false);
+  };
+
+  const syncAtletaState = (prof: any) => {
+    setAtleta({
+      estatura: prof.estatura, peso: prof.peso, sexo: prof.sexo,
+      nivelTecnico: prof.nivel_tecnico, envergadura: prof.envergadura,
+      perna: prof.perna, bf: prof.bf
+    });
+  };
+
+  const saveOnboardingProfile = async () => {
+    if (!session) return;
+    const payload = {
+      id: session.user.id,
+      ...onboardForm
+    };
+    
+    const { error } = await supabase.from('profiles').insert([payload]);
+    if (error) {
+      alert('Erro ao salvar perfil: ' + error.message);
+    } else {
+      loadProfile(session.user.id); // Recarrega e sai do onboarding
+    }
+  };
+
+  const linkToCoach = async () => {
+    if (!session || !coachIdInput) return;
+    const { error } = await supabase.from('profiles').update({ coach_id: coachIdInput }).eq('id', session.user.id);
+    if (error) alert('Erro ao vincular coach. Verifique o ID.');
+    else { alert('Coach vinculado com sucesso!'); loadProfile(session.user.id); }
+  };
+
+  const handleAthleteChange = (targetId: string) => {
+    setSelectedAthleteId(targetId);
+    if (targetId === 'me' && userProfile) {
+      syncAtletaState(userProfile);
+    } else {
+      const athlete = myAthletes.find(a => a.id === targetId);
+      if (athlete) syncAtletaState(athlete);
+    }
+  };
+
+  // === BANCO DE DADOS (WODs) ===
   const fetchWodsFromSupabase = async () => {
-    const { data, error } = await supabase.from('wods').select('*').order('created_at', { ascending: false });
+    // Se for coach e selecionou um aluno, busca os WODs do aluno. Senão, busca os próprios.
+    const queryId = selectedAthleteId === 'me' ? session?.user.id : selectedAthleteId;
+    
+    const { data, error } = await supabase.from('wods').select('*').eq('athlete_id', queryId).order('created_at', { ascending: false });
     if (!error && data) setSavedWods(data as WodDatabaseRecord[]);
   };
 
+  const salvarNoSupabase = async () => {
+    if (!session || !userProfile) return;
+    
+    const targetAthleteId = selectedAthleteId === 'me' ? session.user.id : selectedAthleteId;
+
+    const wodPayload: WodDatabaseRecord = {
+      title: `Treino ${tipoTreino} - ${new Date().toLocaleDateString('pt-BR')}`,
+      tipo_treino: tipoTreino, tempo_alvo: tempoAlvo, rounds_prescritos: roundsPrescritos,
+      rounds_real: roundsReal, tempo_real: tempoReal, tempo_descanso: tempoDescanso,
+      atleta, movimentos: lousa, timeline: timelineState,
+      score_watts: resultado ? resultado.potenciaReal : 0,
+      score_kcal: resultado ? resultado.gastoMetabolico : 0,
+      athlete_id: targetAthleteId, // Aqui vinculamos a quem o WOD pertence!
+      user_id: session.user.id // Quem criou (Coach ou Atleta)
+    };
+    
+    const { error } = await supabase.from('wods').insert([wodPayload]);
+    if (error) alert('Erro ao salvar no Supabase: ' + error.message);
+    else { alert('Treino salvo no DynaWOD!'); fetchWodsFromSupabase(); }
+  };
+
+  // === FUNÇÕES DA LOUSA (Mantidas) ===
   const addMovimento = (baseId: string | null = null) => {
     const newId = crypto.randomUUID();
     let newItem: ItemLousa = { originalId: newId, movId: 'air_squat', phase: 'round', reps: 10, carga: 0, tecnica: 'tng', extraVal: '' };
@@ -80,42 +188,21 @@ export default function App() {
     }
     setLousa([...lousa, newItem]);
   };
-
   const removeMovimento = (id: string) => setLousa(lousa.filter(m => m.originalId !== id));
   const updateMovimento = (id: string, field: keyof ItemLousa, val: any) => setLousa(lousa.map(item => item.originalId === id ? { ...item, [field]: val } : item));
   const handleTimelineChange = (rowId: string, field: keyof TimelineStateItem, val: any) => setTimelineState(prev => ({ ...prev, [rowId]: { ...(prev[rowId] || { reps: 0, start: '', end: '' }), [field]: val } }));
-
   const exportarJSON = () => setJsonInOut(JSON.stringify({ tipoTreino, tempoAlvo, roundsPrescritos, atleta, movimentos: lousa, timeline: timelineState }, null, 2));
-  
   const importarJSON = () => {
     try {
       const wod = JSON.parse(jsonInOut);
       if (wod.tipoTreino) setTipoTreino(wod.tipoTreino);
       if (wod.tempoAlvo) setTempoAlvo(wod.tempoAlvo);
       if (wod.roundsPrescritos) setRoundsPrescritos(wod.roundsPrescritos);
-      if (wod.atleta) setAtleta(wod.atleta);
       if (wod.movimentos) setLousa(wod.movimentos);
       if (wod.timeline) setTimelineState(wod.timeline);
       alert('WOD Importado com sucesso!');
     } catch (e) { alert('JSON Inválido'); }
   };
-
-  const salvarNoSupabase = async () => {
-    if (!session) return;
-    const wodPayload: WodDatabaseRecord = {
-      title: `Treino ${tipoTreino} - ${new Date().toLocaleDateString('pt-BR')}`,
-      tipo_treino: tipoTreino, tempo_alvo: tempoAlvo, rounds_prescritos: roundsPrescritos,
-      rounds_real: roundsReal, tempo_real: tempoReal, tempo_descanso: tempoDescanso,
-      atleta, movimentos: lousa, timeline: timelineState,
-      score_watts: resultado ? resultado.potenciaReal : 0,
-      score_kcal: resultado ? resultado.gastoMetabolico : 0
-    };
-    
-    const { error } = await supabase.from('wods').insert([wodPayload]);
-    if (error) alert('Erro ao salvar no Supabase: ' + error.message);
-    else { alert('Treino salvo no DynaWOD!'); fetchWodsFromSupabase(); }
-  };
-
   const carregarDoSupabase = (rec: WodDatabaseRecord) => {
     setTipoTreino(rec.tipo_treino); setTempoAlvo(rec.tempo_alvo); setRoundsPrescritos(rec.rounds_prescritos);
     if (rec.rounds_real !== undefined) setRoundsReal(rec.rounds_real);
@@ -219,8 +306,10 @@ export default function App() {
     setResultado({ trabalhoReal: trabalhoMechTotalReal, gastoMetabolico: gastoMetabolicoFinal, potenciaEsp: potEsp, potenciaReal: potReal, logDetalhesHTML: logDetalhes });
   };
 
+  // === RENDER: CARREGAMENTO ===
   if (loadingAuth) return <div style={{textAlign: 'center', marginTop: '50px'}}>Iniciando DynaWOD...</div>;
 
+  // === RENDER: TELA DE LOGIN ===
   if (!session) {
     return (
       <div className="container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '80vh' }}>
@@ -236,10 +325,64 @@ export default function App() {
     );
   }
 
+  // === RENDER: TELA DE ONBOARDING ===
+  if (isNewUser) {
+    return (
+      <div className="container" style={{ maxWidth: '600px' }}>
+        <div className="panel">
+          <h2>Bem-vindo ao DynaWOD!</h2>
+          <p style={{ color: '#aaa' }}>Complete seu perfil biomecânico para calibrarmos o motor para o seu corpo.</p>
+          
+          <div className="form-group" style={{ marginTop: '20px' }}>
+            <label>Seu Nome Completo</label>
+            <input type="text" value={onboardForm.full_name} onChange={e => setOnboardForm({...onboardForm, full_name: e.target.value})} />
+          </div>
+
+          <div style={{ background: '#222', padding: '15px', borderRadius: '8px', margin: '20px 0' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.1rem', cursor: 'pointer' }}>
+              <input type="checkbox" checked={onboardForm.is_coach} onChange={e => setOnboardForm({...onboardForm, is_coach: e.target.checked})} style={{ width: '20px', height: '20px' }} />
+              <strong>Eu sou um Coach</strong> (Quero prescrever para alunos)
+            </label>
+          </div>
+
+          <div className="grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
+            <div className="form-group"><label>Estatura (m)</label><input type="number" step="0.01" value={onboardForm.estatura} onChange={e => setOnboardForm({...onboardForm, estatura: Number(e.target.value)})} /></div>
+            <div className="form-group"><label>Peso (kg)</label><input type="number" step="0.1" value={onboardForm.peso} onChange={e => setOnboardForm({...onboardForm, peso: Number(e.target.value)})} /></div>
+            <div className="form-group"><label>Sexo Biológico</label><select value={onboardForm.sexo} onChange={e => setOnboardForm({...onboardForm, sexo: e.target.value as 'M'|'F'})}><option value="M">Masculino</option><option value="F">Feminino</option></select></div>
+            <div className="form-group"><label>Nível</label><select value={onboardForm.nivel_tecnico} onChange={e => setOnboardForm({...onboardForm, nivel_tecnico: e.target.value})}><option value="iniciante">Iniciante</option><option value="intermediario">Intermediário</option><option value="avancado">Avançado</option></select></div>
+            <div className="form-group"><label>Envergadura (m)</label><input type="number" step="0.01" value={onboardForm.envergadura} onChange={e => setOnboardForm({...onboardForm, envergadura: Number(e.target.value)})} /></div>
+            <div className="form-group"><label>Alt. Perna (m)</label><input type="number" step="0.01" value={onboardForm.perna} onChange={e => setOnboardForm({...onboardForm, perna: Number(e.target.value)})} /></div>
+            <div className="form-group"><label>% BF</label><input type="number" value={onboardForm.bf} onChange={e => setOnboardForm({...onboardForm, bf: Number(e.target.value)})} /></div>
+          </div>
+
+          <button onClick={saveOnboardingProfile} style={{ marginTop: '20px', width: '100%', fontSize: '1.2rem', padding: '15px' }}>Salvar Perfil e Entrar</button>
+        </div>
+      </div>
+    );
+  }
+
+  // === RENDER: APLICAÇÃO PRINCIPAL ===
   return (
     <div className="container">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-        <h1 style={{ margin: 0, border: 'none', paddingBottom: 0 }}>DynaWOD</h1>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', background: '#1e1e1e', padding: '15px', borderRadius: '8px', borderLeft: '4px solid var(--accent)' }}>
+        <div>
+          <h1 style={{ margin: 0, border: 'none', paddingBottom: 0, fontSize: '1.5rem' }}>Olá, {userProfile?.full_name} {userProfile?.is_coach ? '🏆 (Coach)' : '🏋️'}</h1>
+          {userProfile?.is_coach && (
+            <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <strong style={{ color: '#aaa' }}>Ambiente de trabalho:</strong>
+              <select 
+                value={selectedAthleteId} 
+                onChange={e => handleAthleteChange(e.target.value)}
+                style={{ background: '#333', border: '1px solid #444', color: '#fff', padding: '5px 10px', borderRadius: '4px' }}
+              >
+                <option value="me">Meu Próprio Desempenho (Eu)</option>
+                <optgroup label="Meus Alunos">
+                  {myAthletes.map(a => <option key={a.id} value={a.id}>{a.full_name}</option>)}
+                </optgroup>
+              </select>
+            </div>
+          )}
+        </div>
         <button onClick={signOut} style={{ width: 'auto', backgroundColor: '#333', padding: '8px 15px', fontSize: '0.85rem' }}>Sair</button>
       </div>
       
@@ -259,71 +402,36 @@ export default function App() {
             <input type="text" value={tempoAlvo} onChange={e => setTempoAlvo(e.target.value)} />
           </div>
           <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', marginBottom: 0 }}>
-            <div className="form-group">
-              <label>Rounds Prescritos</label>
-              <input type="number" value={roundsPrescritos} onChange={e => setRoundsPrescritos(Number(e.target.value))} />
-            </div>
+            <div className="form-group"><label>Rounds Prescritos</label><input type="number" value={roundsPrescritos} onChange={e => setRoundsPrescritos(Number(e.target.value))} /></div>
             {tipoTreino !== 'FOR_TIME' ? (
-              <div className="form-group">
-                <label>Rounds Reais (Score)</label>
-                <input type="number" step="0.1" value={roundsReal} onChange={e => setRoundsReal(Number(e.target.value))} />
-              </div>
+              <div className="form-group"><label>Rounds Reais (Score)</label><input type="number" step="0.1" value={roundsReal} onChange={e => setRoundsReal(Number(e.target.value))} /></div>
             ) : (
-              <div className="form-group">
-                <label>Tempo Real (Score em mm:ss)</label>
-                <input type="text" value={tempoReal} onChange={e => setTempoReal(e.target.value)} placeholder="Ex: 12:30" />
-              </div>
+              <div className="form-group"><label>Tempo Real (mm:ss)</label><input type="text" value={tempoReal} onChange={e => setTempoReal(e.target.value)} placeholder="Ex: 12:30" /></div>
             )}
           </div>
         </div>
 
         <div className="panel" style={{ marginBottom: 0 }}>
-          <h2>Perfil do Atleta</h2>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h2 style={{ margin: 0 }}>Perfil do Atleta</h2>
+            {selectedAthleteId !== 'me' && <span style={{ background: '#ff9800', color: '#000', padding: '2px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold' }}>Visualizando Aluno</span>}
+          </div>
+          <p style={{ fontSize: '0.8rem', color: '#888', marginTop: '5px' }}>Os dados base são carregados automaticamente do perfil do atleta.</p>
+          
           <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', marginBottom: 0 }}>
-            <div className="form-group">
-              <label>Estatura (m)</label>
-              <input type="number" step="0.01" value={atleta.estatura} onChange={e => setAtleta({ ...atleta, estatura: Number(e.target.value) })} />
-            </div>
-            <div className="form-group">
-              <label>Massa (kg)</label>
-              <input type="number" step="0.1" value={atleta.peso} onChange={e => setAtleta({ ...atleta, peso: Number(e.target.value) })} />
-            </div>
+            <div className="form-group"><label>Estatura (m)</label><input type="number" step="0.01" value={atleta.estatura} onChange={e => setAtleta({ ...atleta, estatura: Number(e.target.value) })} /></div>
+            <div className="form-group"><label>Massa (kg)</label><input type="number" step="0.1" value={atleta.peso} onChange={e => setAtleta({ ...atleta, peso: Number(e.target.value) })} /></div>
           </div>
           <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', marginBottom: 0, marginTop: '15px' }}>
-            <div className="form-group">
-              <label>Sexo Biológico</label>
-              <select value={atleta.sexo} onChange={e => setAtleta({ ...atleta, sexo: e.target.value as 'M' | 'F' })}>
-                <option value="M">Masculino</option>
-                <option value="F">Feminino</option>
-              </select>
-            </div>
-            <div className="form-group">
-              <label>Nível Técnico</label>
-              <select value={atleta.nivelTecnico} onChange={e => setAtleta({ ...atleta, nivelTecnico: e.target.value as any })}>
-                <option value="iniciante">Iniciante / Amador</option>
-                <option value="intermediario">Intermediário</option>
-                <option value="avancado">Avançado / Elite</option>
-              </select>
-            </div>
+            <div className="form-group"><label>Sexo Biológico</label><select value={atleta.sexo} onChange={e => setAtleta({ ...atleta, sexo: e.target.value as 'M' | 'F' })}><option value="M">Masculino</option><option value="F">Feminino</option></select></div>
+            <div className="form-group"><label>Nível Técnico</label><select value={atleta.nivelTecnico} onChange={e => setAtleta({ ...atleta, nivelTecnico: e.target.value as any })}><option value="iniciante">Iniciante</option><option value="intermediario">Intermediário</option><option value="avancado">Avançado</option></select></div>
           </div>
           <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', marginBottom: 0, marginTop: '15px' }}>
-            <div className="form-group">
-              <label>Envergadura (m)</label>
-              <input type="number" step="0.01" value={atleta.envergadura} onChange={e => setAtleta({ ...atleta, envergadura: Number(e.target.value) })} />
-            </div>
-            <div className="form-group">
-              <label>Alt. Perna (m)</label>
-              <input type="number" step="0.01" value={atleta.perna} onChange={e => setAtleta({ ...atleta, perna: Number(e.target.value) })} />
-            </div>
+            <div className="form-group"><label>Envergadura (m)</label><input type="number" step="0.01" value={atleta.envergadura} onChange={e => setAtleta({ ...atleta, envergadura: Number(e.target.value) })} /></div>
+            <div className="form-group"><label>Alt. Perna (m)</label><input type="number" step="0.01" value={atleta.perna} onChange={e => setAtleta({ ...atleta, perna: Number(e.target.value) })} /></div>
           </div>
-          <div className="form-group" style={{ marginTop: '15px' }}>
-            <label>% Gordura Corporal (BF)</label>
-            <input type="number" step="0.1" value={atleta.bf} onChange={e => setAtleta({ ...atleta, bf: Number(e.target.value) })} />
-          </div>
-          <div className="form-group" style={{ marginTop: '15px' }}>
-            <label>Transição/Descanso Total (seg)</label>
-            <input type="number" value={tempoDescanso} onChange={e => setTempoDescanso(Number(e.target.value))} />
-          </div>
+          <div className="form-group" style={{ marginTop: '15px' }}><label>% Gordura Corporal (BF)</label><input type="number" step="0.1" value={atleta.bf} onChange={e => setAtleta({ ...atleta, bf: Number(e.target.value) })} /></div>
+          <div className="form-group" style={{ marginTop: '15px' }}><label>Transição/Descanso Total (seg)</label><input type="number" value={tempoDescanso} onChange={e => setTempoDescanso(Number(e.target.value))} /></div>
         </div>
       </div>
 
@@ -335,7 +443,7 @@ export default function App() {
 
       {activeTab === 'prescricao' && (
         <div className="panel">
-          <h2>Quadro de Movimentos (O que foi prescrito)</h2>
+          <h2>Quadro de Movimentos</h2>
           <button className="btn-add" onClick={() => addMovimento()}>+ Adicionar Exercício</button>
           
           <div className="wod-list">
@@ -358,24 +466,15 @@ export default function App() {
                       </select>
                     </div>
                   </div>
-                  <div>
-                    <label>Reps/Mts</label>
-                    <input type="number" value={item.reps} onChange={e => updateMovimento(item.originalId, 'reps', Number(e.target.value))} />
-                  </div>
+                  <div><label>Reps/Mts</label><input type="number" value={item.reps} onChange={e => updateMovimento(item.originalId, 'reps', Number(e.target.value))} /></div>
                   <div>
                     <label>Carga/Téc.</label>
                     <div style={{ display: 'flex', gap: '5px' }}>
                       <input type="number" disabled={!cfg.usaCarga} value={item.carga} onChange={e => updateMovimento(item.originalId, 'carga', Number(e.target.value))} />
-                      <select value={item.tecnica} onChange={e => updateMovimento(item.originalId, 'tecnica', e.target.value)}>
-                        <option value="tng">T&G</option>
-                        <option value="drop">Drop</option>
-                      </select>
+                      <select value={item.tecnica} onChange={e => updateMovimento(item.originalId, 'tecnica', e.target.value)}><option value="tng">T&G</option><option value="drop">Drop</option></select>
                     </div>
                   </div>
-                  <div>
-                    <label>{cfg.paramExtra ? cfg.paramExtra.label : 'Param.'}</label>
-                    <input type="text" disabled={!cfg.paramExtra} value={item.extraVal} onChange={e => updateMovimento(item.originalId, 'extraVal', e.target.value)} />
-                  </div>
+                  <div><label>{cfg.paramExtra ? cfg.paramExtra.label : 'Param.'}</label><input type="text" disabled={!cfg.paramExtra} value={item.extraVal} onChange={e => updateMovimento(item.originalId, 'extraVal', e.target.value)} /></div>
                   <div className="actions-col">
                     <button className="btn-action" onClick={() => addMovimento(item.originalId)} title="Duplicar">📋</button>
                     <button className="btn-remove" onClick={() => removeMovimento(item.originalId)}>X</button>
@@ -385,8 +484,8 @@ export default function App() {
             })}
           </div>
 
-          <h2>Importar / Exportar Lousa</h2>
-          <textarea rows={3} value={jsonInOut} onChange={e => setJsonInOut(e.target.value)} placeholder="{ ... código JSON do WOD ... }" />
+          <h2>Importar / Exportar</h2>
+          <textarea rows={3} value={jsonInOut} onChange={e => setJsonInOut(e.target.value)} placeholder="{ JSON }" />
           <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
             <button onClick={exportarJSON} style={{ backgroundColor: '#444' }}>Exportar JSON</button>
             <button onClick={importarJSON} style={{ backgroundColor: '#388e3c' }}>Importar JSON</button>
@@ -397,7 +496,8 @@ export default function App() {
 
       {activeTab === 'analise' && (
         <div className="panel">
-          <h2>Timeline Expandida (O que foi executado)</h2>
+          <h2>Timeline Expandida</h2>
+          {/* Omiti os campos da timeline aqui visualmente na mensagem mas no codigo está gerando */}
           <div className="wod-list">
             {(() => {
               let rTimeline = (tipoTreino === 'FOR_TIME') ? roundsPrescritos : Math.ceil(roundsReal);
@@ -410,24 +510,10 @@ export default function App() {
                 rows.push(
                   <div key={rowId} className="wod-item-analise">
                     <div className={`badge-round ${badgeClass}`}>{badgeText}</div>
-                    <div>
-                      <div style={{ fontWeight: 'bold' }}>{cfg ? cfg.nome : m.movId}</div>
-                      <div style={{ fontSize: '0.75rem', color: '#aaa' }}>
-                        {m.carga > 0 ? `${m.carga}kg (${m.tecnica})` : ''} {m.extraVal ? `| ${m.extraVal}` : ''}
-                      </div>
-                    </div>
-                    <div>
-                      <label>Reps</label>
-                      <input type="number" value={st.reps} onChange={e => handleTimelineChange(rowId, 'reps', Number(e.target.value))} />
-                    </div>
-                    <div>
-                      <label>Início</label>
-                      <input type="text" placeholder="mm:ss" value={st.start} onChange={e => handleTimelineChange(rowId, 'start', e.target.value)} />
-                    </div>
-                    <div>
-                      <label>Fim</label>
-                      <input type="text" placeholder="mm:ss" value={st.end} onChange={e => handleTimelineChange(rowId, 'end', e.target.value)} />
-                    </div>
+                    <div><div style={{ fontWeight: 'bold' }}>{cfg ? cfg.nome : m.movId}</div><div style={{ fontSize: '0.75rem', color: '#aaa' }}>{m.carga > 0 ? `${m.carga}kg (${m.tecnica})` : ''} {m.extraVal ? `| ${m.extraVal}` : ''}</div></div>
+                    <div><label>Reps</label><input type="number" value={st.reps} onChange={e => handleTimelineChange(rowId, 'reps', Number(e.target.value))} /></div>
+                    <div><label>Início</label><input type="text" placeholder="mm:ss" value={st.start} onChange={e => handleTimelineChange(rowId, 'start', e.target.value)} /></div>
+                    <div><label>Fim</label><input type="text" placeholder="mm:ss" value={st.end} onChange={e => handleTimelineChange(rowId, 'end', e.target.value)} /></div>
                   </div>
                 );
               };
@@ -444,22 +530,10 @@ export default function App() {
             <div className="results">
               <h2>Painel de Resultado Biomecânico</h2>
               <div className="grid" style={{ marginBottom: 0 }}>
-                <div style={{ margin: '15px 0' }}>
-                  <div className="result-value color-mech">{resultado.trabalhoReal.toFixed(0)} J</div>
-                  <div>Trabalho Mecânico Corrigido</div>
-                </div>
-                <div style={{ margin: '15px 0' }}>
-                  <div className="result-value color-metabolic">{resultado.gastoMetabolico.toFixed(0)} kCal</div>
-                  <div>Gasto Termodinâmico (+ EPOC)</div>
-                </div>
-                <div style={{ margin: '15px 0' }}>
-                  <div className="result-value" style={{ color: '#aaa' }}>{resultado.potenciaEsp > 0 ? resultado.potenciaEsp.toFixed(1) + ' W' : '-- W'}</div>
-                  <div>Potência Esperada</div>
-                </div>
-                <div style={{ margin: '15px 0' }}>
-                  <div className="result-value" style={{ color: '#4caf50' }}>{resultado.potenciaReal > 0 ? resultado.potenciaReal.toFixed(1) + ' W' : '-- W'}</div>
-                  <div>Potência Real Executada</div>
-                </div>
+                <div style={{ margin: '15px 0' }}><div className="result-value color-mech">{resultado.trabalhoReal.toFixed(0)} J</div><div>Trabalho Mecânico</div></div>
+                <div style={{ margin: '15px 0' }}><div className="result-value color-metabolic">{resultado.gastoMetabolico.toFixed(0)} kCal</div><div>Gasto Termodinâmico (+ EPOC)</div></div>
+                <div style={{ margin: '15px 0' }}><div className="result-value" style={{ color: '#aaa' }}>{resultado.potenciaEsp > 0 ? resultado.potenciaEsp.toFixed(1) + ' W' : '-- W'}</div><div>Potência Esperada</div></div>
+                <div style={{ margin: '15px 0' }}><div className="result-value" style={{ color: '#4caf50' }}>{resultado.potenciaReal > 0 ? resultado.potenciaReal.toFixed(1) + ' W' : '-- W'}</div><div>Potência Real Executada</div></div>
               </div>
               <div className="result-detail" dangerouslySetInnerHTML={{ __html: resultado.logDetalhesHTML }} />
             </div>
@@ -469,7 +543,22 @@ export default function App() {
 
       {activeTab === 'historico' && (
         <div className="panel">
-          <h2>Seu Histórico de Desempenho</h2>
+          
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h2>Histórico de Desempenho {selectedAthleteId !== 'me' ? '(Aluno)' : ''}</h2>
+            {selectedAthleteId === 'me' && !userProfile?.is_coach && (
+              <div style={{ display: 'flex', gap: '5px' }}>
+                <input type="text" placeholder="ID do seu Coach..." value={coachIdInput} onChange={e => setCoachIdInput(e.target.value)} style={{ padding: '8px' }} />
+                <button onClick={linkToCoach} style={{ width: 'auto', padding: '8px 15px', backgroundColor: '#388e3c' }}>Vincular</button>
+              </div>
+            )}
+          </div>
+
+          {selectedAthleteId === 'me' && (
+            <div style={{ marginBottom: '20px', padding: '10px', background: '#333', borderRadius: '4px', fontSize: '0.9rem' }}>
+              <strong>Seu ID de Atleta (Passe para o seu Coach):</strong> <span style={{ color: '#4caf50', userSelect: 'all' }}>{session.user.id}</span>
+            </div>
+          )}
           
           {savedWods.length > 0 ? (
             <>
@@ -477,17 +566,10 @@ export default function App() {
                 <ResponsiveContainer>
                   <LineChart data={[...savedWods].reverse()} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#444" />
-                    <XAxis 
-                      dataKey="created_at" 
-                      tickFormatter={(tick) => new Date(tick as string).toLocaleDateString('pt-BR')} 
-                      stroke="#aaa" 
-                    />
+                    <XAxis dataKey="created_at" tickFormatter={(tick) => new Date(tick as string).toLocaleDateString('pt-BR')} stroke="#aaa" />
                     <YAxis yAxisId="left" stroke="#4caf50" />
                     <YAxis yAxisId="right" orientation="right" stroke="#ff9800" />
-                    <Tooltip 
-                      labelFormatter={(label) => new Date(label as string).toLocaleDateString('pt-BR')} 
-                      contentStyle={{ backgroundColor: '#1e1e1e', border: 'none' }} 
-                    />
+                    <Tooltip labelFormatter={(label) => new Date(label as string).toLocaleDateString('pt-BR')} contentStyle={{ backgroundColor: '#1e1e1e', border: 'none' }} />
                     <Legend />
                     <Line yAxisId="left" type="monotone" dataKey="score_watts" name="Potência (Watts)" stroke="#4caf50" strokeWidth={3} activeDot={{ r: 8 }} />
                     <Line yAxisId="right" type="monotone" dataKey="score_kcal" name="Gasto (kCal)" stroke="#ff9800" strokeWidth={3} />
@@ -509,7 +591,7 @@ export default function App() {
               </div>
             </>
           ) : (
-            <p style={{ color: '#aaa', textAlign: 'center', padding: '20px' }}>Você ainda não salvou nenhum treino no DynaWOD.</p>
+            <p style={{ color: '#aaa', textAlign: 'center', padding: '20px' }}>Nenhum treino salvo para este atleta.</p>
           )}
         </div>
       )}
