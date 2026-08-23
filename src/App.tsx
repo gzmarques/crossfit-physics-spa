@@ -330,7 +330,10 @@ export default function App() {
     return (
       <div className="container" style={{ maxWidth: '600px' }}>
         <div className="panel">
-          <h2>Bem-vindo ao DynaWOD!</h2>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+            <h2 style={{ margin: 0 }}>Bem-vindo ao DynaWOD!</h2>
+            <button onClick={signOut} style={{ width: 'auto', backgroundColor: '#333', padding: '5px 10px', fontSize: '0.85rem' }}>Sair</button>
+          </div>
           <p style={{ color: '#aaa' }}>Complete seu perfil biomecânico para calibrarmos o motor para o seu corpo.</p>
           
           <div className="form-group" style={{ marginTop: '20px' }}>
