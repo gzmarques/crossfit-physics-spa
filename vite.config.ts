@@ -30,7 +30,7 @@ export default defineConfig({
         ]
       }
     })
-  ]
+  ],
   manifest: {
         name: 'DynaWOD - Motor Biomecânico',
         short_name: 'DynaWOD',
