@@ -365,29 +365,61 @@ export default function App() {
   }
 
   // === RENDER: APLICAÇÃO PRINCIPAL ===
+  // === RENDER: APLICAÇÃO PRINCIPAL ===
   return (
-    <div className="container">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', background: '#1e1e1e', padding: '15px', borderRadius: '8px', borderLeft: '4px solid var(--accent)' }}>
-        <div>
-          <h1 style={{ margin: 0, border: 'none', paddingBottom: 0, fontSize: '1.5rem' }}>Olá, {userProfile?.full_name} {userProfile?.is_coach ? '🏆 (Coach)' : '🏋️'}</h1>
-          {userProfile?.is_coach && (
-            <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <strong style={{ color: '#aaa' }}>Ambiente de trabalho:</strong>
-              <select 
-                value={selectedAthleteId} 
-                onChange={e => handleAthleteChange(e.target.value)}
-                style={{ background: '#333', border: '1px solid #444', color: '#fff', padding: '5px 10px', borderRadius: '4px' }}
-              >
-                <option value="me">Meu Próprio Desempenho (Eu)</option>
-                <optgroup label="Meus Alunos">
-                  {myAthletes.map(a => <option key={a.id} value={a.id}>{a.full_name}</option>)}
-                </optgroup>
-              </select>
-            </div>
-          )}
+    <div className="container" style={{ padding: 0 }}> {/* Removi o padding padrão do container para o header encostar nas bordas */}
+      
+      {/* NOVO CABEÇALHO DYNAWOD */}
+      <header style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        padding: '16px 24px', 
+        backgroundColor: 'var(--bg-dark, #0a0a0a)',
+        borderBottom: '1px solid var(--line-silver, #26272b)',
+        marginBottom: '24px'
+      }}>
+        {/* Logo e Nome da Marca */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {/* Nota: Se você não renomeou a imagem para favicon.png, mude o src abaixo para /dynawod-transparent.png */}
+          <img 
+            src="/favicon.png" 
+            alt="DynaWOD Logo" 
+            style={{ height: '40px', objectFit: 'contain' }} 
+          />
+          <h1 style={{ margin: 0, fontSize: '22px', fontWeight: 800, letterSpacing: '1px', border: 'none', paddingBottom: 0 }}>
+            Dyna<span style={{ color: 'var(--dyna-red, #FF2B3D)' }}>WOD</span>
+          </h1>
         </div>
-        <button onClick={signOut} style={{ width: 'auto', backgroundColor: '#333', padding: '8px 15px', fontSize: '0.85rem' }}>Sair</button>
-      </div>
+
+        {/* Saudação, Dropdown Coach e Sair */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+          
+          <div style={{ fontSize: '14px', color: 'var(--text-muted, #8a8d94)', fontWeight: 600 }}>
+            Olá, <span style={{ color: '#fff' }}>{userProfile?.full_name}</span> {userProfile?.is_coach ? '🏆' : '🏋️'}
+          </div>
+
+          {userProfile?.is_coach && (
+            <select 
+              value={selectedAthleteId} 
+              onChange={e => handleAthleteChange(e.target.value)}
+              style={{ background: 'var(--bg-card, #181a1e)', border: '1px solid var(--line-silver, #26272b)', color: '#fff', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer' }}
+            >
+              <option value="me">Meu Desempenho</option>
+              <optgroup label="Meus Alunos">
+                {myAthletes.map(a => <option key={a.id} value={a.id}>{a.full_name}</option>)}
+              </optgroup>
+            </select>
+          )}
+
+          <button onClick={signOut} style={{ width: 'auto', backgroundColor: 'var(--dyna-burgundy, #7A0F1B)', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer', fontWeight: 'bold' }}>
+            Sair
+          </button>
+        </div>
+      </header>
+
+      {/* O container interno precisa de padding agora que o header é de fora a fora */}
+      <div style={{ padding: '0 24px' }}>
       
       <div className="grid">
         <div className="panel" style={{ marginBottom: 0 }}>
@@ -492,7 +524,7 @@ export default function App() {
           <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
             <button onClick={exportarJSON} style={{ backgroundColor: '#444' }}>Exportar JSON</button>
             <button onClick={importarJSON} style={{ backgroundColor: '#388e3c' }}>Importar JSON</button>
-            <button onClick={salvarNoSupabase} style={{ backgroundColor: '#1976d2' }}>Salvar WOD</button>
+            <button onClick={salvarNoSupabase} style={{ backgroundColor: 'var(--dyna-red, #FF2B3D)', color: '#fff', fontWeight: 'bold' }}>Salvar WOD</button>
           </div>
         </div>
       )}
@@ -527,7 +559,9 @@ export default function App() {
             })()}
           </div>
 
-          <button onClick={processarWOD} style={{ fontSize: '1.1rem', padding: '15px' }}>Processar Dinâmica e Termodinâmica</button>
+          <button onClick={processarWOD} style={{ fontSize: '1.1rem', padding: '15px', backgroundColor: 'var(--dyna-red, #FF2B3D)', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', width: '100%', cursor: 'pointer', marginBottom: '20px' }}>
+            ⚡ Processar Dinâmica e Termodinâmica
+          </button>
 
           {resultado && (
             <div className="results">
@@ -598,6 +632,7 @@ export default function App() {
           )}
         </div>
       )}
+      </div>
     </div>
   );
 }
