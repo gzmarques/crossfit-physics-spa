@@ -525,9 +525,13 @@ export default function App() {
             )}
             
             <div style={{ display: 'flex', gap: '10px' }}>
-              <button onClick={importarWod} style={{ backgroundColor: 'var(--line-silver, #26272b)', color: '#fff', border: '1px solid #444' }}>📥 Importar via Código</button>
-              <button onClick={compartilharWod} style={{ backgroundColor: '#1976d2', color: '#fff' }}>🔗 Copiar Código (Compartilhar)</button>
-              <button onClick={() => salvarNoSupabase(false)} style={{ backgroundColor: 'var(--dyna-red, #FF2B3D)', color: '#fff', fontWeight: 'bold' }}>
+              <button onClick={importarWod} style={{ backgroundColor: 'var(--bg-card, #181a1e)', color: '#fff', border: '1px solid var(--line-silver, #26272b)' }}>
+                📥 Importar via Código
+              </button>
+              <button onClick={compartilharWod} style={{ backgroundColor: 'var(--dyna-burgundy, #7A0F1B)', color: '#fff', border: 'none', fontWeight: '600' }}>
+                🔗 Copiar Código
+              </button>
+              <button onClick={() => salvarNoSupabase(false)} style={{ backgroundColor: 'var(--dyna-red, #FF2B3D)', color: '#fff', border: 'none', fontWeight: 'bold' }}>
                 {currentWodId ? '💾 Atualizar WOD' : '💾 Salvar Novo WOD'}
               </button>
             </div>
