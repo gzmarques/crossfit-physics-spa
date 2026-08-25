@@ -46,7 +46,7 @@ export default function App() {
 
   // Formato do Perfil para o Onboarding
   const [onboardForm, setOnboardForm] = useState({
-    full_name: '', is_coach: false, estatura: 1.75, peso: 80, sexo: 'M', 
+    full_name: '', apelido: '',is_coach: false, estatura: 1.75, peso: 80, sexo: 'M', 
     nivel_tecnico: 'intermediario', envergadura: 1.75, perna: 0.85, bf: 15
   });
 
@@ -340,6 +340,10 @@ export default function App() {
             <label>Seu Nome Completo</label>
             <input type="text" value={onboardForm.full_name} onChange={e => setOnboardForm({...onboardForm, full_name: e.target.value})} />
           </div>
+          <div className="form-group">
+            <label>Como quer ser chamado?</label>
+            <input type="text" value={onboardForm.apelido} onChange={e => setOnboardForm({...onboardForm, apelido: e.target.value})} placeholder="Ex: Gui" />
+          </div>
 
           <div style={{ background: '#222', padding: '15px', borderRadius: '8px', margin: '20px 0' }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.1rem', cursor: 'pointer' }}>
@@ -396,7 +400,7 @@ export default function App() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
           
           <div style={{ fontSize: '14px', color: 'var(--text-muted, #8a8d94)', fontWeight: 600 }}>
-            Olá, <span style={{ color: '#fff' }}>{userProfile?.full_name}</span> {userProfile?.is_coach ? '🏆' : '🏋️'}
+            Olá, <span style={{ color: '#fff' }}>{userProfile?.apelido || userProfile?.full_name?.split(' ')[0]}</span>
           </div>
 
           {userProfile?.is_coach && (

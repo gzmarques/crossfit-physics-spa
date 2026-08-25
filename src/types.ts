@@ -77,6 +77,7 @@ export interface UserProfile {
   id: string;
   is_coach: boolean;
   full_name: string;
+  apelido?: string;
   coach_id?: string;
   estatura: number;
   peso: number;
