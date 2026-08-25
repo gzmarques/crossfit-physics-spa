@@ -8,6 +8,7 @@ import type {
   ResultadoProcessamento, TimelineStateItem, WodDatabaseRecord, UserProfile
 } from './types';
 import { calcularFisica, parseClockTime } from './utils/physicsEngine';
+import { Trophy, Dumbbell, Copy, Download, Share2, Save, LogOut } from 'lucide-react';
 
 export default function App() {
   // === AUTENTICAÇÃO E PERFIL ===
@@ -381,7 +382,7 @@ export default function App() {
         <div className="panel">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
             <h2 style={{ margin: 0 }}>Bem-vindo ao DynaWOD!</h2>
-            <button onClick={signOut} style={{ width: 'auto', backgroundColor: '#333', padding: '5px 10px', fontSize: '0.85rem' }}>Sair</button>
+            <button onClick={signOut} style={{ display: 'flex', alignItems: 'center', gap: '8px', width: 'auto', backgroundColor: '#333', padding: '5px 10px', fontSize: '0.85rem' }}>Sair</button>
           </div>
           <p style={{ color: '#aaa' }}>Complete seu perfil biomecânico para calibrarmos o motor para o seu corpo.</p>
           
@@ -443,7 +444,7 @@ export default function App() {
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
           <div style={{ fontSize: '14px', color: 'var(--text-muted, #8a8d94)', fontWeight: 600 }}>
-            Olá, <span style={{ color: '#fff' }}>{userProfile?.full_name?.split(' ')[0]}</span> {userProfile?.is_coach ? '🏆' : '🏋️'}
+            Olá, <span style={{ color: '#fff' }}>{userProfile?.is_coach ? <Trophy size={18} color="var(--dyna-red)" /> : <Dumbbell size={18} color="var(--line-silver)" />} {userProfile?.apelido || userProfile?.full_name}</span>
           </div>
           {userProfile?.is_coach && (
             <select value={selectedAthleteId} onChange={e => handleAthleteChange(e.target.value)} style={{ background: 'var(--bg-card, #181a1e)', border: '1px solid var(--line-silver, #26272b)', color: '#fff', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer' }}>
@@ -451,7 +452,7 @@ export default function App() {
               <optgroup label="Meus Alunos">{myAthletes.map(a => <option key={a.id} value={a.id}>{a.full_name}</option>)}</optgroup>
             </select>
           )}
-          <button onClick={signOut} style={{ width: 'auto', backgroundColor: 'var(--dyna-burgundy, #7A0F1B)', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer', fontWeight: 'bold' }}>Sair</button>
+          <button onClick={signOut} style={{ width: 'auto', backgroundColor: 'var(--dyna-burgundy, #7A0F1B)', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer', fontWeight: 'bold' }}><LogOut size={16} /> Sair</button>
         </div>
       </header>
 
@@ -524,8 +525,10 @@ export default function App() {
                     </div>
                     <div><label>{cfg.paramExtra ? cfg.paramExtra.label : 'Param.'}</label><input type="text" disabled={!cfg.paramExtra} value={item.extraVal} onChange={e => updateMovimento(item.originalId, 'extraVal', e.target.value)} /></div>
                     <div className="actions-col">
-                      <button className="btn-action" onClick={() => addMovimento(item.originalId)} title="Duplicar">📋</button>
-                      <button className="btn-remove" onClick={() => removeMovimento(item.originalId)}>X</button>
+                      <button className="btn-action" onClick={() => addMovimento(item.originalId)} title="Duplicar">
+                        <Copy size={16} color="var(--line-silver)" />
+                      </button>
+                      <button className="btn-remove" onClick={() => removeMovimento(item.originalId)}><i data-lucide="x"></i>  </button>
                     </div>
                   </div>
                 );
@@ -541,17 +544,17 @@ export default function App() {
               </p>
             )}
             
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button onClick={importarWod} style={{ backgroundColor: 'var(--bg-card, #181a1e)', color: '#fff', border: '1px solid var(--line-silver, #26272b)' }}>
-                📥 Importar via Código
-              </button>
-              <button onClick={compartilharWod} style={{ backgroundColor: 'var(--dyna-burgundy, #7A0F1B)', color: '#fff', border: 'none', fontWeight: '600' }}>
-                🔗 Copiar Código
-              </button>
-              <button onClick={() => salvarNoSupabase(false)} style={{ backgroundColor: 'var(--dyna-red, #FF2B3D)', color: '#fff', border: 'none', fontWeight: 'bold' }}>
-                {currentWodId ? '💾 Atualizar WOD' : '💾 Salvar Novo WOD'}
-              </button>
-            </div>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button onClick={importarWod} style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: 'var(--bg-card, #181a1e)', color: '#fff', border: '1px solid var(--line-silver, #26272b)' }}>
+                  <Download size={18} /> Importar via Código
+                </button>
+                <button onClick={compartilharWod} style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: 'var(--dyna-burgundy, #7A0F1B)', color: '#fff', border: 'none', fontWeight: '600' }}>
+                  <Share2 size={18} /> Copiar Código
+                </button>
+                <button onClick={() => salvarNoSupabase(false)} style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: 'var(--dyna-red, #FF2B3D)', color: '#fff', border: 'none', fontWeight: 'bold' }}>
+                  <Save size={18} /> {currentWodId ? 'Atualizar WOD' : 'Salvar Novo WOD'}
+                </button>
+              </div>
           </div>
         )}
 
