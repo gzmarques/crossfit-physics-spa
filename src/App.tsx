@@ -30,6 +30,10 @@ export default function App() {
   const [tempoReal, setTempoReal] = useState('');
   const [tempoDescanso, setTempoDescanso] = useState(0);
 
+  // === RASTREAMENTO DO WOD ATUAL ===
+  const [currentWodId, setCurrentWodId] = useState<string | null>(null);
+  const [currentShortCode, setCurrentShortCode] = useState<string | null>(null);
+
   // Atleta base que alimenta o motor de física
   const [atleta, setAtleta] = useState<AtletaPerfil>({
     estatura: 1.75, peso: 80, sexo: 'M', nivelTecnico: 'intermediario', envergadura: 1.75, perna: 0.85, bf: 15
@@ -41,7 +45,6 @@ export default function App() {
   const [timelineState, setTimelineState] = useState<Record<string, TimelineStateItem>>({});
   
   const [resultado, setResultado] = useState<ResultadoProcessamento | null>(null);
-  const [jsonInOut, setJsonInOut] = useState('');
   const [savedWods, setSavedWods] = useState<WodDatabaseRecord[]>([]);
 
   // Formato do Perfil para o Onboarding
@@ -151,25 +154,69 @@ export default function App() {
     if (!error && data) setSavedWods(data as WodDatabaseRecord[]);
   };
 
-  const salvarNoSupabase = async () => {
-    if (!session || !userProfile) return;
+// === LÓGICA DE SALVAMENTO E COMPARTILHAMENTO ===
+  
+  // Gerador de código curto (Ex: 8XF2A9)
+  const generateShortCode = () => Math.random().toString(36).substring(2, 8).toUpperCase();
+
+  const salvarNoSupabase = async (isExporting = false) => {
+    if (!session || !userProfile) return null;
     
     const targetAthleteId = selectedAthleteId === 'me' ? session.user.id : selectedAthleteId;
+    const newShortCode = currentShortCode || generateShortCode();
 
-    const wodPayload: WodDatabaseRecord = {
+    const wodPayload = {
       title: `Treino ${tipoTreino} - ${new Date().toLocaleDateString('pt-BR')}`,
       tipo_treino: tipoTreino, tempo_alvo: tempoAlvo, rounds_prescritos: roundsPrescritos,
       rounds_real: roundsReal, tempo_real: tempoReal, tempo_descanso: tempoDescanso,
       atleta, movimentos: lousa, timeline: timelineState,
       score_watts: resultado ? resultado.potenciaReal : 0,
       score_kcal: resultado ? resultado.gastoMetabolico : 0,
-      athlete_id: targetAthleteId, // Aqui vinculamos a quem o WOD pertence!
-      user_id: session.user.id // Quem criou (Coach ou Atleta)
+      athlete_id: targetAthleteId,
+      user_id: session.user.id,
+      short_code: newShortCode
     };
+
+    if (currentWodId) {
+      // ATUALIZAÇÃO
+      if (!isExporting && !window.confirm('Deseja sobrescrever as alterações neste WOD?')) return null;
+      
+      const { error } = await supabase.from('wods').update(wodPayload).eq('id', currentWodId);
+      if (error) { alert('Erro ao atualizar: ' + error.message); return null; }
+      if (!isExporting) alert('WOD Atualizado com sucesso!');
+    } else {
+      // CRIAÇÃO (NOVO)
+      const { data, error } = await supabase.from('wods').insert([wodPayload]).select('id, short_code').single();
+      if (error) { alert('Erro ao salvar: ' + error.message); return null; }
+      setCurrentWodId(data.id);
+      setCurrentShortCode(data.short_code);
+      if (!isExporting) alert('Treino salvo no DynaWOD!');
+    }
     
-    const { error } = await supabase.from('wods').insert([wodPayload]);
-    if (error) alert('Erro ao salvar no Supabase: ' + error.message);
-    else { alert('Treino salvo no DynaWOD!'); fetchWodsFromSupabase(); }
+    fetchWodsFromSupabase();
+    return newShortCode;
+  };
+
+  const compartilharWod = async () => {
+    const code = await salvarNoSupabase(true); // Salva silenciosamente antes de exportar
+    if (code) {
+      navigator.clipboard.writeText(code);
+      alert(`Código do WOD (${code}) copiado para a área de transferência! Envie para seus alunos.`);
+    }
+  };
+
+  const importarWod = async () => {
+    const codeToFind = window.prompt('Digite o código de 6 dígitos do WOD:');
+    if (!codeToFind) return;
+
+    const { data, error } = await supabase.from('wods').select('*').eq('short_code', codeToFind.toUpperCase()).single();
+    
+    if (error || !data) {
+      alert('WOD não encontrado. Verifique o código.');
+      return;
+    }
+
+    carregarDoSupabase(data);
   };
 
   // === FUNÇÕES DA LOUSA (Mantidas) ===
@@ -191,26 +238,22 @@ export default function App() {
   const removeMovimento = (id: string) => setLousa(lousa.filter(m => m.originalId !== id));
   const updateMovimento = (id: string, field: keyof ItemLousa, val: any) => setLousa(lousa.map(item => item.originalId === id ? { ...item, [field]: val } : item));
   const handleTimelineChange = (rowId: string, field: keyof TimelineStateItem, val: any) => setTimelineState(prev => ({ ...prev, [rowId]: { ...(prev[rowId] || { reps: 0, start: '', end: '' }), [field]: val } }));
-  const exportarJSON = () => setJsonInOut(JSON.stringify({ tipoTreino, tempoAlvo, roundsPrescritos, atleta, movimentos: lousa, timeline: timelineState }, null, 2));
-  const importarJSON = () => {
-    try {
-      const wod = JSON.parse(jsonInOut);
-      if (wod.tipoTreino) setTipoTreino(wod.tipoTreino);
-      if (wod.tempoAlvo) setTempoAlvo(wod.tempoAlvo);
-      if (wod.roundsPrescritos) setRoundsPrescritos(wod.roundsPrescritos);
-      if (wod.movimentos) setLousa(wod.movimentos);
-      if (wod.timeline) setTimelineState(wod.timeline);
-      alert('WOD Importado com sucesso!');
-    } catch (e) { alert('JSON Inválido'); }
-  };
-  const carregarDoSupabase = (rec: WodDatabaseRecord) => {
-    setTipoTreino(rec.tipo_treino); setTempoAlvo(rec.tempo_alvo); setRoundsPrescritos(rec.rounds_prescritos);
+  const carregarDoSupabase = (rec: any) => {
+    setTipoTreino(rec.tipo_treino); 
+    setTempoAlvo(rec.tempo_alvo); 
+    setRoundsPrescritos(rec.rounds_prescritos);
+    
     if (rec.rounds_real !== undefined) setRoundsReal(rec.rounds_real);
     if (rec.tempo_real) setTempoReal(rec.tempo_real);
     if (rec.tempo_descanso) setTempoDescanso(rec.tempo_descanso);
     if (rec.atleta) setAtleta(rec.atleta);
     if (rec.movimentos) setLousa(rec.movimentos);
     if (rec.timeline) setTimelineState(rec.timeline);
+    
+    // AQUI ESTÁ A MÁGICA DA MEMÓRIA:
+    setCurrentWodId(rec.id);
+    setCurrentShortCode(rec.short_code);
+    
     setActiveTab('prescricao');
   };
 
@@ -474,12 +517,19 @@ export default function App() {
 
             <hr style={{ borderColor: 'var(--line-silver, #26272b)', margin: '25px 0' }} />
             
-            <h2>Importar / Exportar / Salvar</h2>
-            <textarea rows={3} value={jsonInOut} onChange={e => setJsonInOut(e.target.value)} placeholder="{ JSON }" />
-            <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-              <button onClick={exportarJSON} style={{ backgroundColor: '#444' }}>Exportar JSON</button>
-              <button onClick={importarJSON} style={{ backgroundColor: '#388e3c' }}>Importar JSON</button>
-              <button onClick={salvarNoSupabase} style={{ backgroundColor: 'var(--dyna-red, #FF2B3D)', color: '#fff', fontWeight: 'bold' }}>Salvar WOD</button>
+            <h2>Gerenciar WOD</h2>
+            {currentShortCode && (
+              <p style={{ color: 'var(--text-muted, #8a8d94)', fontSize: '0.9rem', marginBottom: '15px' }}>
+                Código deste treino: <strong style={{ color: '#fff', letterSpacing: '2px' }}>{currentShortCode}</strong>
+              </p>
+            )}
+            
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button onClick={importarWod} style={{ backgroundColor: 'var(--line-silver, #26272b)', color: '#fff', border: '1px solid #444' }}>📥 Importar via Código</button>
+              <button onClick={compartilharWod} style={{ backgroundColor: '#1976d2', color: '#fff' }}>🔗 Copiar Código (Compartilhar)</button>
+              <button onClick={() => salvarNoSupabase(false)} style={{ backgroundColor: 'var(--dyna-red, #FF2B3D)', color: '#fff', fontWeight: 'bold' }}>
+                {currentWodId ? '💾 Atualizar WOD' : '💾 Salvar Novo WOD'}
+              </button>
             </div>
           </div>
         )}

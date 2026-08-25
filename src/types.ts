@@ -56,6 +56,7 @@ export interface ResultadoProcessamento {
 
 export interface WodDatabaseRecord {
   id?: string;
+  short_code?: string;
   created_at?: string;
   title: string;
   tipo_treino: Modalidade;
@@ -71,6 +72,8 @@ export interface WodDatabaseRecord {
   score_kcal?: number;
   athlete_id?: string;
   user_id?: string;
+  currentWodId?: string;
+  currentShortCode?: string;
 }
 
 export interface UserProfile {
