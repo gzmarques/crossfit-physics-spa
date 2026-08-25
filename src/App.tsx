@@ -361,7 +361,7 @@ export default function App() {
             <img 
             src="/dynawod-texto.png"
             alt="DynaWOD Tipografia" 
-            style={{ height: '28px', objectFit: 'contain' }} /* Ajuste o 28px se precisar dela maior ou menor */
+            style={{ height: '48px', objectFit: 'contain' }}
             />
           </h1>
           <p style={{ color: '#aaa', marginBottom: '30px' }}>Seu motor biomecânico. Calcule potência e gasto metabólico real.</p>
