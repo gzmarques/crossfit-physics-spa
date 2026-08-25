@@ -8,7 +8,7 @@ import type {
   ResultadoProcessamento, TimelineStateItem, WodDatabaseRecord, UserProfile
 } from './types';
 import { calcularFisica, parseClockTime } from './utils/physicsEngine';
-import { Trophy, Dumbbell, Copy, Download, Share2, Save, LogOut } from 'lucide-react';
+import { Trophy, Dumbbell, Copy, Download, Share2, Save, LogOut, X } from 'lucide-react';
 
 export default function App() {
   // === AUTENTICAÇÃO E PERFIL ===
@@ -528,7 +528,7 @@ export default function App() {
                       <button className="btn-action" onClick={() => addMovimento(item.originalId)} title="Duplicar">
                         <Copy size={16} color="var(--line-silver)" />
                       </button>
-                      <button className="btn-remove" onClick={() => removeMovimento(item.originalId)}><i data-lucide="x"></i>  </button>
+                      <button className="btn-remove" onClick={() => removeMovimento(item.originalId)}><X size={16} /></button>
                     </div>
                   </div>
                 );
