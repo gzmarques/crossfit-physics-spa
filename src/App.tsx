@@ -371,7 +371,7 @@ export default function App() {
   // === RENDER: APLICAÇÃO PRINCIPAL ===
   // === RENDER: APLICAÇÃO PRINCIPAL ===
   return (
-    <div className="container" style={{ padding: 0 }}> {/* Removi o padding padrão do container para o header encostar nas bordas */}
+    <div className="container" style={{ padding: 0, maxWidth: '1200px', margin: '0 auto' }}>
       
       {/* NOVO CABEÇALHO DYNAWOD */}
       <header style={{ 
