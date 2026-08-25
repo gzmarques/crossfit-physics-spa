@@ -544,16 +544,26 @@ export default function App() {
               </p>
             )}
             
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <button onClick={importarWod} style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: 'var(--bg-card, #181a1e)', color: '#fff', border: '1px solid var(--line-silver, #26272b)' }}>
-                  <Download size={"1.2em"} /> Importar via Código
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                
+                {/* Botão Importar */}
+                <button onClick={importarWod} style={{ flex: '1 1 140px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '1rem', backgroundColor: 'var(--bg-card, #181a1e)', color: '#fff', border: '1px solid var(--line-silver, #26272b)' }}>
+                  <Download size={22} style={{ flexShrink: 0 }} /> 
+                  <span>Importar</span> {/* Encurtei um pouco o texto para melhorar o visual no mobile */}
                 </button>
-                <button onClick={compartilharWod} style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: 'var(--dyna-burgundy, #7A0F1B)', color: '#fff', border: 'none', fontWeight: '600' }}>
-                  <Share2 size={"1.2em"} /> Copiar Código
+                
+                {/* Botão Copiar (Compartilhar) */}
+                <button onClick={compartilharWod} style={{ flex: '1 1 140px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '1rem', backgroundColor: 'var(--dyna-burgundy, #7A0F1B)', color: '#fff', border: 'none', fontWeight: '600' }}>
+                  <Share2 size={22} style={{ flexShrink: 0 }} /> 
+                  <span>Copiar</span>
                 </button>
-                <button onClick={() => salvarNoSupabase(false)} style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: 'var(--dyna-red, #FF2B3D)', color: '#fff', border: 'none', fontWeight: 'bold' }}>
-                  <Save size={"1.2em"} /> {currentWodId ? 'Atualizar WOD' : 'Salvar Novo WOD'}
+                
+                {/* Botão Salvar / Atualizar */}
+                <button onClick={() => salvarNoSupabase(false)} style={{ flex: '1 1 140px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '1rem', backgroundColor: 'var(--dyna-red, #FF2B3D)', color: '#fff', border: 'none', fontWeight: 'bold' }}>
+                  <Save size={22} style={{ flexShrink: 0 }} /> 
+                  <span>{currentWodId ? 'Atualizar WOD' : 'Salvar WOD'}</span>
                 </button>
+                
               </div>
           </div>
         )}
