@@ -22,7 +22,7 @@ export default function App() {
   const [coachIdInput, setCoachIdInput] = useState('');
 
   // === ESTADOS DO MOTOR ===
-  const [activeTab, setActiveTab] = useState<'prescricao' | 'analise' | 'historico'>('prescricao');
+  const [activeTab, setActiveTab] = useState<'prescricao' | 'analise' | 'atleta' | 'historico'>('prescricao');
   const [tipoTreino, setTipoTreino] = useState<Modalidade>('FOR_TIME');
   const [tempoAlvo, setTempoAlvo] = useState('05:00');
   const [roundsPrescritos, setRoundsPrescritos] = useState(3);
@@ -369,274 +369,273 @@ export default function App() {
   }
 
   // === RENDER: APLICAÇÃO PRINCIPAL ===
-  // === RENDER: APLICAÇÃO PRINCIPAL ===
   return (
-    <div className="container" style={{ padding: 0, maxWidth: '1200px', margin: '0 auto' }}>
+    <div className="container" style={{ padding: 0, maxWidth: '1200px', margin: '0 auto' }}> 
       
       {/* NOVO CABEÇALHO DYNAWOD */}
-      <header style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        padding: '16px 24px', 
-        backgroundColor: 'var(--bg-dark, #0a0a0a)',
-        borderBottom: '1px solid var(--line-silver, #26272b)',
-        marginBottom: '24px'
-      }}>
-        {/* Logo e Nome da Marca */}
+      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 24px', backgroundColor: 'var(--bg-dark, #0a0a0a)', borderBottom: '1px solid var(--line-silver, #26272b)', marginBottom: '24px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          {/* Nota: Se você não renomeou a imagem para favicon.png, mude o src abaixo para /dynawod-transparent.png */}
-          <img 
-            src="/favicon.png" 
-            alt="DynaWOD Logo" 
-            style={{ height: '40px', objectFit: 'contain' }} 
-          />
+          <img src="/favicon.png" alt="DynaWOD Logo" style={{ height: '40px', objectFit: 'contain' }} />
           <h1 style={{ margin: 0, fontSize: '22px', fontWeight: 800, letterSpacing: '1px', border: 'none', paddingBottom: 0 }}>
             Dyna<span style={{ color: 'var(--dyna-red, #FF2B3D)' }}>WOD</span>
           </h1>
         </div>
 
-        {/* Saudação, Dropdown Coach e Sair */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-          
           <div style={{ fontSize: '14px', color: 'var(--text-muted, #8a8d94)', fontWeight: 600 }}>
-            Olá, <span style={{ color: '#fff' }}>{userProfile?.apelido || userProfile?.full_name?.split(' ')[0]}</span> {userProfile?.is_coach ? '🏆' : '🏋️'}
+            Olá, <span style={{ color: '#fff' }}>{userProfile?.full_name?.split(' ')[0]}</span> {userProfile?.is_coach ? '🏆' : '🏋️'}
           </div>
-
           {userProfile?.is_coach && (
-            <select 
-              value={selectedAthleteId} 
-              onChange={e => handleAthleteChange(e.target.value)}
-              style={{ background: 'var(--bg-card, #181a1e)', border: '1px solid var(--line-silver, #26272b)', color: '#fff', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer' }}
-            >
+            <select value={selectedAthleteId} onChange={e => handleAthleteChange(e.target.value)} style={{ background: 'var(--bg-card, #181a1e)', border: '1px solid var(--line-silver, #26272b)', color: '#fff', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer' }}>
               <option value="me">Meu Desempenho</option>
-              <optgroup label="Meus Alunos">
-                {myAthletes.map(a => <option key={a.id} value={a.id}>{a.full_name}</option>)}
-              </optgroup>
+              <optgroup label="Meus Alunos">{myAthletes.map(a => <option key={a.id} value={a.id}>{a.full_name}</option>)}</optgroup>
             </select>
           )}
-
-          <button onClick={signOut} style={{ width: 'auto', backgroundColor: 'var(--dyna-burgundy, #7A0F1B)', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer', fontWeight: 'bold' }}>
-            Sair
-          </button>
+          <button onClick={signOut} style={{ width: 'auto', backgroundColor: 'var(--dyna-burgundy, #7A0F1B)', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer', fontWeight: 'bold' }}>Sair</button>
         </div>
       </header>
 
-      {/* O container interno precisa de padding agora que o header é de fora a fora */}
       <div style={{ padding: '0 24px' }}>
-      
-      <div className="grid">
-        <div className="panel" style={{ marginBottom: 0 }}>
-          <h2>Estrutura Base (Domínio)</h2>
-          <div className="form-group">
-            <label>Modalidade (Domínio de Tempo)</label>
-            <select value={tipoTreino} onChange={e => setTipoTreino(e.target.value as Modalidade)}>
-              <option value="FOR_TIME">For Time (Por Tempo)</option>
-              <option value="AMRAP">AMRAP (O maior nº de Rounds)</option>
-              <option value="EMOM">EMOM (A cada minuto)</option>
-            </select>
-          </div>
-          <div className="form-group">
-            <label>{tipoTreino === 'FOR_TIME' ? 'Time Cap / Tempo Alvo (mm:ss ou seg)' : 'Tempo Total (mm:ss ou seg)'}</label>
-            <input type="text" value={tempoAlvo} onChange={e => setTempoAlvo(e.target.value)} />
-          </div>
-          <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', marginBottom: 0 }}>
-            <div className="form-group"><label>Rounds Prescritos</label><input type="number" value={roundsPrescritos} onChange={e => setRoundsPrescritos(Number(e.target.value))} /></div>
-            {tipoTreino !== 'FOR_TIME' ? (
-              <div className="form-group"><label>Rounds Reais (Score)</label><input type="number" step="0.1" value={roundsReal} onChange={e => setRoundsReal(Number(e.target.value))} /></div>
-            ) : (
-              <div className="form-group"><label>Tempo Real (mm:ss)</label><input type="text" value={tempoReal} onChange={e => setTempoReal(e.target.value)} placeholder="Ex: 12:30" /></div>
-            )}
-          </div>
+        
+        {/* NAVEGAÇÃO DE ABAS ATUALIZADA */}
+        <div className="tabs">
+          <button className={`tab-btn ${activeTab === 'prescricao' ? 'active' : ''}`} onClick={() => setActiveTab('prescricao')}>1. Lousa</button>
+          <button className={`tab-btn ${activeTab === 'analise' ? 'active' : ''}`} onClick={() => setActiveTab('analise')}>2. Análise</button>
+          <button className={`tab-btn ${activeTab === 'atleta' ? 'active' : ''}`} onClick={() => setActiveTab('atleta')}>3. Atleta</button>
+          <button className={`tab-btn ${activeTab === 'historico' ? 'active' : ''}`} onClick={() => setActiveTab('historico')}>4. Histórico</button>
         </div>
 
-        <div className="panel" style={{ marginBottom: 0 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h2 style={{ margin: 0 }}>Perfil do Atleta</h2>
-            {selectedAthleteId !== 'me' && <span style={{ background: '#ff9800', color: '#000', padding: '2px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold' }}>Visualizando Aluno</span>}
-          </div>
-          <p style={{ fontSize: '0.8rem', color: '#888', marginTop: '5px' }}>Os dados base são carregados automaticamente do perfil do atleta.</p>
-          
-          <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', marginBottom: 0 }}>
-            <div className="form-group"><label>Estatura (m)</label><input type="number" step="0.01" value={atleta.estatura} onChange={e => setAtleta({ ...atleta, estatura: Number(e.target.value) })} /></div>
-            <div className="form-group"><label>Massa (kg)</label><input type="number" step="0.1" value={atleta.peso} onChange={e => setAtleta({ ...atleta, peso: Number(e.target.value) })} /></div>
-          </div>
-          <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', marginBottom: 0, marginTop: '15px' }}>
-            <div className="form-group"><label>Sexo Biológico</label><select value={atleta.sexo} onChange={e => setAtleta({ ...atleta, sexo: e.target.value as 'M' | 'F' })}><option value="M">Masculino</option><option value="F">Feminino</option></select></div>
-            <div className="form-group"><label>Nível Técnico</label><select value={atleta.nivelTecnico} onChange={e => setAtleta({ ...atleta, nivelTecnico: e.target.value as any })}><option value="iniciante">Iniciante</option><option value="intermediario">Intermediário</option><option value="avancado">Avançado</option></select></div>
-          </div>
-          <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', marginBottom: 0, marginTop: '15px' }}>
-            <div className="form-group"><label>Envergadura (m)</label><input type="number" step="0.01" value={atleta.envergadura} onChange={e => setAtleta({ ...atleta, envergadura: Number(e.target.value) })} /></div>
-            <div className="form-group"><label>Alt. Perna (m)</label><input type="number" step="0.01" value={atleta.perna} onChange={e => setAtleta({ ...atleta, perna: Number(e.target.value) })} /></div>
-          </div>
-          <div className="form-group" style={{ marginTop: '15px' }}><label>% Gordura Corporal (BF)</label><input type="number" step="0.1" value={atleta.bf} onChange={e => setAtleta({ ...atleta, bf: Number(e.target.value) })} /></div>
-          <div className="form-group" style={{ marginTop: '15px' }}><label>Transição/Descanso Total (seg)</label><input type="number" value={tempoDescanso} onChange={e => setTempoDescanso(Number(e.target.value))} /></div>
-        </div>
-      </div>
+        {/* ABA 1: LOUSA (Agora contém o Domínio de Tempo) */}
+        {activeTab === 'prescricao' && (
+          <div className="panel">
+            
+            {/* DOMÍNIO DE TEMPO */}
+            <h2>Estrutura do Treino</h2>
+            <div className="grid" style={{ gridTemplateColumns: '1fr 1fr 1fr', marginBottom: '10px', gap: '15px' }}>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label>Modalidade</label>
+                <select value={tipoTreino} onChange={e => setTipoTreino(e.target.value as Modalidade)}>
+                  <option value="FOR_TIME">For Time</option>
+                  <option value="AMRAP">AMRAP</option>
+                  <option value="EMOM">EMOM</option>
+                </select>
+              </div>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label>{tipoTreino === 'FOR_TIME' ? 'Time Cap (mm:ss)' : 'Tempo Total'}</label>
+                <input type="text" value={tempoAlvo} onChange={e => setTempoAlvo(e.target.value)} placeholder="Ex: 10:00" />
+              </div>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label>Rounds Prescritos</label>
+                <input type="number" value={roundsPrescritos} onChange={e => setRoundsPrescritos(Number(e.target.value))} />
+              </div>
+            </div>
 
-      <div className="tabs">
-        <button className={`tab-btn ${activeTab === 'prescricao' ? 'active' : ''}`} onClick={() => setActiveTab('prescricao')}>1. Lousa</button>
-        <button className={`tab-btn ${activeTab === 'analise' ? 'active' : ''}`} onClick={() => setActiveTab('analise')}>2. Análise</button>
-        <button className={`tab-btn ${activeTab === 'historico' ? 'active' : ''}`} onClick={() => setActiveTab('historico')}>3. Dashboard</button>
-      </div>
+            <hr style={{ borderColor: 'var(--line-silver, #26272b)', margin: '25px 0' }} />
 
-      {activeTab === 'prescricao' && (
-        <div className="panel">
-          <h2>Quadro de Movimentos</h2>
-          <button className="btn-add" onClick={() => addMovimento()}>+ Adicionar Exercício</button>
-          
-          <div className="wod-list">
-            {lousa.map((item) => {
-              const cfg = movimentosDB[item.movId] || movimentosDB['pushup'];
-              return (
-                <div key={item.originalId} className="wod-item">
-                  <div>
-                    <label>Fase</label>
-                    <select value={item.phase} onChange={e => updateMovimento(item.originalId, 'phase', e.target.value)}>
-                      <option value="buyin">Buy-in</option>
-                      <option value="round">WOD</option>
-                      <option value="cashout">Cash-out</option>
-                    </select>
-                    <div style={{ marginTop: '5px' }}>
-                      <select value={item.movId} onChange={e => updateMovimento(item.originalId, 'movId', e.target.value)}>
-                        {Object.entries(movimentosDB).map(([k, v]) => (
-                          <option key={k} value={k}>{v.nome}</option>
-                        ))}
+            {/* QUADRO DE MOVIMENTOS */}
+            <h2>Quadro de Movimentos</h2>
+            <button className="btn-add" onClick={() => addMovimento()} style={{ backgroundColor: 'transparent', color: 'var(--dyna-red, #FF2B3D)', border: '1px dashed var(--dyna-red, #FF2B3D)', padding: '10px 15px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', width: '100%', marginBottom: '15px' }}>+ Adicionar Exercício</button>
+            
+            <div className="wod-list">
+              {lousa.map((item) => {
+                const cfg = movimentosDB[item.movId] || movimentosDB['pushup'];
+                return (
+                  <div key={item.originalId} className="wod-item">
+                    <div>
+                      <label>Fase</label>
+                      <select value={item.phase} onChange={e => updateMovimento(item.originalId, 'phase', e.target.value)}>
+                        <option value="buyin">Buy-in</option>
+                        <option value="round">WOD</option>
+                        <option value="cashout">Cash-out</option>
                       </select>
+                      <div style={{ marginTop: '5px' }}>
+                        <select value={item.movId} onChange={e => updateMovimento(item.originalId, 'movId', e.target.value)}>
+                          {Object.entries(movimentosDB).map(([k, v]) => (<option key={k} value={k}>{v.nome}</option>))}
+                        </select>
+                      </div>
                     </div>
-                  </div>
-                  <div><label>Reps/Mts</label><input type="number" value={item.reps} onChange={e => updateMovimento(item.originalId, 'reps', Number(e.target.value))} /></div>
-                  <div>
-                    <label>Carga/Téc.</label>
-                    <div style={{ display: 'flex', gap: '5px' }}>
-                      <input type="number" disabled={!cfg.usaCarga} value={item.carga} onChange={e => updateMovimento(item.originalId, 'carga', Number(e.target.value))} />
-                      <select value={item.tecnica} onChange={e => updateMovimento(item.originalId, 'tecnica', e.target.value)}><option value="tng">T&G</option><option value="drop">Drop</option></select>
+                    <div><label>Reps/Mts</label><input type="number" value={item.reps} onChange={e => updateMovimento(item.originalId, 'reps', Number(e.target.value))} /></div>
+                    <div>
+                      <label>Carga/Téc.</label>
+                      <div style={{ display: 'flex', gap: '5px' }}>
+                        <input type="number" disabled={!cfg.usaCarga} value={item.carga} onChange={e => updateMovimento(item.originalId, 'carga', Number(e.target.value))} />
+                        <select value={item.tecnica} onChange={e => updateMovimento(item.originalId, 'tecnica', e.target.value)}><option value="tng">T&G</option><option value="drop">Drop</option></select>
+                      </div>
                     </div>
-                  </div>
-                  <div><label>{cfg.paramExtra ? cfg.paramExtra.label : 'Param.'}</label><input type="text" disabled={!cfg.paramExtra} value={item.extraVal} onChange={e => updateMovimento(item.originalId, 'extraVal', e.target.value)} /></div>
-                  <div className="actions-col">
-                    <button className="btn-action" onClick={() => addMovimento(item.originalId)} title="Duplicar">📋</button>
-                    <button className="btn-remove" onClick={() => removeMovimento(item.originalId)}>X</button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          <h2>Importar / Exportar</h2>
-          <textarea rows={3} value={jsonInOut} onChange={e => setJsonInOut(e.target.value)} placeholder="{ JSON }" />
-          <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-            <button onClick={exportarJSON} style={{ backgroundColor: '#444' }}>Exportar JSON</button>
-            <button onClick={importarJSON} style={{ backgroundColor: '#388e3c' }}>Importar JSON</button>
-            <button onClick={salvarNoSupabase} style={{ backgroundColor: 'var(--dyna-red, #FF2B3D)', color: '#fff', fontWeight: 'bold' }}>Salvar WOD</button>
-          </div>
-        </div>
-      )}
-
-      {activeTab === 'analise' && (
-        <div className="panel">
-          <h2>Timeline Expandida</h2>
-          {/* Omiti os campos da timeline aqui visualmente na mensagem mas no codigo está gerando */}
-          <div className="wod-list">
-            {(() => {
-              let rTimeline = (tipoTreino === 'FOR_TIME') ? roundsPrescritos : Math.ceil(roundsReal);
-              if (rTimeline < 1) rTimeline = 1;
-              const rows: any[] = [];
-              const renderRow = (m: ItemLousa, badgeClass: string, badgeText: string, rIdx: number) => {
-                const rowId = `${m.originalId}-R${rIdx}`;
-                const cfg = movimentosDB[m.movId];
-                const st = timelineState[rowId] || { reps: m.reps, start: '', end: '' };
-                rows.push(
-                  <div key={rowId} className="wod-item-analise">
-                    <div className={`badge-round ${badgeClass}`}>{badgeText}</div>
-                    <div><div style={{ fontWeight: 'bold' }}>{cfg ? cfg.nome : m.movId}</div><div style={{ fontSize: '0.75rem', color: '#aaa' }}>{m.carga > 0 ? `${m.carga}kg (${m.tecnica})` : ''} {m.extraVal ? `| ${m.extraVal}` : ''}</div></div>
-                    <div><label>Reps</label><input type="number" value={st.reps} onChange={e => handleTimelineChange(rowId, 'reps', Number(e.target.value))} /></div>
-                    <div><label>Início</label><input type="text" placeholder="mm:ss" value={st.start} onChange={e => handleTimelineChange(rowId, 'start', e.target.value)} /></div>
-                    <div><label>Fim</label><input type="text" placeholder="mm:ss" value={st.end} onChange={e => handleTimelineChange(rowId, 'end', e.target.value)} /></div>
+                    <div><label>{cfg.paramExtra ? cfg.paramExtra.label : 'Param.'}</label><input type="text" disabled={!cfg.paramExtra} value={item.extraVal} onChange={e => updateMovimento(item.originalId, 'extraVal', e.target.value)} /></div>
+                    <div className="actions-col">
+                      <button className="btn-action" onClick={() => addMovimento(item.originalId)} title="Duplicar">📋</button>
+                      <button className="btn-remove" onClick={() => removeMovimento(item.originalId)}>X</button>
+                    </div>
                   </div>
                 );
-              };
-              lousa.filter(m => m.phase === 'buyin').forEach(m => renderRow(m, 'badge-buyin', 'Buy-in', 0));
-              for (let r = 1; r <= rTimeline; r++) lousa.filter(m => m.phase === 'round').forEach(m => renderRow(m, '', `R ${r}`, r));
-              lousa.filter(m => m.phase === 'cashout').forEach(m => renderRow(m, 'badge-cashout', 'Cash-out', 99));
-              return rows;
-            })()}
-          </div>
-
-          <button onClick={processarWOD} style={{ fontSize: '1.1rem', padding: '15px', backgroundColor: 'var(--dyna-red, #FF2B3D)', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', width: '100%', cursor: 'pointer', marginBottom: '20px' }}>
-            ⚡ Processar Dinâmica e Termodinâmica
-          </button>
-
-          {resultado && (
-            <div className="results">
-              <h2>Painel de Resultado Biomecânico</h2>
-              <div className="grid" style={{ marginBottom: 0 }}>
-                <div style={{ margin: '15px 0' }}><div className="result-value color-mech">{resultado.trabalhoReal.toFixed(0)} J</div><div>Trabalho Mecânico</div></div>
-                <div style={{ margin: '15px 0' }}><div className="result-value color-metabolic">{resultado.gastoMetabolico.toFixed(0)} kCal</div><div>Gasto Termodinâmico (+ EPOC)</div></div>
-                <div style={{ margin: '15px 0' }}><div className="result-value" style={{ color: '#aaa' }}>{resultado.potenciaEsp > 0 ? resultado.potenciaEsp.toFixed(1) + ' W' : '-- W'}</div><div>Potência Esperada</div></div>
-                <div style={{ margin: '15px 0' }}><div className="result-value" style={{ color: '#4caf50' }}>{resultado.potenciaReal > 0 ? resultado.potenciaReal.toFixed(1) + ' W' : '-- W'}</div><div>Potência Real Executada</div></div>
-              </div>
-              <div className="result-detail" dangerouslySetInnerHTML={{ __html: resultado.logDetalhesHTML }} />
+              })}
             </div>
-          )}
-        </div>
-      )}
 
-      {activeTab === 'historico' && (
-        <div className="panel">
-          
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h2>Histórico de Desempenho {selectedAthleteId !== 'me' ? '(Aluno)' : ''}</h2>
-            {selectedAthleteId === 'me' && !userProfile?.is_coach && (
-              <div style={{ display: 'flex', gap: '5px' }}>
-                <input type="text" placeholder="ID do seu Coach..." value={coachIdInput} onChange={e => setCoachIdInput(e.target.value)} style={{ padding: '8px' }} />
-                <button onClick={linkToCoach} style={{ width: 'auto', padding: '8px 15px', backgroundColor: '#388e3c' }}>Vincular</button>
+            <hr style={{ borderColor: 'var(--line-silver, #26272b)', margin: '25px 0' }} />
+            
+            <h2>Importar / Exportar / Salvar</h2>
+            <textarea rows={3} value={jsonInOut} onChange={e => setJsonInOut(e.target.value)} placeholder="{ JSON }" />
+            <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+              <button onClick={exportarJSON} style={{ backgroundColor: '#444' }}>Exportar JSON</button>
+              <button onClick={importarJSON} style={{ backgroundColor: '#388e3c' }}>Importar JSON</button>
+              <button onClick={salvarNoSupabase} style={{ backgroundColor: 'var(--dyna-red, #FF2B3D)', color: '#fff', fontWeight: 'bold' }}>Salvar WOD</button>
+            </div>
+          </div>
+        )}
+
+        {/* ABA 2: ANÁLISE (Agora com o Score de destaque no topo) */}
+        {activeTab === 'analise' && (
+          <div className="panel">
+            
+            {/* NOVO BLOCO DE SCORE */}
+            <div style={{ backgroundColor: 'var(--bg-card, #181a1e)', padding: '20px', borderRadius: '8px', borderLeft: '4px solid var(--dyna-red, #FF2B3D)', marginBottom: '25px' }}>
+              <h2 style={{ margin: '0 0 10px 0', fontSize: '1.2rem' }}>Score (Resultado Real)</h2>
+              <p style={{ margin: '0 0 15px 0', fontSize: '0.85rem', color: 'var(--text-muted, #8a8d94)' }}>Insira o resultado alcançado para calcular a potência gerada.</p>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label>{tipoTreino === 'FOR_TIME' ? 'Tempo Real Efetivado (mm:ss)' : 'Rounds Reais Completados'}</label>
+                {tipoTreino === 'FOR_TIME' ? (
+                  <input type="text" value={tempoReal} onChange={e => setTempoReal(e.target.value)} placeholder="Ex: 12:30" style={{ maxWidth: '250px', fontSize: '1.1rem' }} />
+                ) : (
+                  <input type="number" step="0.1" value={roundsReal} onChange={e => setRoundsReal(Number(e.target.value))} style={{ maxWidth: '250px', fontSize: '1.1rem' }} />
+                )}
+              </div>
+            </div>
+
+            <h2>Timeline Expandida</h2>
+            <div className="wod-list">
+              {(() => {
+                let rTimeline = (tipoTreino === 'FOR_TIME') ? roundsPrescritos : Math.ceil(roundsReal);
+                if (rTimeline < 1) rTimeline = 1;
+                const rows: any[] = [];
+                const renderRow = (m: ItemLousa, badgeClass: string, badgeText: string, rIdx: number) => {
+                  const rowId = `${m.originalId}-R${rIdx}`;
+                  const cfg = movimentosDB[m.movId];
+                  const st = timelineState[rowId] || { reps: m.reps, start: '', end: '' };
+                  rows.push(
+                    <div key={rowId} className="wod-item-analise">
+                      <div className={`badge-round ${badgeClass}`}>{badgeText}</div>
+                      <div><div style={{ fontWeight: 'bold' }}>{cfg ? cfg.nome : m.movId}</div><div style={{ fontSize: '0.75rem', color: '#aaa' }}>{m.carga > 0 ? `${m.carga}kg (${m.tecnica})` : ''} {m.extraVal ? `| ${m.extraVal}` : ''}</div></div>
+                      <div><label>Reps</label><input type="number" value={st.reps} onChange={e => handleTimelineChange(rowId, 'reps', Number(e.target.value))} /></div>
+                      <div><label>Início</label><input type="text" placeholder="mm:ss" value={st.start} onChange={e => handleTimelineChange(rowId, 'start', e.target.value)} /></div>
+                      <div><label>Fim</label><input type="text" placeholder="mm:ss" value={st.end} onChange={e => handleTimelineChange(rowId, 'end', e.target.value)} /></div>
+                    </div>
+                  );
+                };
+                lousa.filter(m => m.phase === 'buyin').forEach(m => renderRow(m, 'badge-buyin', 'Buy-in', 0));
+                for (let r = 1; r <= rTimeline; r++) lousa.filter(m => m.phase === 'round').forEach(m => renderRow(m, '', `R ${r}`, r));
+                lousa.filter(m => m.phase === 'cashout').forEach(m => renderRow(m, 'badge-cashout', 'Cash-out', 99));
+                return rows;
+              })()}
+            </div>
+
+            <button onClick={processarWOD} style={{ fontSize: '1.1rem', padding: '15px', backgroundColor: 'var(--dyna-red, #FF2B3D)', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', width: '100%', cursor: 'pointer', marginBottom: '20px', marginTop: '10px' }}>
+              ⚡ Processar Dinâmica e Termodinâmica
+            </button>
+
+            {resultado && (
+              <div className="results">
+                <h2>Painel de Resultado Biomecânico</h2>
+                <div className="grid" style={{ marginBottom: 0 }}>
+                  <div style={{ margin: '15px 0' }}><div className="result-value color-mech">{resultado.trabalhoReal.toFixed(0)} J</div><div>Trabalho Mecânico</div></div>
+                  <div style={{ margin: '15px 0' }}><div className="result-value color-metabolic">{resultado.gastoMetabolico.toFixed(0)} kCal</div><div>Gasto Termodinâmico (+ EPOC)</div></div>
+                  <div style={{ margin: '15px 0' }}><div className="result-value" style={{ color: '#aaa' }}>{resultado.potenciaEsp > 0 ? resultado.potenciaEsp.toFixed(1) + ' W' : '-- W'}</div><div>Potência Esperada</div></div>
+                  <div style={{ margin: '15px 0' }}><div className="result-value" style={{ color: '#4caf50' }}>{resultado.potenciaReal > 0 ? resultado.potenciaReal.toFixed(1) + ' W' : '-- W'}</div><div>Potência Real Executada</div></div>
+                </div>
+                <div className="result-detail" dangerouslySetInnerHTML={{ __html: resultado.logDetalhesHTML }} />
               </div>
             )}
           </div>
+        )}
 
-          {selectedAthleteId === 'me' && (
-            <div style={{ marginBottom: '20px', padding: '10px', background: '#333', borderRadius: '4px', fontSize: '0.9rem' }}>
-              <strong>Seu ID de Atleta (Passe para o seu Coach):</strong> <span style={{ color: '#4caf50', userSelect: 'all' }}>{session.user.id}</span>
+        {/* ABA 3: ATLETA (Nova aba dedicada) */}
+        {activeTab === 'atleta' && (
+          <div className="panel">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+              <h2 style={{ margin: 0 }}>Perfil do Atleta</h2>
+              {selectedAthleteId !== 'me' && <span style={{ background: '#ff9800', color: '#000', padding: '2px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold' }}>Visualizando Aluno</span>}
             </div>
-          )}
-          
-          {savedWods.length > 0 ? (
-            <>
-              <div style={{ width: '100%', height: 300, marginBottom: '40px', backgroundColor: '#2c2c2c', padding: '20px', borderRadius: '8px' }}>
-                <ResponsiveContainer>
-                  <LineChart data={[...savedWods].reverse()} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#444" />
-                    <XAxis dataKey="created_at" tickFormatter={(tick) => new Date(tick as string).toLocaleDateString('pt-BR')} stroke="#aaa" />
-                    <YAxis yAxisId="left" stroke="#4caf50" />
-                    <YAxis yAxisId="right" orientation="right" stroke="#ff9800" />
-                    <Tooltip labelFormatter={(label) => new Date(label as string).toLocaleDateString('pt-BR')} contentStyle={{ backgroundColor: '#1e1e1e', border: 'none' }} />
-                    <Legend />
-                    <Line yAxisId="left" type="monotone" dataKey="score_watts" name="Potência (Watts)" stroke="#4caf50" strokeWidth={3} activeDot={{ r: 8 }} />
-                    <Line yAxisId="right" type="monotone" dataKey="score_kcal" name="Gasto (kCal)" stroke="#ff9800" strokeWidth={3} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted, #8a8d94)', marginBottom: '20px' }}>
+              Os dados base são carregados automaticamente do perfil selecionado. Você pode ajustá-los pontualmente para este cálculo sem afetar o cadastro oficial.
+            </p>
+            
+            <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', marginBottom: '15px' }}>
+              <div className="form-group"><label>Estatura (m)</label><input type="number" step="0.01" value={atleta.estatura} onChange={e => setAtleta({ ...atleta, estatura: Number(e.target.value) })} /></div>
+              <div className="form-group"><label>Massa (kg)</label><input type="number" step="0.1" value={atleta.peso} onChange={e => setAtleta({ ...atleta, peso: Number(e.target.value) })} /></div>
+            </div>
+            <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', marginBottom: '15px' }}>
+              <div className="form-group"><label>Sexo Biológico</label><select value={atleta.sexo} onChange={e => setAtleta({ ...atleta, sexo: e.target.value as 'M' | 'F' })}><option value="M">Masculino</option><option value="F">Feminino</option></select></div>
+              <div className="form-group"><label>Nível Técnico</label><select value={atleta.nivelTecnico} onChange={e => setAtleta({ ...atleta, nivelTecnico: e.target.value as any })}><option value="iniciante">Iniciante</option><option value="intermediario">Intermediário</option><option value="avancado">Avançado</option></select></div>
+            </div>
+            <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', marginBottom: '15px' }}>
+              <div className="form-group"><label>Envergadura (m)</label><input type="number" step="0.01" value={atleta.envergadura} onChange={e => setAtleta({ ...atleta, envergadura: Number(e.target.value) })} /></div>
+              <div className="form-group"><label>Alt. Perna (m)</label><input type="number" step="0.01" value={atleta.perna} onChange={e => setAtleta({ ...atleta, perna: Number(e.target.value) })} /></div>
+            </div>
+            <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', marginBottom: 0 }}>
+              <div className="form-group"><label>% Gordura Corporal (BF)</label><input type="number" step="0.1" value={atleta.bf} onChange={e => setAtleta({ ...atleta, bf: Number(e.target.value) })} /></div>
+              <div className="form-group"><label>Transição Global Estimada (seg)</label><input type="number" value={tempoDescanso} onChange={e => setTempoDescanso(Number(e.target.value))} /></div>
+            </div>
+          </div>
+        )}
 
-              <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '15px' }}>
-                {savedWods.map(w => (
-                  <div key={w.id} style={{ background: '#2c2c2c', padding: '20px', borderRadius: '8px', borderLeft: '4px solid #1976d2' }}>
-                    <h3 style={{ margin: '0 0 10px 0', fontSize: '1.2rem' }}>{w.title}</h3>
-                    <div style={{ fontSize: '0.9rem', color: '#ccc', marginBottom: '15px' }}>
-                      <strong>Data:</strong> {new Date(w.created_at || '').toLocaleDateString('pt-BR')}<br />
-                      <strong>Resultado:</strong> {(w as any).score_watts?.toFixed(1) || '--'} W | {(w as any).score_kcal?.toFixed(0) || '--'} kCal
-                    </div>
-                    <button onClick={() => carregarDoSupabase(w)} style={{ width: '100%', padding: '10px', backgroundColor: '#388e3c' }}>Carregar Treino</button>
-                  </div>
-                ))}
+        {/* ABA 4: HISTÓRICO */}
+        {activeTab === 'historico' && (
+          <div className="panel">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h2>Histórico de Desempenho {selectedAthleteId !== 'me' ? '(Aluno)' : ''}</h2>
+              {selectedAthleteId === 'me' && !userProfile?.is_coach && (
+                <div style={{ display: 'flex', gap: '5px' }}>
+                  <input type="text" placeholder="ID do seu Coach..." value={coachIdInput} onChange={e => setCoachIdInput(e.target.value)} style={{ padding: '8px' }} />
+                  <button onClick={linkToCoach} style={{ width: 'auto', padding: '8px 15px', backgroundColor: '#388e3c' }}>Vincular</button>
+                </div>
+              )}
+            </div>
+
+            {selectedAthleteId === 'me' && (
+              <div style={{ marginBottom: '20px', padding: '10px', background: 'var(--bg-card, #181a1e)', border: '1px dashed var(--line-silver, #26272b)', borderRadius: '4px', fontSize: '0.9rem' }}>
+                <strong>Seu ID de Atleta (Passe para o seu Coach):</strong> <span style={{ color: '#4caf50', userSelect: 'all' }}>{session.user.id}</span>
               </div>
-            </>
-          ) : (
-            <p style={{ color: '#aaa', textAlign: 'center', padding: '20px' }}>Nenhum treino salvo para este atleta.</p>
-          )}
-        </div>
-      )}
-      </div>
+            )}
+            
+            {savedWods.length > 0 ? (
+              <>
+                <div style={{ width: '100%', height: 300, marginBottom: '40px', backgroundColor: 'var(--bg-card, #181a1e)', padding: '20px', borderRadius: '8px' }}>
+                  <ResponsiveContainer>
+                    <LineChart data={[...savedWods].reverse()} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#444" />
+                      <XAxis dataKey="created_at" tickFormatter={(tick) => new Date(tick as string).toLocaleDateString('pt-BR')} stroke="#aaa" />
+                      <YAxis yAxisId="left" stroke="#4caf50" />
+                      <YAxis yAxisId="right" orientation="right" stroke="#ff9800" />
+                      <Tooltip labelFormatter={(label) => new Date(label as string).toLocaleDateString('pt-BR')} contentStyle={{ backgroundColor: '#1e1e1e', border: 'none' }} />
+                      <Legend />
+                      <Line yAxisId="left" type="monotone" dataKey="score_watts" name="Potência (Watts)" stroke="#4caf50" strokeWidth={3} activeDot={{ r: 8 }} />
+                      <Line yAxisId="right" type="monotone" dataKey="score_kcal" name="Gasto (kCal)" stroke="#ff9800" strokeWidth={3} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+
+                <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '15px' }}>
+                  {savedWods.map(w => (
+                    <div key={w.id} style={{ background: 'var(--bg-card, #181a1e)', padding: '20px', borderRadius: '8px', borderLeft: '4px solid var(--dyna-burgundy, #7A0F1B)' }}>
+                      <h3 style={{ margin: '0 0 10px 0', fontSize: '1.2rem' }}>{w.title}</h3>
+                      <div style={{ fontSize: '0.9rem', color: 'var(--text-muted, #8a8d94)', marginBottom: '15px' }}>
+                        <strong>Data:</strong> {new Date(w.created_at || '').toLocaleDateString('pt-BR')}<br />
+                        <strong>Resultado:</strong> {(w as any).score_watts?.toFixed(1) || '--'} W | {(w as any).score_kcal?.toFixed(0) || '--'} kCal
+                      </div>
+                      <button onClick={() => carregarDoSupabase(w)} style={{ width: '100%', padding: '10px', backgroundColor: 'var(--line-silver, #26272b)', color: '#fff', border: '1px solid #444', borderRadius: '4px', cursor: 'pointer' }}>Carregar Treino</button>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <p style={{ color: 'var(--text-muted, #8a8d94)', textAlign: 'center', padding: '20px' }}>Nenhum treino salvo para este atleta.</p>
+            )}
+          </div>
+        )}
+      
+      </div> 
+      {/* FECHAMENTO DA DIV DE PADDING */}
+      
     </div>
   );
 }
