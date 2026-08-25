@@ -400,7 +400,7 @@ export default function App() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
           
           <div style={{ fontSize: '14px', color: 'var(--text-muted, #8a8d94)', fontWeight: 600 }}>
-            Olá, <span style={{ color: '#fff' }}>{userProfile?.apelido || userProfile?.full_name?.split(' ')[0]}</span>
+            Olá, <span style={{ color: '#fff' }}>{userProfile?.apelido || userProfile?.full_name?.split(' ')[0]}</span> {userProfile?.is_coach ? '🏆' : '🏋️'}
           </div>
 
           {userProfile?.is_coach && (
