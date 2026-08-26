@@ -6,7 +6,7 @@ import type { Session } from '@supabase/supabase-js';
 import type { 
   AtletaPerfil, ItemLousa, Modalidade, 
   ResultadoProcessamento, TimelineStateItem, UserProfile,
-  WodTemplateRecord, WodResultRecord // 👈 A mágica acontece aqui
+  WodTemplateRecord // 👈 A mágica acontece aqui
 } from './types';
 import { calcularFisica, parseClockTime } from './utils/physicsEngine';
 import { Trophy, Dumbbell, Copy, Download, Share2, Save, LogOut, X } from 'lucide-react';
@@ -662,6 +662,18 @@ export default function App() {
                 ) : (
                   <input type="number" step="0.1" value={roundsReal} onChange={e => setRoundsReal(Number(e.target.value))} style={{ maxWidth: '250px', fontSize: '1.1rem' }} />
                 )}
+              </div>
+              <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <input 
+                  type="checkbox" 
+                  id="checkbox-scaled"
+                  checked={isScaled}
+                  onChange={(e) => setIsScaled(e.target.checked)}
+                  style={{ width: '18px', height: '18px' }}
+                />
+                <label htmlFor="checkbox-scaled" style={{ color: '#fff', fontSize: '14px' }}>
+                  Marcar como Scaled (Treino Adaptado)
+                </label>
               </div>
             </div>
 
