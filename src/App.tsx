@@ -755,7 +755,9 @@ export default function App() {
                   const rowId = `${m.originalId}-R${rIdx}`;
                   const cfg = movimentosDB[m.movId];
                   const st = timelineState[rowId] || { reps: m.reps, start: '', end: '' };
-                  return (
+                  
+                  // 🚨 CORREÇÃO: Voltando com o rows.push para empurrar o HTML para a tela
+                  rows.push(
                     <div key={rowId} className="wod-item-analise">
                       <div className={`badge-round ${badgeClass}`}>{badgeText}</div>
                       <div>
@@ -766,7 +768,7 @@ export default function App() {
                       </div>
                       <div><label>Reps</label><input type="number" value={st.reps !== undefined ? st.reps : m.reps} onChange={e => handleTimelineChange(rowId, 'reps', Number(e.target.value))} /></div>
                       
-                      {/* NOVO CAMPO: CARGA REAL */}
+                      {/* CAMPO: CARGA REAL */}
                       <div>
                         <label>Carga Real</label>
                         <input 
@@ -915,7 +917,7 @@ export default function App() {
         <div 
           id="instagram-card-export" 
           style={{
-            width: '400px', // Proporção perfeita para os Stories
+            width: '420px', // Aumentado um pouco para acomodar os gráficos sem cortar
             backgroundColor: '#111315',
             color: '#fff',
             fontFamily: 'sans-serif',
@@ -940,14 +942,17 @@ export default function App() {
               Prescription <span style={{ fontSize: '11px', color: '#8a8d94', fontWeight: 'normal' }}>(PLANTA BAIXA DO WOD)</span>
             </h2>
             <div style={{ color: '#d1d5db', fontSize: '16px', lineHeight: '1.6' }}>
-              <strong style={{ color: '#fff', fontSize: '18px' }}>TREINO {tipoTreino.toUpperCase()}</strong><br />
+              
+              {/* CORREÇÃO DO FOR_TIME */}
+              <strong style={{ color: '#fff', fontSize: '18px' }}>TREINO {tipoTreino.replace('_', ' ')}</strong><br />
+              
               TIME CAP: <span style={{ color: '#fff' }}>{tempoAlvo || 'N/A'}</span> • RNDS: <span style={{ color: '#fff' }}>{roundsPrescritos || 'N/A'}</span><br />
               <span style={{ color: '#8a8d94', fontSize: '14px' }}>Movimentos Cadastrados: {lousa.length}</span>
             </div>
           </div>
 
           {/* 3. Bloco de Resultado (A Execução) */}
-          <div style={{ border: '2px solid var(--dyna-red, #FF2B3D)', borderRadius: '12px', padding: '25px 20px', backgroundColor: '#181a1e', boxShadow: '0 0 25px rgba(255, 43, 61, 0.15)', position: 'relative', marginTop: '10px' }}>
+          <div style={{ border: '2px solid var(--dyna-red, #FF2B3D)', borderRadius: '12px', padding: '25px 15px', backgroundColor: '#181a1e', boxShadow: '0 0 25px rgba(255, 43, 61, 0.15)', position: 'relative', marginTop: '10px' }}>
             
             <h2 style={{ margin: 0, fontSize: '24px', position: 'absolute', top: '-15px', backgroundColor: '#181a1e', padding: '0 10px', color: 'var(--dyna-red, #FF2B3D)' }}>
               Resultado
@@ -967,16 +972,44 @@ export default function App() {
               )}
             </div>
 
-            {/* Sub-cards de Física e Metabolismo */}
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'space-between' }}>
-              <div style={{ flex: 1, backgroundColor: '#111315', padding: '20px 10px', borderRadius: '10px', textAlign: 'center', border: '1px solid #26272b' }}>
-                <div style={{ fontSize: '12px', color: '#8a8d94', marginBottom: '8px', fontWeight: 'bold' }}>POTÊNCIA MÉDIA</div>
-                <div style={{ fontSize: '24px', fontWeight: '900' }}>{resultado ? resultado.potenciaReal : 0} <span style={{ fontSize: '14px', fontWeight: 'normal', color: '#8a8d94' }}>WATTS</span></div>
+            {/* Sub-cards de Física e Metabolismo com Gráficos SVG ("Reloginhos") */}
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'space-between' }}>
+              
+              {/* CARD DE POTÊNCIA */}
+              <div style={{ flex: 1, backgroundColor: '#111315', padding: '15px 5px', borderRadius: '10px', textAlign: 'center', border: '1px solid #26272b' }}>
+                <div style={{ fontSize: '11px', color: '#8a8d94', marginBottom: '10px', fontWeight: 'bold' }}>POTÊNCIA MÉDIA</div>
+                
+                {/* SVG: Velocímetro (Speedometer) */}
+                <svg width="70" height="35" viewBox="0 0 100 50" style={{ marginBottom: '8px' }}>
+                  <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="#26272b" strokeWidth="10" />
+                  <path d="M 10 50 A 40 40 0 0 1 70 20" fill="none" stroke="#FF2B3D" strokeWidth="10" strokeLinecap="round" />
+                  <line x1="50" y1="50" x2="65" y2="25" stroke="#fff" strokeWidth="3" strokeLinecap="round" />
+                  <circle cx="50" cy="50" r="4" fill="#fff" />
+                </svg>
+
+                {/* CORREÇÃO: Arredondamento da Potência */}
+                <div style={{ fontSize: '22px', fontWeight: '900' }}>
+                  {resultado ? resultado.potenciaReal.toFixed(0) : 0} <span style={{ fontSize: '12px', fontWeight: 'normal', color: '#8a8d94' }}>W</span>
+                </div>
               </div>
-              <div style={{ flex: 1, backgroundColor: '#111315', padding: '20px 10px', borderRadius: '10px', textAlign: 'center', border: '1px solid #26272b' }}>
-                <div style={{ fontSize: '12px', color: '#8a8d94', marginBottom: '8px', fontWeight: 'bold' }}>GASTO ENERGÉTICO</div>
-                <div style={{ fontSize: '24px', fontWeight: '900' }}>{resultado ? resultado.gastoMetabolico : 0} <span style={{ fontSize: '14px', fontWeight: 'normal', color: '#8a8d94' }}>kcal</span></div>
+              
+              {/* CARD DE GASTO ENERGÉTICO */}
+              <div style={{ flex: 1, backgroundColor: '#111315', padding: '15px 5px', borderRadius: '10px', textAlign: 'center', border: '1px solid #26272b' }}>
+                <div style={{ fontSize: '11px', color: '#8a8d94', marginBottom: '10px', fontWeight: 'bold' }}>GASTO ENERGÉTICO</div>
+                
+                {/* SVG: Medidor de Calorias (Chama) */}
+                <svg width="70" height="35" viewBox="0 0 100 50" style={{ marginBottom: '8px' }}>
+                  <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="#26272b" strokeWidth="10" />
+                  <path d="M 10 50 A 40 40 0 0 1 85 30" fill="none" stroke="#ff9800" strokeWidth="10" strokeLinecap="round" />
+                  <path d="M 50 45 Q 40 45 45 30 Q 50 20 50 15 Q 50 25 55 30 Q 60 45 50 45" fill="#ff9800" />
+                </svg>
+
+                {/* CORREÇÃO: Arredondamento do Metabolismo */}
+                <div style={{ fontSize: '22px', fontWeight: '900' }}>
+                  {resultado ? resultado.gastoMetabolico.toFixed(0) : 0} <span style={{ fontSize: '12px', fontWeight: 'normal', color: '#8a8d94' }}>kcal</span>
+                </div>
               </div>
+
             </div>
           </div>
           
