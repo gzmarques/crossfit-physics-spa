@@ -43,9 +43,9 @@ export const movimentosDB: Record<string, MovimentoConfig> = {
   'ring_muscle_up': { nome: 'RMU (Kipping)', grupo: 'Ginástica Avançada', categoria: 'vertical_bw_total', usaCarga: false },
   
   'air_squat': { nome: 'Air Squat', grupo: 'Agachamento BW', categoria: 'squat_bw', usaCarga: false },
-  'pistol_squat': { nome: 'Pistol Squat (Alt)', grupo: 'Agachamento BW', categoria: 'squat_bw', usaCarga: false },
-  'box_step_up': { nome: 'Box Step-up', grupo: 'Agachamento BW', categoria: 'box_step_up', usaCarga: false, paramExtra: { label: 'Caixa(m) 0=Auto', val: '0', type: 'number' } },
-  'high_box_step_up': { nome: 'High Box Step-up', grupo: 'Agachamento BW', categoria: 'box_step_up', usaCarga: false, isHighBox: true, paramExtra: { label: 'Caixa(m) 0=Auto', val: '0', type: 'number' } },
+  'pistol_squat': { nome: 'Pistol Squat (Alt)', grupo: 'Agachamento BW', categoria: 'squat_bw', usaCarga: false, isUnilateral: true },
+'box_step_up': { nome: 'Box Step-up', grupo: 'Agachamento BW', categoria: 'box_step_up', usaCarga: false, paramExtra: { label: 'Caixa(m) 0=Auto', val: '0', type: 'number' }, isUnilateral: true },
+'high_box_step_up': { nome: 'High Box Step-up', grupo: 'Agachamento BW', categoria: 'box_step_up', usaCarga: false, isHighBox: true, paramExtra: { label: 'Caixa(m) 0=Auto', val: '0', type: 'number' }, isUnilateral: true },
   'box_jump': { nome: 'Box Jump', grupo: 'Agachamento BW', categoria: 'box_jump', usaCarga: false, paramExtra: { label: 'Caixa(m) 0=Auto', val: '0', type: 'number' } },
   'high_box_jump': { nome: 'High Box Jump', grupo: 'Agachamento BW', categoria: 'box_jump', usaCarga: false, isHighBox: true, paramExtra: { label: 'Caixa(m) 0=Auto', val: '0', type: 'number' } },
   'box_jump_over': { nome: 'Box Jump Over', grupo: 'Agachamento BW', categoria: 'box_jump_over', usaCarga: false, paramExtra: { label: 'Caixa(m) 0=Auto', val: '0', type: 'number' } },
@@ -55,10 +55,10 @@ export const movimentosDB: Record<string, MovimentoConfig> = {
   'back_squat': { nome: 'Back Squat', grupo: 'Agachamento Carga', categoria: 'squat_carga', usaCarga: true },
   'overhead_squat': { nome: 'Overhead Squat', grupo: 'Agachamento Carga', categoria: 'squat_carga', usaCarga: true },
   
-  'walking_lunge': { nome: 'Walking Lunge', grupo: 'Lunges', categoria: 'lunge_bw', usaCarga: false },
-  'lunge_suitcase': { nome: 'Lunge (Suitcase)', grupo: 'Lunges', categoria: 'lunge_carga', usaCarga: true },
-  'lunge_front_rack': { nome: 'Lunge (Front Rack)', grupo: 'Lunges', categoria: 'lunge_carga', usaCarga: true },
-  'lunge_overhead': { nome: 'Lunge (Overhead)', grupo: 'Lunges', categoria: 'lunge_carga', usaCarga: true },
+  'walking_lunge': { nome: 'Walking Lunge', grupo: 'Lunges', categoria: 'lunge_bw', usaCarga: false, isUnilateral: true },
+  'lunge_suitcase': { nome: 'Lunge (Suitcase)', grupo: 'Lunges', categoria: 'lunge_carga', usaCarga: true, isUnilateral: true },
+  'lunge_front_rack': { nome: 'Lunge (Front Rack)', grupo: 'Lunges', categoria: 'lunge_carga', usaCarga: true, isUnilateral: true },
+  'lunge_overhead': { nome: 'Lunge (Overhead)', grupo: 'Lunges', categoria: 'lunge_carga', usaCarga: true, isUnilateral: true },
   
   'deadlift': { nome: 'Deadlift', grupo: 'LPO / Força', categoria: 'deadlift', usaCarga: true },
   'clean': { nome: 'Squat Clean', grupo: 'LPO / Força', categoria: 'lpo_floor_squat', usaCarga: true, fatorH: 0.85 },

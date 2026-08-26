@@ -55,17 +55,34 @@ export function calcularFisica(
   const m_arms = atleta.peso * (isM ? 0.0988 : 0.0898);
   const m_sup = Math.max(0, atleta.peso - m_thigh - m_shank_foot); 
 
-  // Refatoração 1: Abdução e rotação externa no agachamento (Cos 20 graus)
+  // --- NOVA REFATORAÇÃO 1: Unilateralidade e Abdução ---
   const anguloAbducaoRad = 20 * (Math.PI / 180);
   const cosAbducao = Math.cos(anguloAbducaoRad);
-  const W_squat_body = (m_sup * G * (L_thigh * cosAbducao)) + (m_thigh * G * ((L_thigh * 0.59) * cosAbducao));
+  let W_squat_body = 0;
+  
+  if (cfg.isUnilateral) {
+    W_squat_body = (m_sup * G * (L_thigh * cosAbducao)) + 
+                   ((m_thigh / 2) * G * ((L_thigh * 0.59) * cosAbducao)) + 
+                   ((m_thigh / 2) * G * L_thigh); 
+  } else {
+    W_squat_body = (m_sup * G * (L_thigh * cosAbducao)) + (m_thigh * G * ((L_thigh * 0.59) * cosAbducao));
+  }
   
   const h_puxao = atleta.estatura * 0.60;
   
-  // Refatoração 2: Energia Cinética Translacional do LPO (1.8 m/s)
-  const velLPO = 1.8; 
+  // --- NOVA REFATORAÇÃO 2: Curva Força-Velocidade logarítmica para o LPO ---
+  const loadRatio = pCarga / Math.max(1, atleta.peso);
+  const velMax = 2.2; 
+  const velLPO = Math.max(1.1, velMax - (0.8 * Math.log(1 + loadRatio)));
   const energiaCineticaBarra = 0.5 * pCarga * Math.pow(velLPO, 2);
+  const dissipacaoExcentricaGRF = energiaCineticaBarra * 0.15; // Choque térmico
   
+  // --- NOVA REFATORAÇÃO 3: Fator SSC (Ciclo Alongamento-Encurtamento) ---
+  const fatorSSC = ['burpee_box_jump', 'burpee_high_box_jump', 'burpee_box_jump_over', 'burpee_high_box_jump_over', 'box_jump', 'high_box_jump', 'box_jump_over', 'high_box_jump_over'].includes(cfg.categoria) ? 0.82 : 1.0; 
+
+  // ==========================================================
+  // DECLARAÇÕES ORIGINAIS E VARIÁVEIS RESTAURADAS (Não apagar)
+  // ==========================================================
   let tMech = 0, tMetWork = 0, tMetWorkConcIsom = 0, exL = "", P = 0, sErgo = 0, isErgo = false;
   let isCalorieErgo = false;
   
@@ -76,7 +93,7 @@ export function calcularFisica(
               ? extra : (atleta.estatura * (cfg.fatorH || 0.40));
   
   const h_box = extra > 0 ? extra : (cfg.isHighBox ? (isM ? 0.75 : 0.60) : (isM ? 0.60 : 0.50));
-  const safeReps = Math.max(1, reps);
+  const safeReps = Math.max(1, reps); // Aqui a variável 'reps' volta a ser utilizada
 
   switch(cfg.categoria) {
       case 'deadlift': 
@@ -393,6 +410,9 @@ export function calcularFisica(
           tMech = (pCarga > 0 ? pCarga : atleta.peso) * G * 0.5;
   }
 
+  // Aplicar a poupança energética da fáscia (SSC) no trabalho mecânico total
+  tMech = tMech * fatorSSC;
+
   if (cfg.categoria === 'shuttle_run') { 
       tMetWork = atleta.peso * (extraSafe / 1000.0) * (1.0 + (12.5 / extraSafe)); 
       tMetWorkConcIsom = tMetWork; 
@@ -482,7 +502,11 @@ export function calcularFisica(
       const W_exc = tMech * W_exc_ratio;
       
       const E_met_conc = W_conc / (Math.max(0.01, eta_conc) * 4184.0);
-      const E_met_exc = W_exc / (eta_exc * 4184.0);
+      
+      // Integra a dissipação GRF no custo excêntrico (se for um movimento de LPO)
+      const custoExtraGRF = (cfg.categoria.includes('lpo_') || cfg.categoria.includes('db_') || cfg.categoria === 'deadlift') ? dissipacaoExcentricaGRF : 0;
+      const E_met_exc = (W_exc + custoExtraGRF) / (eta_exc * 4184.0);
+      
       const E_met_isom = E_isom / 4184.0;
 
       tMetWork = E_met_conc + E_met_exc + E_met_isom;

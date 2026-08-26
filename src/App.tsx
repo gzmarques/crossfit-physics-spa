@@ -391,12 +391,14 @@ export default function App() {
     const desc = tempoDescanso || 0;
     const tempoDisponivel = Math.max(0, tempoTotalReferencia - somaTempoDeterminadoGlobal - totalTransicaoGlobal - desc);
     
-    // Refatoração do Fator EPOC baseado na Potência Estimada Dinâmica
+    // Refatoração 4: Fator EPOC Sigmoidal baseado na fadiga termodinâmica extrema
     const refTempoEstimado = tempoTotalReferencia > 0 ? tempoTotalReferencia : tAlvoSec;
     const tempoLiquidoEstimado = Math.max(1, refTempoEstimado - desc - totalTransicaoGlobal);
     const potRealEstimada = tempoLiquidoEstimado > 0 ? (trabalhoMechTotalReal / tempoLiquidoEstimado) : 0;
     const limiarPotencia = potRealEstimada / (atleta?.peso || 80);
-    const fatorEPOC = 1.05 + Math.min(0.20, limiarPotencia * 0.03);
+    
+    // Função sigmoide: Teto dinâmico máximo de 40% (1.40) com inflexão aos 3.5 W/kg
+    const fatorEPOC = 1.0 + (0.40 / (1.0 + Math.exp(-1.5 * (limiarPotencia - 3.5))));
 
     let logDetalhes = "", lastPhase: string | null = null;
     let tempoTotalExecucaoEfetiva = 0;

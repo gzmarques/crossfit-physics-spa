@@ -18,6 +18,7 @@ export interface MovimentoConfig {
   fatorH?: number;
   isHighBox?: boolean;
   paramExtra?: ParamExtraConfig;
+  isUnilateral?: boolean;
 }
 
 export interface ItemLousa {
