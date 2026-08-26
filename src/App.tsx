@@ -299,6 +299,17 @@ export default function App() {
     carregarDoSupabase(data);
   };
 
+  const clonarWod = () => {
+    if (!window.confirm('Deseja usar este treino como base para criar um NOVO WOD seu? O vínculo com o original será quebrado.')) return;
+    
+    // Apaga os IDs originais. O React agora acha que é um WOD novo, feito do zero.
+    setCurrentTemplateId(null);
+    setCurrentShortCode(null);
+    setCurrentResultId(null);
+    
+    alert('Pronto! O WOD foi desvinculado. Faça suas alterações e clique em "Salvar WOD".');
+  };
+
   // === FUNÇÕES DA LOUSA (Mantidas) ===
   const addMovimento = (baseId: string | null = null) => {
     const newId = crypto.randomUUID();
@@ -343,7 +354,7 @@ export default function App() {
     const rawTempoReal = parseClockTime(tempoReal);
     const tRealSec = rawTempoReal > 0 ? rawTempoReal : 0;
 
-    const ffm = atleta.peso * (1.0 - (atleta.bf / 100.0));
+    const ffm = (atleta?.peso || 80) * (1.0 - ((atleta?.bf || 15) / 100.0));
     const bmrDia = 370.0 + (21.6 * ffm);
     const bmrSec = bmrDia / 86400.0;
 
@@ -351,11 +362,13 @@ export default function App() {
     lousa.forEach(m => {
       const cfg = movimentosDB[m.movId];
       if (!cfg) return;
-      const mult = (m.phase === 'round') ? roundsPrescritos : 1;
-      trabalhoMechTotalEsp += calcularFisica(m.movId, cfg, m.reps, m.carga, m.extraVal, atleta, m.tecnica, 0).trabMech * mult;
+      const mult = (m.phase === 'round') ? (roundsPrescritos || 1) : 1;
+      const calc = calcularFisica(m.movId, cfg, m.reps, m.carga, m.extraVal, atleta, m.tecnica, 0);
+      const trab = calc?.trabMech || 0;
+      trabalhoMechTotalEsp += trab * mult;
     });
 
-    let roundsTimeline = (tipoTreino === 'FOR_TIME') ? roundsPrescritos : Math.ceil(roundsReal);
+    let roundsTimeline = (tipoTreino === 'FOR_TIME') ? (roundsPrescritos || 1) : Math.ceil(roundsReal || 1);
     if (roundsTimeline < 1) roundsTimeline = 1;
 
     const flatItems: any[] = [];
@@ -367,27 +380,48 @@ export default function App() {
     const itemsProcessados: any[] = [];
 
     flatItems.forEach(row => {
-      const config = movimentosDB[row.movId];
+      // Trava de segurança caso o movimento não exista no banco local
+      const config = movimentosDB[row.movId] || movimentosDB['air_squat']; 
       const state = timelineState[row.rowId] || { reps: row.reps, start: '', end: '' };
-      const repsEffective = state.reps !== undefined ? Number(state.reps) : row.reps;
+      const repsEffective = state.reps !== undefined ? Number(state.reps) : (row.reps || 0);
+      
+      // 🚨 MUDANÇA: Lê a carga da timeline (se o aluno mudou), senão usa a do RX
+      const cargaEffective = state.carga !== undefined ? Number(state.carga) : (row.carga || 0);
+
       const startSec = parseClockTime(state.start);
       const endSec = parseClockTime(state.end);
       const tempoDefinitivoTemp = (startSec >= 0 && endSec > startSec) ? (endSec - startSec) : 0;
       
-      const calc = calcularFisica(row.movId, config, repsEffective, row.carga, row.extraVal, atleta, row.tecnica, tempoDefinitivoTemp);
+      // 🚨 MUDANÇA: Passamos a 'cargaEffective' para o motor, ao invés da 'row.carga'
+      const calc = calcularFisica(row.movId, config, repsEffective, cargaEffective, row.extraVal, atleta, row.tecnica, tempoDefinitivoTemp) || {};
+
+      const trabMetabolicoWork = calc.trabMetabolicoWork || 0;
+      const trabMetabolicoConcIsom = calc.trabMetabolicoConcIsom || 0;
+      const trabMech = calc.trabMech || 0;
 
       let transicaoEspecifica = 0;
       if (tempoDefinitivoTemp > 0) {
         if (lastEndSec >= 0 && startSec >= lastEndSec) { transicaoEspecifica = startSec - lastEndSec; totalTransicaoGlobal += transicaoEspecifica; }
-        lastEndSec = endSec; somaTempoDeterminadoGlobal += tempoDefinitivoTemp; gastoMetabolicoLiquidoTotal += calc.trabMetabolicoWork;
-      } else { lastEndSec = -1; metabolicoRestanteGlobal += calc.trabMetabolicoConcIsom; }
+        lastEndSec = endSec; somaTempoDeterminadoGlobal += tempoDefinitivoTemp; gastoMetabolicoLiquidoTotal += trabMetabolicoWork;
+      } else { 
+        lastEndSec = -1; metabolicoRestanteGlobal += trabMetabolicoConcIsom; 
+      }
       
-      trabalhoMechTotalReal += calc.trabMech;
-      itemsProcessados.push({ ...calc, nome: config.nome, reps: repsEffective, labelRounds: row.badgeText, tempoDefinitivo: tempoDefinitivoTemp, transicaoEspecifica, phase: row.phase });
+      trabalhoMechTotalReal += trabMech;
+      itemsProcessados.push({ 
+        ...calc, 
+        nome: config.nome || row.movId, 
+        reps: repsEffective, 
+        labelRounds: row.badgeText, 
+        tempoDefinitivo: tempoDefinitivoTemp, 
+        transicaoEspecifica, 
+        phase: row.phase 
+      });
     });
 
     const tempoTotalReferencia = (tipoTreino === 'FOR_TIME' && tRealSec > 0) ? tRealSec : tAlvoSec;
-    const tempoDisponivel = Math.max(0, tempoTotalReferencia - somaTempoDeterminadoGlobal - totalTransicaoGlobal - tempoDescanso);
+    const desc = tempoDescanso || 0;
+    const tempoDisponivel = Math.max(0, tempoTotalReferencia - somaTempoDeterminadoGlobal - totalTransicaoGlobal - desc);
     
     let logDetalhes = "", lastPhase: string | null = null;
     const fatorEPOC = 1.15;
@@ -400,33 +434,59 @@ export default function App() {
         else if (item.phase === 'cashout') logDetalhes += `<div style="margin-top:15px; padding:5px 10px; background:#2a2a2a; border-left:3px solid #2196f3;"><strong>⏹ CASH-OUT</strong></div>`;
         lastPhase = item.phase;
       }
-      let tempoParaPotencia = item.tempoDefinitivo; 
-      if (item.transicaoEspecifica > 0) logDetalhes += `<span class="color-transition">&nbsp;&nbsp;↳ 🚶 Transição: ${item.transicaoEspecifica.toFixed(0)}s</span><br/>`;
+      
+      let tempoParaPotencia = item.tempoDefinitivo || 0; 
+      const transEsp = item.transicaoEspecifica || 0;
+      
+      if (transEsp > 0) logDetalhes += `<span class="color-transition">&nbsp;&nbsp;↳ 🚶 Transição: ${transEsp.toFixed(0)}s</span><br/>`;
+      
+      const trabMetConcIsom = item.trabMetabolicoConcIsom || 0;
+      const trabMetWork = item.trabMetabolicoWork || 0;
+      const ergTime = item.ergTime || 0;
+      
       if (tempoParaPotencia === 0) {
-        if (metabolicoRestanteGlobal > 0 && tempoDisponivel > 0) tempoParaPotencia = (item.trabMetabolicoConcIsom / metabolicoRestanteGlobal) * tempoDisponivel; 
-        else if (item.isErgo) tempoParaPotencia = item.ergTime;
-        gastoMetabolicoLiquidoTotal += item.trabMetabolicoWork;
+        if (metabolicoRestanteGlobal > 0 && tempoDisponivel > 0) {
+          tempoParaPotencia = (trabMetConcIsom / metabolicoRestanteGlobal) * tempoDisponivel; 
+        } else if (item.isErgo) {
+          tempoParaPotencia = ergTime;
+        }
+        gastoMetabolicoLiquidoTotal += trabMetWork;
       }
       tempoTotalExecucaoEfetiva += tempoParaPotencia;
 
       const gastoBasalLinha = item.isCalorieErgo ? 0 : (bmrSec * tempoParaPotencia);
-      const totalKcalLinha = (item.trabMetabolicoWork * fatorEPOC) + gastoBasalLinha;
+      const totalKcalLinha = (trabMetWork * fatorEPOC) + gastoBasalLinha;
+      
       let strPot = "", strTmp = "";
+      const trabMechLinha = item.trabMechLinha || 0;
+      const extraLog = item.infoExtraLog || '';
+
       if (tempoParaPotencia > 0) {
         strTmp = ` | 🕒 ${tempoParaPotencia.toFixed(0)}s`; 
-        strPot = ` | <strong class="color-time">⚡ ${(item.trabMechLinha / tempoParaPotencia).toFixed(1)} W</strong>`;
+        strPot = ` | <strong class="color-time">⚡ ${(trabMechLinha / tempoParaPotencia).toFixed(1)} W</strong>`;
       }
-      logDetalhes += `• [${item.labelRounds}] ${item.reps}x ${item.nome}${item.infoExtraLog}: <strong class="color-mech">${item.trabMechLinha.toFixed(0)} J</strong> | <strong class="color-metabolic">${totalKcalLinha.toFixed(1)} kCal</strong>${strTmp}${strPot}<br/>`;
+      
+      logDetalhes += `• [${item.labelRounds}] ${item.reps}x ${item.nome}${extraLog}: <strong class="color-mech">${trabMechLinha.toFixed(0)} J</strong> | <strong class="color-metabolic">${totalKcalLinha.toFixed(1)} kCal</strong>${strTmp}${strPot}<br/>`;
     });
 
-    const tempoLiquidoEsp = tAlvoSec - tempoDescanso - totalTransicaoGlobal;
+    const tempoLiquidoEsp = tAlvoSec - desc - totalTransicaoGlobal;
     const potEsp = tempoLiquidoEsp > 0 ? (trabalhoMechTotalEsp / tempoLiquidoEsp) : 0;
-    const tempoLiquidoReal = (tempoTotalReferencia > 0 ? tempoTotalReferencia : tempoTotalExecucaoEfetiva) - tempoDescanso - totalTransicaoGlobal;
+    
+    const refTempo = tempoTotalReferencia > 0 ? tempoTotalReferencia : tempoTotalExecucaoEfetiva;
+    const tempoLiquidoReal = refTempo - desc - totalTransicaoGlobal;
     const potReal = tempoLiquidoReal > 0 ? (trabalhoMechTotalReal / tempoLiquidoReal) : 0;
-    const gastoBasalSessao = bmrSec * (tempoTotalReferencia > 0 ? tempoTotalReferencia : (tempoTotalExecucaoEfetiva + totalTransicaoGlobal + tempoDescanso));
+    
+    const tempoTotalSessao = tempoTotalReferencia > 0 ? tempoTotalReferencia : (tempoTotalExecucaoEfetiva + totalTransicaoGlobal + desc);
+    const gastoBasalSessao = bmrSec * tempoTotalSessao;
     const gastoMetabolicoFinal = (gastoMetabolicoLiquidoTotal * fatorEPOC) + gastoBasalSessao;
 
-    setResultado({ trabalhoReal: trabalhoMechTotalReal, gastoMetabolico: gastoMetabolicoFinal, potenciaEsp: potEsp, potenciaReal: potReal, logDetalhesHTML: logDetalhes });
+    setResultado({ 
+      trabalhoReal: trabalhoMechTotalReal || 0, 
+      gastoMetabolico: gastoMetabolicoFinal || 0, 
+      potenciaEsp: potEsp || 0, 
+      potenciaReal: potReal || 0, 
+      logDetalhesHTML: logDetalhes 
+    });
   };
 
   // === RENDER: CARREGAMENTO ===
@@ -636,6 +696,14 @@ export default function App() {
                   <Share2 size={22} style={{ flexShrink: 0 }} /> 
                   <span>Copiar</span>
                 </button>
+
+                {/* NOVO: Botão Duplicar (Só aparece se já existir um WOD carregado) */}
+                {currentTemplateId && (
+                  <button onClick={clonarWod} style={{ flex: '1 1 140px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '1rem', backgroundColor: '#3b82f6', color: '#fff', border: 'none', fontWeight: 'bold' }}>
+                    <Copy size={22} style={{ flexShrink: 0 }} /> 
+                    <span>Duplicar</span>
+                  </button>
+                )}
                 
                 {/* Botão Salvar / Atualizar */}
                 <button onClick={() => salvarNoSupabase(false)} style={{ flex: '1 1 140px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '1rem', backgroundColor: 'var(--dyna-red, #FF2B3D)', color: '#fff', border: 'none', fontWeight: 'bold' }}>
@@ -687,13 +755,31 @@ export default function App() {
                   const rowId = `${m.originalId}-R${rIdx}`;
                   const cfg = movimentosDB[m.movId];
                   const st = timelineState[rowId] || { reps: m.reps, start: '', end: '' };
-                  rows.push(
+                  return (
                     <div key={rowId} className="wod-item-analise">
                       <div className={`badge-round ${badgeClass}`}>{badgeText}</div>
-                      <div><div style={{ fontWeight: 'bold' }}>{cfg ? cfg.nome : m.movId}</div><div style={{ fontSize: '0.75rem', color: '#aaa' }}>{m.carga > 0 ? `${m.carga}kg (${m.tecnica})` : ''} {m.extraVal ? `| ${m.extraVal}` : ''}</div></div>
-                      <div><label>Reps</label><input type="number" value={st.reps} onChange={e => handleTimelineChange(rowId, 'reps', Number(e.target.value))} /></div>
-                      <div><label>Início</label><input type="text" placeholder="mm:ss" value={st.start} onChange={e => handleTimelineChange(rowId, 'start', e.target.value)} /></div>
-                      <div><label>Fim</label><input type="text" placeholder="mm:ss" value={st.end} onChange={e => handleTimelineChange(rowId, 'end', e.target.value)} /></div>
+                      <div>
+                        <div style={{ fontWeight: 'bold' }}>{cfg ? cfg.nome : m.movId}</div>
+                        <div style={{ fontSize: '0.75rem', color: '#aaa' }}>
+                          RX: {m.carga > 0 ? `${m.carga}kg` : '--'} {m.extraVal ? `| ${m.extraVal}` : ''}
+                        </div>
+                      </div>
+                      <div><label>Reps</label><input type="number" value={st.reps !== undefined ? st.reps : m.reps} onChange={e => handleTimelineChange(rowId, 'reps', Number(e.target.value))} /></div>
+                      
+                      {/* NOVO CAMPO: CARGA REAL */}
+                      <div>
+                        <label>Carga Real</label>
+                        <input 
+                          type="number" 
+                          value={st.carga !== undefined ? st.carga : m.carga} 
+                          onChange={e => handleTimelineChange(rowId, 'carga', Number(e.target.value))}
+                          disabled={!(cfg?.usaCarga)}
+                          style={{ border: isScaled && (st.carga !== undefined ? st.carga : m.carga) < m.carga ? '1px solid var(--dyna-red, #FF2B3D)' : '' }}
+                        />
+                      </div>
+
+                      <div><label>Início</label><input type="text" placeholder="mm:ss" value={st.start || ''} onChange={e => handleTimelineChange(rowId, 'start', e.target.value)} /></div>
+                      <div><label>Fim</label><input type="text" placeholder="mm:ss" value={st.end || ''} onChange={e => handleTimelineChange(rowId, 'end', e.target.value)} /></div>
                     </div>
                   );
                 };

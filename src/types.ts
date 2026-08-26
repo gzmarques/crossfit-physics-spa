@@ -34,6 +34,7 @@ export interface TimelineStateItem {
   reps: number;
   start: string;
   end: string;
+  carga?: number;
 }
 
 export interface AtletaPerfil {
