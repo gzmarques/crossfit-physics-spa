@@ -1,0 +1,2470 @@
+==================================================
+ESTRUTURA COMPLETA DO PROJETO E CÓDIGOS-FONTE
+==================================================
+
+--- ESTRUTURA DE ARQUIVOS ---
+[ARQUIVO] .env.local
+[ARQUIVO] consolidar.js
+[ARQUIVO] eslint.config.js
+[ARQUIVO] index.html
+[ARQUIVO] package.json
+[ARQUIVO] README.md
+[ARQUIVO] src\App.tsx
+[ARQUIVO] src\data\movements.ts
+[ARQUIVO] src\index.css
+[ARQUIVO] src\lib\supabase.ts
+[ARQUIVO] src\main.tsx
+[ARQUIVO] src\types.ts
+[ARQUIVO] src\utils\physicsEngine.ts
+[ARQUIVO] tsconfig.app.json
+[ARQUIVO] tsconfig.json
+[ARQUIVO] tsconfig.node.json
+[ARQUIVO] vite.config.ts
+
+==================================================
+CONTEÚDO DOS ARQUIVOS
+==================================================
+
+--- INÍCIO DO ARQUIVO: .env.local ---
+VITE_SUPABASE_URL=https://dzljhnkxifqcywutcbvq.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6bGpobmt4aWZxY3l3dXRjYnZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcwNjY2MDEsImV4cCI6MjEwMjY0MjYwMX0.1tYx8zVmzoEtMZAL8dkLv69LmZwp5ZtWdm7h6a7lrlA
+--- FIM DO ARQUIVO: .env.local ---
+
+========================================
+
+--- INÍCIO DO ARQUIVO: consolidar.js ---
+import fs from 'fs';
+import path from 'path';
+
+// CONFIGURAÇÕES
+const PASTA_PROJETO = '.'; 
+const ARQUIVO_SAIDA = 'codigo_consolidado.txt';
+
+const EXTENSOES_PERMITIDAS = new Set([
+  '.js', '.jsx', '.ts', '.tsx', '.html', '.css', 
+  '.json', '.md', '.yml', '.yaml', '.env', '.local'
+]);
+
+const IGNORAR_PASTAS = new Set([
+  'node_modules', '.git', '.venv', 'venv', 'env', 
+  '__pycache__', 'dist', 'build', '.next', '.idea', '.vscode', 'coverage'
+]);
+
+const IGNORAR_ARQUIVOS = new Set([
+  ARQUIVO_SAIDA, 'package-lock.json', 'yarn.lock', 'pnpm-lock.yaml', '.DS_Store'
+]);
+
+let contadorArquivos = 0;
+
+function andarPorPastas(diretorio, listaArquivos = []) {
+  const arquivos = fs.readdirSync(diretorio);
+
+  for (const arquivo of arquivos) {
+    const caminhoCompleto = path.join(diretorio, arquivo);
+    const estatisticas = fs.statSync(caminhoCompleto);
+
+    if (estatisticas.isDirectory()) {
+      if (!IGNORAR_PASTAS.has(arquivo)) {
+        andarPorPastas(caminhoCompleto, listaArquivos);
+      }
+    } else {
+      const extensao = path.extname(arquivo).toLowerCase();
+      const nomeOuExtensao = extensao || arquivo; 
+      
+      if ((EXTENSOES_PERMITIDAS.has(extensao) || EXTENSOES_PERMITIDAS.has(nomeOuExtensao)) && !IGNORAR_ARQUIVOS.has(arquivo)) {
+        listaArquivos.push(caminhoCompleto);
+      }
+    }
+  }
+  return listaArquivos;
+}
+
+function consolidarCodigo() {
+  console.log(`🔍 Analisando arquivos em: ${path.resolve(PASTA_PROJETO)}`);
+  
+  try {
+    const todosArquivos = andarPorPastas(PASTA_PROJETO);
+    const fluxoSaida = fs.createWriteStream(ARQUIVO_SAIDA, { encoding: 'utf8' });
+
+    fluxoSaida.write("==================================================\n");
+    fluxoSaida.write("ESTRUTURA COMPLETA DO PROJETO E CÓDIGOS-FONTE\n");
+    fluxoSaida.write("==================================================\n\n");
+    
+    fluxoSaida.write("--- ESTRUTURA DE ARQUIVOS ---\n");
+    for (const arquivo of todosArquivos) {
+      const caminhoRelativo = path.relative(PASTA_PROJETO, arquivo);
+      fluxoSaida.write(`[ARQUIVO] ${caminhoRelativo}\n`);
+    }
+
+    fluxoSaida.write("\n==================================================\n");
+    fluxoSaida.write("CONTEÚDO DOS ARQUIVOS\n");
+    fluxoSaida.write("==================================================\n\n");
+
+    for (const arquivo of todosArquivos) {
+      const caminhoRelativo = path.relative(PASTA_PROJETO, arquivo);
+      
+      try {
+        const conteudo = fs.readFileSync(arquivo, 'utf8');
+        fluxoSaida.write(`--- INÍCIO DO ARQUIVO: ${caminhoRelativo} ---\n`);
+        fluxoSaida.write(conteudo);
+        fluxoSaida.write(`\n--- FIM DO ARQUIVO: ${caminhoRelativo} ---\n\n`);
+        fluxoSaida.write("=".repeat(40) + "\n\n");
+        
+        console.log(`✅ Incluído: ${caminhoRelativo}`);
+        contadorArquivos++;
+      } catch (erroLeitura) {
+        console.log(`❌ Erro ao ler ${caminhoRelativo}: ${erroLeitura.message}`);
+      }
+    }
+
+    fluxoSaida.end();
+    console.log(`\n🎉 Concluído! ${contadorArquivos} arquivos consolidados em: ${ARQUIVO_SAIDA}`);
+
+  } catch (erro) {
+    console.error(`❌ Ocorreu um erro geral: ${erro.message}`);
+  }
+}
+
+consolidarCodigo();
+
+--- FIM DO ARQUIVO: consolidar.js ---
+
+========================================
+
+--- INÍCIO DO ARQUIVO: eslint.config.js ---
+import js from '@eslint/js'
+import globals from 'globals'
+import reactHooks from 'eslint-plugin-react-hooks'
+import reactRefresh from 'eslint-plugin-react-refresh'
+import tseslint from 'typescript-eslint'
+import { defineConfig, globalIgnores } from 'eslint/config'
+
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      js.configs.recommended,
+      tseslint.configs.recommended,
+      reactHooks.configs.flat.recommended,
+      reactRefresh.configs.vite,
+    ],
+    languageOptions: {
+      globals: globals.browser,
+    },
+  },
+])
+
+--- FIM DO ARQUIVO: eslint.config.js ---
+
+========================================
+
+--- INÍCIO DO ARQUIVO: index.html ---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DynaWOD - O Motor Biomecânico do Fitness</title>
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/dynawod-192.png" />
+    <meta name="theme-color" content="#1e1e1e" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+
+--- FIM DO ARQUIVO: index.html ---
+
+========================================
+
+--- INÍCIO DO ARQUIVO: package.json ---
+{
+  "name": "dynawod",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.112.3",
+    "html2canvas": "^1.4.1",
+    "lucide-react": "^1.33.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "recharts": "^3.10.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^24.13.3",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.4",
+    "eslint": "^10.8.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.3",
+    "globals": "^17.7.0",
+    "typescript": "~6.0.2",
+    "typescript-eslint": "^8.65.0",
+    "vite": "^8.2.0",
+    "vite-plugin-pwa": "^1.3.0"
+  }
+}
+
+--- FIM DO ARQUIVO: package.json ---
+
+========================================
+
+--- INÍCIO DO ARQUIVO: README.md ---
+# React + TypeScript + Vite
+
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+
+Currently, two official plugins are available:
+
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+
+## React Compiler
+
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+
+## Expanding the ESLint configuration
+
+If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+
+```js
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+
+      // Remove tseslint.configs.recommended and replace with this
+      tseslint.configs.recommendedTypeChecked,
+      // Alternatively, use this for stricter rules
+      tseslint.configs.strictTypeChecked,
+      // Optionally, add this for stylistic rules
+      tseslint.configs.stylisticTypeChecked,
+
+      // Other configs...
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
+
+```
+
+You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+
+```js
+// eslint.config.js
+import reactX from 'eslint-plugin-react-x'
+import reactDom from 'eslint-plugin-react-dom'
+
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+      // Enable lint rules for React
+      reactX.configs['recommended-typescript'],
+      // Enable lint rules for React DOM
+      reactDom.configs.recommended,
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
+
+```
+
+--- FIM DO ARQUIVO: README.md ---
+
+========================================
+
+--- INÍCIO DO ARQUIVO: src\App.tsx ---
+import { useState, useEffect } from 'react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { movimentosDB } from './data/movements';
+import { supabase } from './lib/supabase';
+import type { Session } from '@supabase/supabase-js'; 
+import type { 
+  AtletaPerfil, ItemLousa, Modalidade, 
+  ResultadoProcessamento, TimelineStateItem, UserProfile,
+  WodTemplateRecord // 👈 A mágica acontece aqui
+} from './types';
+import { calcularFisica, parseClockTime } from './utils/physicsEngine';
+import { Trophy, Dumbbell, Copy, Download, Share2, Save, LogOut, X } from 'lucide-react';
+import html2canvas from 'html2canvas';
+
+export default function App() {
+  // === AUTENTICAÇÃO E PERFIL ===
+  const [session, setSession] = useState<Session | null>(null);
+  const [loadingAuth, setLoadingAuth] = useState(true);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [isNewUser, setIsNewUser] = useState(false);
+  
+  // === GESTÃO DE COACH E ATLETAS ===
+  const [myAthletes, setMyAthletes] = useState<UserProfile[]>([]);
+  const [selectedAthleteId, setSelectedAthleteId] = useState<string>('me');
+  const [coachIdInput, setCoachIdInput] = useState('');
+
+  // === ESTADOS DO MOTOR ===
+  const [activeTab, setActiveTab] = useState<'prescricao' | 'analise' | 'atleta' | 'historico'>('prescricao');
+  const [tipoTreino, setTipoTreino] = useState<Modalidade>('FOR_TIME');
+  const [tempoAlvo, setTempoAlvo] = useState('05:00');
+  const [roundsPrescritos, setRoundsPrescritos] = useState(3);
+  const [roundsReal, setRoundsReal] = useState(0);
+  const [tempoReal, setTempoReal] = useState('');
+  const [tempoDescanso, setTempoDescanso] = useState(0);
+
+  // === RASTREAMENTO DO WOD ATUAL ===
+  // Substitutos do antigo currentWodId:
+  const [currentTemplateId, setCurrentTemplateId] = useState<string | null>(null);
+  const [currentResultId, setCurrentResultId] = useState<string | null>(null);
+
+  // Flag para sabermos se o atleta alterou as cargas na lousa
+  const [isScaled, setIsScaled] = useState<boolean>(false);
+
+  const [currentShortCode, setCurrentShortCode] = useState<string | null>(null);
+
+  // Atleta base que alimenta o motor de física
+  const [atleta, setAtleta] = useState<AtletaPerfil>({
+    estatura: 1.75, peso: 80, sexo: 'M', nivelTecnico: 'intermediario', envergadura: 1.75, perna: 0.85, bf: 15
+  });
+
+  const [lousa, setLousa] = useState<ItemLousa[]>([
+    { originalId: crypto.randomUUID(), movId: 'thruster', phase: 'round', reps: 21, carga: 43, tecnica: 'tng', extraVal: '' }
+  ]);
+  const [timelineState, setTimelineState] = useState<Record<string, TimelineStateItem>>({});
+  
+  const [resultado, setResultado] = useState<ResultadoProcessamento | null>(null);
+  const [savedWods, setSavedWods] = useState<WodTemplateRecord[]>([]);
+
+  // Formato do Perfil para o Onboarding
+  const [onboardForm, setOnboardForm] = useState({
+    full_name: '', apelido: '',is_coach: false, estatura: 1.75, peso: 80, sexo: 'M', 
+    nivel_tecnico: 'intermediario', envergadura: 1.75, perna: 0.85, bf: 15
+  });
+
+  const gerarCardInstagram = async () => {
+    const cardElement = document.getElementById('instagram-card-export');
+    
+    if (!cardElement) {
+      alert('Erro: Card não encontrado na tela.');
+      return;
+    }
+
+    try {
+      const canvas = await html2canvas(cardElement, {
+        backgroundColor: '#111315', // Cor de fundo do app
+        scale: 2, // Escala 2x garante alta resolução para o Instagram!
+        useCORS: true // Essencial se tiver imagens/logos externos
+      });
+
+      const image = canvas.toDataURL('image/jpeg', 0.9);
+      
+      // Cria um link falso e clica nele para baixar a imagem
+      const link = document.createElement('a');
+      link.href = image;
+      link.download = `DynaWOD-${currentShortCode || 'Resultado'}.jpg`;
+      link.click();
+      
+    } catch (error) {
+      console.error('Erro ao gerar imagem:', error);
+      alert('Ops! Não foi possível gerar a imagem.');
+    }
+  };
+
+  // === EFEITOS ===
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      if (session) loadProfile(session.user.id);
+      else setLoadingAuth(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      if (session) loadProfile(session.user.id);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (session && userProfile && !isNewUser) fetchWodsFromSupabase();
+  }, [session, userProfile, isNewUser, selectedAthleteId]); // Refetch se mudar o atleta selecionado
+
+  // === FUNÇÕES DE LOGIN / PERFIL ===
+  const signInWithGoogle = async () => {
+    await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
+  };
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    setUserProfile(null);
+    setSavedWods([]);
+  };
+
+  const loadProfile = async (userId: string) => {
+    const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single();
+    
+    if (error || !data) {
+      setIsNewUser(true); // Se não achou perfil, vai pro Onboarding
+      setLoadingAuth(false);
+      return;
+    }
+
+    setUserProfile(data as UserProfile);
+    syncAtletaState(data);
+    
+    if (data.is_coach) {
+      const { data: athletes } = await supabase.from('profiles').select('*').eq('coach_id', userId);
+      if (athletes) setMyAthletes(athletes as UserProfile[]);
+    }
+    
+    setIsNewUser(false);
+    setLoadingAuth(false);
+  };
+
+  const syncAtletaState = (prof: any) => {
+    setAtleta({
+      estatura: prof.estatura, peso: prof.peso, sexo: prof.sexo,
+      nivelTecnico: prof.nivel_tecnico, envergadura: prof.envergadura,
+      perna: prof.perna, bf: prof.bf
+    });
+  };
+
+  const saveOnboardingProfile = async () => {
+    if (!session) return;
+    const payload = {
+      id: session.user.id,
+      ...onboardForm
+    };
+    
+    const { error } = await supabase.from('profiles').insert([payload]);
+    if (error) {
+      alert('Erro ao salvar perfil: ' + error.message);
+    } else {
+      loadProfile(session.user.id); // Recarrega e sai do onboarding
+    }
+  };
+
+  const linkToCoach = async () => {
+    if (!session || !coachIdInput) return;
+    const { error } = await supabase.from('profiles').update({ coach_id: coachIdInput }).eq('id', session.user.id);
+    if (error) alert('Erro ao vincular coach. Verifique o ID.');
+    else { alert('Coach vinculado com sucesso!'); loadProfile(session.user.id); }
+  };
+
+  const handleAthleteChange = (targetId: string) => {
+    setSelectedAthleteId(targetId);
+    if (targetId === 'me' && userProfile) {
+      syncAtletaState(userProfile);
+    } else {
+      const athlete = myAthletes.find(a => a.id === targetId);
+      if (athlete) syncAtletaState(athlete);
+    }
+  };
+
+  // === BANCO DE DADOS (WODs) ===
+  const fetchWodsFromSupabase = async () => {
+    // Se for coach e selecionou um aluno, busca os WODs do aluno. Senão, busca os próprios.
+    const queryId = selectedAthleteId === 'me' ? session?.user.id : selectedAthleteId;
+    
+    const { data, error } = await supabase.from('wods').select('*').eq('athlete_id', queryId).order('created_at', { ascending: false });
+    if (!error && data) setSavedWods(data as WodTemplateRecord[]);
+  };
+
+// === LÓGICA DE SALVAMENTO E COMPARTILHAMENTO ===
+  
+  // Gerador de código curto (Ex: 8XF2A9)
+  const generateShortCode = () => Math.random().toString(36).substring(2, 8).toUpperCase();
+
+  const salvarNoSupabase = async (isExporting = false) => {
+    if (!session || !userProfile) return null;
+    
+    const targetAthleteId = selectedAthleteId === 'me' ? session.user.id : selectedAthleteId;
+    const newShortCode = currentShortCode || generateShortCode();
+
+    // ==========================================
+    // 1. PREPARAR DADOS DA PRESCRIÇÃO (TEMPLATE)
+    // ==========================================
+    const templatePayload = {
+      title: `Treino ${tipoTreino} - ${new Date().toLocaleDateString('pt-BR')}`,
+      short_code: newShortCode,
+      tipo_treino: tipoTreino,
+      tempo_alvo: tempoAlvo,
+      rounds_prescritos: roundsPrescritos,
+      movimentos: lousa,
+      creator_id: session.user.id
+    };
+
+    let activeTemplateId = currentTemplateId;
+
+    // A. Salvar ou Atualizar o Template
+    if (activeTemplateId) {
+      if (!isExporting && !window.confirm('Deseja sobrescrever as alterações na prescrição deste WOD?')) return null;
+      
+      const { error } = await supabase.from('wod_templates').update(templatePayload).eq('id', activeTemplateId);
+      if (error) { alert('Erro ao atualizar Template: ' + error.message); return null; }
+    } else {
+      const { data, error } = await supabase.from('wod_templates').insert([templatePayload]).select('id, short_code').single();
+      if (error) { alert('Erro ao criar Template: ' + error.message); return null; }
+      
+      activeTemplateId = data.id;
+      setCurrentTemplateId(data.id);
+      setCurrentShortCode(data.short_code);
+    }
+
+    // ==========================================
+    // 2. PREPARAR DADOS DO RESULTADO (EXECUÇÃO)
+    // ==========================================
+    // Só tentamos salvar um resultado se o atleta tiver preenchido algo real (Tempo ou Rounds)
+    const hasResult = tempoReal || roundsReal > 0 || (resultado && resultado.potenciaReal > 0);
+
+    if (hasResult) {
+      const resultPayload = {
+        template_id: activeTemplateId, // Liga o resultado ao treino!
+        athlete_id: targetAthleteId,
+        tempo_real: tempoReal,
+        rounds_real: roundsReal,
+        score_watts: resultado ? resultado.potenciaReal : 0,
+        score_kcal: resultado ? resultado.gastoMetabolico : 0,
+        timeline: timelineState,
+        cargas_adaptadas: isScaled // A nova variável que criamos
+      };
+
+      if (currentResultId) {
+        // Atualiza o resultado existente
+        const { error } = await supabase.from('wod_results').update(resultPayload).eq('id', currentResultId);
+        if (error) console.error('Erro ao atualizar resultado:', error);
+      } else {
+        // Cria um resultado novo
+        const { data, error } = await supabase.from('wod_results').insert([resultPayload]).select('id').single();
+        if (error) {
+          console.error('Erro ao salvar resultado:', error);
+        } else {
+          setCurrentResultId(data.id);
+        }
+      }
+    }
+
+    if (!isExporting) alert('Dados salvos com sucesso no DynaWOD!');
+    
+    // ATENÇÃO: A função de buscar os WODs vai quebrar agora, porque ela lê da tabela velha!
+    if (typeof fetchWodsFromSupabase === 'function') {
+      // fetchWodsFromSupabase(); // Comentado temporariamente para não dar erro
+    }
+    
+    return newShortCode;
+  };
+
+  const compartilharWod = async () => {
+    const code = await salvarNoSupabase(true); // Salva silenciosamente antes de exportar
+    if (code) {
+      navigator.clipboard.writeText(code);
+      alert(`Código do WOD (${code}) copiado para a área de transferência! Envie para seus alunos.`);
+    }
+  };
+
+  const importarWod = async () => {
+    const codeToFind = window.prompt('Digite o código de 6 dígitos do WOD:');
+    if (!codeToFind) return;
+
+    // 🚨 MUDANÇA AQUI: Agora ele busca na tabela de Templates!
+    const { data, error } = await supabase.from('wod_templates').select('*').eq('short_code', codeToFind.toUpperCase()).single();
+    
+    if (error || !data) {
+      alert('WOD não encontrado. Verifique o código.');
+      return;
+    }
+
+    carregarDoSupabase(data);
+  };
+
+  const clonarWod = () => {
+    if (!window.confirm('Deseja usar este treino como base para criar um NOVO WOD seu? O vínculo com o original será quebrado.')) return;
+    
+    // Apaga os IDs originais. O React agora acha que é um WOD novo, feito do zero.
+    setCurrentTemplateId(null);
+    setCurrentShortCode(null);
+    setCurrentResultId(null);
+    
+    alert('Pronto! O WOD foi desvinculado. Faça suas alterações e clique em "Salvar WOD".');
+  };
+
+  // === FUNÇÕES DA LOUSA (Mantidas) ===
+  const addMovimento = (baseId: string | null = null) => {
+    const newId = crypto.randomUUID();
+    let newItem: ItemLousa = { originalId: newId, movId: 'air_squat', phase: 'round', reps: 10, carga: 0, tecnica: 'tng', extraVal: '' };
+    if (baseId) {
+      const idx = lousa.findIndex(m => m.originalId === baseId);
+      if (idx !== -1) {
+        newItem = { ...lousa[idx], originalId: newId };
+        const updated = [...lousa];
+        updated.splice(idx + 1, 0, newItem);
+        setLousa(updated);
+        return;
+      }
+    }
+    setLousa([...lousa, newItem]);
+  };
+  const removeMovimento = (id: string) => setLousa(lousa.filter(m => m.originalId !== id));
+  const updateMovimento = (id: string, field: keyof ItemLousa, val: any) => setLousa(lousa.map(item => item.originalId === id ? { ...item, [field]: val } : item));
+  const handleTimelineChange = (rowId: string, field: keyof TimelineStateItem, val: any) => setTimelineState(prev => ({ ...prev, [rowId]: { ...(prev[rowId] || { reps: 0, start: '', end: '' }), [field]: val } }));
+  const carregarDoSupabase = (rec: any) => {
+    setTipoTreino(rec.tipo_treino); 
+    setTempoAlvo(rec.tempo_alvo); 
+    setRoundsPrescritos(rec.rounds_prescritos);
+    
+    if (rec.rounds_real !== undefined) setRoundsReal(rec.rounds_real);
+    if (rec.tempo_real) setTempoReal(rec.tempo_real);
+    if (rec.tempo_descanso) setTempoDescanso(rec.tempo_descanso);
+    if (rec.atleta) setAtleta(rec.atleta);
+    if (rec.movimentos) setLousa(rec.movimentos);
+    if (rec.timeline) setTimelineState(rec.timeline);
+    
+    // AQUI ESTÁ A MÁGICA DA MEMÓRIA:
+    setCurrentTemplateId(rec.id);
+    setCurrentShortCode(rec.short_code);
+    
+    setActiveTab('prescricao');
+  };
+
+  const processarWOD = () => {
+    const rawTempoAlvo = parseClockTime(tempoAlvo);
+    const tAlvoSec = rawTempoAlvo > 0 ? rawTempoAlvo : 0;
+    const rawTempoReal = parseClockTime(tempoReal);
+    const tRealSec = rawTempoReal > 0 ? rawTempoReal : 0;
+
+    const ffm = (atleta?.peso || 80) * (1.0 - ((atleta?.bf || 15) / 100.0));
+    const bmrDia = 370.0 + (21.6 * ffm);
+    const bmrSec = bmrDia / 86400.0;
+
+    let trabalhoMechTotalEsp = 0;
+    lousa.forEach(m => {
+      const cfg = movimentosDB[m.movId];
+      if (!cfg) return;
+      const mult = (m.phase === 'round') ? (roundsPrescritos || 1) : 1;
+      const calc = calcularFisica(m.movId, cfg, m.reps, m.carga, m.extraVal, atleta, m.tecnica, 0);
+      const trab = calc?.trabMech || 0;
+      trabalhoMechTotalEsp += trab * mult;
+    });
+
+    let roundsTimeline = (tipoTreino === 'FOR_TIME') ? (roundsPrescritos || 1) : Math.ceil(roundsReal || 1);
+    if (roundsTimeline < 1) roundsTimeline = 1;
+
+    const flatItems: any[] = [];
+    lousa.filter(m => m.phase === 'buyin').forEach(m => flatItems.push({ rowId: `${m.originalId}-R0`, movId: m.movId, reps: m.reps, carga: m.carga, extraVal: m.extraVal, phase: 'buyin', tecnica: m.tecnica, badgeText: 'Buy-in', badgeClass: 'badge-buyin' }));
+    for (let r = 1; r <= roundsTimeline; r++) lousa.filter(m => m.phase === 'round').forEach(m => flatItems.push({ rowId: `${m.originalId}-R${r}`, movId: m.movId, reps: m.reps, carga: m.carga, extraVal: m.extraVal, phase: 'round', tecnica: m.tecnica, badgeText: `R ${r}`, badgeClass: '' }));
+    lousa.filter(m => m.phase === 'cashout').forEach(m => flatItems.push({ rowId: `${m.originalId}-R99`, movId: m.movId, reps: m.reps, carga: m.carga, extraVal: m.extraVal, phase: 'cashout', tecnica: m.tecnica, badgeText: 'Cash-out', badgeClass: 'badge-cashout' }));
+
+    let somaTempoDeterminadoGlobal = 0, totalTransicaoGlobal = 0, trabalhoMechTotalReal = 0, gastoMetabolicoLiquidoTotal = 0, metabolicoRestanteGlobal = 0, lastEndSec = -1;
+    const itemsProcessados: any[] = [];
+
+    flatItems.forEach(row => {
+      // Trava de segurança caso o movimento não exista no banco local
+      const config = movimentosDB[row.movId] || movimentosDB['air_squat']; 
+      const state = timelineState[row.rowId] || { reps: row.reps, start: '', end: '' };
+      const repsEffective = state.reps !== undefined ? Number(state.reps) : (row.reps || 0);
+      
+      // 🚨 MUDANÇA: Lê a carga da timeline (se o aluno mudou), senão usa a do RX
+      const cargaEffective = state.carga !== undefined ? Number(state.carga) : (row.carga || 0);
+
+      const startSec = parseClockTime(state.start);
+      const endSec = parseClockTime(state.end);
+      const tempoDefinitivoTemp = (startSec >= 0 && endSec > startSec) ? (endSec - startSec) : 0;
+      
+      // 🚨 MUDANÇA: Passamos a 'cargaEffective' para o motor, ao invés da 'row.carga'
+      const calc = calcularFisica(row.movId, config, repsEffective, cargaEffective, row.extraVal, atleta, row.tecnica, tempoDefinitivoTemp) || {};
+
+      const trabMetabolicoWork = calc.trabMetabolicoWork || 0;
+      const trabMetabolicoConcIsom = calc.trabMetabolicoConcIsom || 0;
+      const trabMech = calc.trabMech || 0;
+
+      let transicaoEspecifica = 0;
+      if (tempoDefinitivoTemp > 0) {
+        if (lastEndSec >= 0 && startSec >= lastEndSec) { transicaoEspecifica = startSec - lastEndSec; totalTransicaoGlobal += transicaoEspecifica; }
+        lastEndSec = endSec; somaTempoDeterminadoGlobal += tempoDefinitivoTemp; gastoMetabolicoLiquidoTotal += trabMetabolicoWork;
+      } else { 
+        lastEndSec = -1; metabolicoRestanteGlobal += trabMetabolicoConcIsom; 
+      }
+      
+      trabalhoMechTotalReal += trabMech;
+      itemsProcessados.push({ 
+        ...calc, 
+        nome: config.nome || row.movId, 
+        reps: repsEffective, 
+        labelRounds: row.badgeText, 
+        tempoDefinitivo: tempoDefinitivoTemp, 
+        transicaoEspecifica, 
+        phase: row.phase 
+      });
+    });
+
+    const tempoTotalReferencia = (tipoTreino === 'FOR_TIME' && tRealSec > 0) ? tRealSec : tAlvoSec;
+    const desc = tempoDescanso || 0;
+    const tempoDisponivel = Math.max(0, tempoTotalReferencia - somaTempoDeterminadoGlobal - totalTransicaoGlobal - desc);
+    
+    let logDetalhes = "", lastPhase: string | null = null;
+    const fatorEPOC = 1.15;
+    let tempoTotalExecucaoEfetiva = 0;
+
+    itemsProcessados.forEach(item => {
+      if (item.phase !== lastPhase) {
+        if (item.phase === 'buyin') logDetalhes += `<div style="margin-top:15px; padding:5px 10px; background:#2a2a2a; border-left:3px solid #f39c12;"><strong>▶ BUY-IN</strong></div>`;
+        else if (item.phase === 'round') logDetalhes += `<div style="margin-top:15px; padding:5px 10px; background:#2a2a2a; border-left:3px solid var(--accent);"><strong>🔄 WOD PRINCIPAL</strong></div>`;
+        else if (item.phase === 'cashout') logDetalhes += `<div style="margin-top:15px; padding:5px 10px; background:#2a2a2a; border-left:3px solid #2196f3;"><strong>⏹ CASH-OUT</strong></div>`;
+        lastPhase = item.phase;
+      }
+      
+      let tempoParaPotencia = item.tempoDefinitivo || 0; 
+      const transEsp = item.transicaoEspecifica || 0;
+      
+      if (transEsp > 0) logDetalhes += `<span class="color-transition">&nbsp;&nbsp;↳ 🚶 Transição: ${transEsp.toFixed(0)}s</span><br/>`;
+      
+      const trabMetConcIsom = item.trabMetabolicoConcIsom || 0;
+      const trabMetWork = item.trabMetabolicoWork || 0;
+      const ergTime = item.ergTime || 0;
+      
+      if (tempoParaPotencia === 0) {
+        if (metabolicoRestanteGlobal > 0 && tempoDisponivel > 0) {
+          tempoParaPotencia = (trabMetConcIsom / metabolicoRestanteGlobal) * tempoDisponivel; 
+        } else if (item.isErgo) {
+          tempoParaPotencia = ergTime;
+        }
+        gastoMetabolicoLiquidoTotal += trabMetWork;
+      }
+      tempoTotalExecucaoEfetiva += tempoParaPotencia;
+
+      const gastoBasalLinha = item.isCalorieErgo ? 0 : (bmrSec * tempoParaPotencia);
+      const totalKcalLinha = (trabMetWork * fatorEPOC) + gastoBasalLinha;
+      
+      let strPot = "", strTmp = "";
+      const trabMechLinha = item.trabMechLinha || 0;
+      const extraLog = item.infoExtraLog || '';
+
+      if (tempoParaPotencia > 0) {
+        strTmp = ` | 🕒 ${tempoParaPotencia.toFixed(0)}s`; 
+        strPot = ` | <strong class="color-time">⚡ ${(trabMechLinha / tempoParaPotencia).toFixed(1)} W</strong>`;
+      }
+      
+      logDetalhes += `• [${item.labelRounds}] ${item.reps}x ${item.nome}${extraLog}: <strong class="color-mech">${trabMechLinha.toFixed(0)} J</strong> | <strong class="color-metabolic">${totalKcalLinha.toFixed(1)} kCal</strong>${strTmp}${strPot}<br/>`;
+    });
+
+    const tempoLiquidoEsp = tAlvoSec - desc - totalTransicaoGlobal;
+    const potEsp = tempoLiquidoEsp > 0 ? (trabalhoMechTotalEsp / tempoLiquidoEsp) : 0;
+    
+    const refTempo = tempoTotalReferencia > 0 ? tempoTotalReferencia : tempoTotalExecucaoEfetiva;
+    const tempoLiquidoReal = refTempo - desc - totalTransicaoGlobal;
+    const potReal = tempoLiquidoReal > 0 ? (trabalhoMechTotalReal / tempoLiquidoReal) : 0;
+    
+    const tempoTotalSessao = tempoTotalReferencia > 0 ? tempoTotalReferencia : (tempoTotalExecucaoEfetiva + totalTransicaoGlobal + desc);
+    const gastoBasalSessao = bmrSec * tempoTotalSessao;
+    const gastoMetabolicoFinal = (gastoMetabolicoLiquidoTotal * fatorEPOC) + gastoBasalSessao;
+
+    setResultado({ 
+      trabalhoReal: trabalhoMechTotalReal || 0, 
+      gastoMetabolico: gastoMetabolicoFinal || 0, 
+      potenciaEsp: potEsp || 0, 
+      potenciaReal: potReal || 0, 
+      logDetalhesHTML: logDetalhes 
+    });
+  };
+
+  // === RENDER: CARREGAMENTO ===
+  if (loadingAuth) return <div style={{textAlign: 'center', marginTop: '50px'}}>Iniciando...</div>;
+
+  // === RENDER: TELA DE LOGIN ===
+  if (!session) {
+    return (
+      <div className="container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '80vh' }}>
+        <div className="panel" style={{ textAlign: 'center', maxWidth: '400px', width: '100%', padding: '40px 20px' }}>
+          <h1 style={{ border: 'none', marginBottom: '10px' }}>
+            <img 
+            src="/dynawod-texto.png"
+            alt="DynaWOD Tipografia" 
+            style={{ height: '48px', objectFit: 'contain' }}
+            />
+          </h1>
+          <p style={{ color: '#aaa', marginBottom: '30px' }}>Seu motor biomecânico. Calcule potência e gasto metabólico real.</p>
+          <button onClick={signInWithGoogle} style={{ backgroundColor: '#fff', color: '#333', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', fontSize: '1rem', padding: '10px', width: '100%', borderRadius: '5px', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>
+            <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/><path fill="none" d="M1 1h22v22H1z"/></svg>
+            Entrar com Conta Google
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // === RENDER: TELA DE ONBOARDING ===
+  if (isNewUser) {
+    return (
+      <div className="container" style={{ maxWidth: '600px' }}>
+        <div className="panel">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+            <h2 style={{ margin: 0 }}>Bem-vindo ao DynaWOD!</h2>
+            <button onClick={signOut} style={{ display: 'flex', alignItems: 'center', gap: '8px', width: 'auto', backgroundColor: '#333', padding: '5px 10px', fontSize: '0.85rem' }}>Sair</button>
+          </div>
+          <p style={{ color: '#aaa' }}>Complete seu perfil biomecânico para calibrarmos o motor para o seu corpo.</p>
+          
+          <div className="form-group" style={{ marginTop: '20px' }}>
+            <label>Seu Nome Completo</label>
+            <input type="text" value={onboardForm.full_name} onChange={e => setOnboardForm({...onboardForm, full_name: e.target.value})} />
+          </div>
+          <div className="form-group">
+            <label>Como quer ser chamado?</label>
+            <input type="text" value={onboardForm.apelido} onChange={e => setOnboardForm({...onboardForm, apelido: e.target.value})} placeholder="Ex: Gui" />
+          </div>
+
+          <div style={{ background: '#222', padding: '15px', borderRadius: '8px', margin: '20px 0' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.1rem', cursor: 'pointer' }}>
+              <input type="checkbox" checked={onboardForm.is_coach} onChange={e => setOnboardForm({...onboardForm, is_coach: e.target.checked})} style={{ width: '20px', height: '20px' }} />
+              <strong>Eu sou um Coach</strong> (Quero prescrever para alunos)
+            </label>
+          </div>
+
+          <div className="grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
+            <div className="form-group"><label>Estatura (m)</label><input type="number" step="0.01" value={onboardForm.estatura} onChange={e => setOnboardForm({...onboardForm, estatura: Number(e.target.value)})} /></div>
+            <div className="form-group"><label>Peso (kg)</label><input type="number" step="0.1" value={onboardForm.peso} onChange={e => setOnboardForm({...onboardForm, peso: Number(e.target.value)})} /></div>
+            <div className="form-group"><label>Sexo Biológico</label><select value={onboardForm.sexo} onChange={e => setOnboardForm({...onboardForm, sexo: e.target.value as 'M'|'F'})}><option value="M">Masculino</option><option value="F">Feminino</option></select></div>
+            <div className="form-group"><label>Nível</label><select value={onboardForm.nivel_tecnico} onChange={e => setOnboardForm({...onboardForm, nivel_tecnico: e.target.value})}><option value="iniciante">Iniciante</option><option value="intermediario">Intermediário</option><option value="avancado">Avançado</option></select></div>
+            <div className="form-group"><label>Envergadura (m)</label><input type="number" step="0.01" value={onboardForm.envergadura} onChange={e => setOnboardForm({...onboardForm, envergadura: Number(e.target.value)})} /></div>
+            <div className="form-group"><label>Alt. Perna (m)</label><input type="number" step="0.01" value={onboardForm.perna} onChange={e => setOnboardForm({...onboardForm, perna: Number(e.target.value)})} /></div>
+            <div className="form-group"><label>% BF</label><input type="number" value={onboardForm.bf} onChange={e => setOnboardForm({...onboardForm, bf: Number(e.target.value)})} /></div>
+          </div>
+
+          <button onClick={saveOnboardingProfile} style={{ marginTop: '20px', width: '100%', fontSize: '1.2rem', padding: '15px' }}>Salvar Perfil e Entrar</button>
+        </div>
+      </div>
+    );
+  }
+
+  // === RENDER: APLICAÇÃO PRINCIPAL ===
+  return (
+    <div className="container" style={{ padding: 0, maxWidth: '1200px', margin: '0 auto' }}> 
+      
+      {/* NOVO CABEÇALHO DYNAWOD */}
+      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 24px', backgroundColor: 'var(--bg-dark, #0a0a0a)', borderBottom: '1px solid var(--line-silver, #26272b)', marginBottom: '24px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          
+          {/* O símbolo da Mitocôndria (que você já tinha) */}
+          <img 
+            src="/favicon.png" 
+            alt="Símbolo DynaWOD" 
+            style={{ height: '40px', objectFit: 'contain' }} 
+          />
+          
+          {/* A escrita oficial em Imagem (Substituindo o texto antigo) */}
+          <img 
+            src="/dynawod-texto.png"
+            alt="DynaWOD Tipografia" 
+            style={{ height: '28px', objectFit: 'contain' }} /* Ajuste o 28px se precisar dela maior ou menor */
+          />
+          
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+          <div style={{ fontSize: '14px', color: 'var(--text-muted, #8a8d94)', fontWeight: 600 }}>
+            Olá, <span style={{ color: '#fff' }}>{userProfile?.is_coach ? <Trophy size={"1.2em"} color="var(--dyna-red)" /> : <Dumbbell size={"1.2em"} color="var(--line-silver)" />} {userProfile?.apelido || userProfile?.full_name}</span>
+          </div>
+          {userProfile?.is_coach && (
+            <select value={selectedAthleteId} onChange={e => handleAthleteChange(e.target.value)} style={{ background: 'var(--bg-card, #181a1e)', border: '1px solid var(--line-silver, #26272b)', color: '#fff', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer' }}>
+              <option value="me">Meu Desempenho</option>
+              <optgroup label="Meus Alunos">{myAthletes.map(a => <option key={a.id} value={a.id}>{a.full_name}</option>)}</optgroup>
+            </select>
+          )}
+          <button onClick={signOut} style={{ width: 'auto', backgroundColor: 'var(--dyna-burgundy, #7A0F1B)', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer', fontWeight: 'bold' }}><LogOut size={"1.2em"} /> Sair</button>
+        </div>
+      </header>
+
+      <div style={{ padding: '0 24px' }}>
+        
+        {/* NAVEGAÇÃO DE ABAS ATUALIZADA */}
+        <div className="tabs">
+          <button className={`tab-btn ${activeTab === 'prescricao' ? 'active' : ''}`} onClick={() => setActiveTab('prescricao')}>1. Lousa</button>
+          <button className={`tab-btn ${activeTab === 'analise' ? 'active' : ''}`} onClick={() => setActiveTab('analise')}>2. Análise</button>
+          <button className={`tab-btn ${activeTab === 'atleta' ? 'active' : ''}`} onClick={() => setActiveTab('atleta')}>3. Atleta</button>
+          <button className={`tab-btn ${activeTab === 'historico' ? 'active' : ''}`} onClick={() => setActiveTab('historico')}>4. Histórico</button>
+        </div>
+
+        {/* ABA 1: LOUSA (Agora contém o Domínio de Tempo) */}
+        {activeTab === 'prescricao' && (
+          <div className="panel">
+            
+            {/* DOMÍNIO DE TEMPO */}
+            <h2>Estrutura do Treino</h2>
+            <div className="grid" style={{ gridTemplateColumns: '1fr 1fr 1fr', marginBottom: '10px', gap: '15px' }}>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label>Modalidade</label>
+                <select value={tipoTreino} onChange={e => setTipoTreino(e.target.value as Modalidade)}>
+                  <option value="FOR_TIME">For Time</option>
+                  <option value="AMRAP">AMRAP</option>
+                  <option value="EMOM">EMOM</option>
+                </select>
+              </div>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label>{tipoTreino === 'FOR_TIME' ? 'Time Cap (mm:ss)' : 'Tempo Total'}</label>
+                <input type="text" value={tempoAlvo} onChange={e => setTempoAlvo(e.target.value)} placeholder="Ex: 10:00" />
+              </div>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label>Rounds Prescritos</label>
+                <input type="number" value={roundsPrescritos} onChange={e => setRoundsPrescritos(Number(e.target.value))} />
+              </div>
+            </div>
+
+            <hr style={{ borderColor: 'var(--line-silver, #26272b)', margin: '25px 0' }} />
+
+            {/* QUADRO DE MOVIMENTOS */}
+            <h2>Quadro de Movimentos</h2>
+            <button className="btn-add" onClick={() => addMovimento()} style={{ backgroundColor: 'transparent', color: 'var(--dyna-red, #FF2B3D)', border: '1px dashed var(--dyna-red, #FF2B3D)', padding: '10px 15px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', width: '100%', marginBottom: '15px' }}>+ Adicionar Exercício</button>
+            
+            <div className="wod-list">
+              {lousa.map((item) => {
+                const cfg = movimentosDB[item.movId] || movimentosDB['pushup'];
+                return (
+                  <div key={item.originalId} className="wod-item">
+                    <div>
+                      <label>Fase</label>
+                      <select value={item.phase} onChange={e => updateMovimento(item.originalId, 'phase', e.target.value)}>
+                        <option value="buyin">Buy-in</option>
+                        <option value="round">WOD</option>
+                        <option value="cashout">Cash-out</option>
+                      </select>
+                      <div style={{ marginTop: '5px' }}>
+                        <select value={item.movId} onChange={e => updateMovimento(item.originalId, 'movId', e.target.value)}>
+                          {Object.entries(movimentosDB).map(([k, v]) => (<option key={k} value={k}>{v.nome}</option>))}
+                        </select>
+                      </div>
+                    </div>
+                    <div><label>Reps/Mts</label><input type="number" value={item.reps} onChange={e => updateMovimento(item.originalId, 'reps', Number(e.target.value))} /></div>
+                    <div>
+                      <label>Carga/Téc.</label>
+                      <div style={{ display: 'flex', gap: '5px' }}>
+                        <input type="number" disabled={!cfg.usaCarga} value={item.carga} onChange={e => updateMovimento(item.originalId, 'carga', Number(e.target.value))} />
+                        <select value={item.tecnica} onChange={e => updateMovimento(item.originalId, 'tecnica', e.target.value)}><option value="tng">T&G</option><option value="drop">Drop</option></select>
+                      </div>
+                    </div>
+                    <div><label>{cfg.paramExtra ? cfg.paramExtra.label : 'Param.'}</label><input type="text" disabled={!cfg.paramExtra} value={item.extraVal} onChange={e => updateMovimento(item.originalId, 'extraVal', e.target.value)} /></div>
+                    <div className="actions-col">
+                      <button className="btn-action" onClick={() => addMovimento(item.originalId)} title="Duplicar">
+                        <Copy size={"1.2em"} color="var(--line-silver)" />
+                      </button>
+                      <button className="btn-remove" onClick={() => removeMovimento(item.originalId)}><X size={"1.2em"} /></button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <hr style={{ borderColor: 'var(--line-silver, #26272b)', margin: '25px 0' }} />
+            
+            <h2>Gerenciar WOD</h2>
+            {currentShortCode && (
+              <p style={{ color: 'var(--text-muted, #8a8d94)', fontSize: '0.9rem', marginBottom: '15px' }}>
+                Código deste treino: <strong style={{ color: '#fff', letterSpacing: '2px' }}>{currentShortCode}</strong>
+              </p>
+            )}
+            
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                
+                {/* Botão Importar */}
+                <button onClick={importarWod} style={{ flex: '1 1 140px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '1rem', backgroundColor: 'var(--bg-card, #181a1e)', color: '#fff', border: '1px solid var(--line-silver, #26272b)' }}>
+                  <Download size={22} style={{ flexShrink: 0 }} /> 
+                  <span>Importar</span> {/* Encurtei um pouco o texto para melhorar o visual no mobile */}
+                </button>
+                
+                {/* Botão Copiar (Compartilhar) */}
+                <button onClick={compartilharWod} style={{ flex: '1 1 140px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '1rem', backgroundColor: 'var(--dyna-burgundy, #7A0F1B)', color: '#fff', border: 'none', fontWeight: '600' }}>
+                  <Share2 size={22} style={{ flexShrink: 0 }} /> 
+                  <span>Copiar</span>
+                </button>
+
+                {/* NOVO: Botão Duplicar (Só aparece se já existir um WOD carregado) */}
+                {currentTemplateId && (
+                  <button onClick={clonarWod} style={{ flex: '1 1 140px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '1rem', backgroundColor: '#3b82f6', color: '#fff', border: 'none', fontWeight: 'bold' }}>
+                    <Copy size={22} style={{ flexShrink: 0 }} /> 
+                    <span>Duplicar</span>
+                  </button>
+                )}
+                
+                {/* Botão Salvar / Atualizar */}
+                <button onClick={() => salvarNoSupabase(false)} style={{ flex: '1 1 140px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '1rem', backgroundColor: 'var(--dyna-red, #FF2B3D)', color: '#fff', border: 'none', fontWeight: 'bold' }}>
+                  <Save size={22} style={{ flexShrink: 0 }} /> 
+                  <span>{currentTemplateId ? 'Atualizar WOD' : 'Salvar WOD'}</span>
+                </button>
+                
+              </div>
+          </div>
+        )}
+
+        {/* ABA 2: ANÁLISE (Agora com o Score de destaque no topo) */}
+        {activeTab === 'analise' && (
+          <div className="panel">
+            
+            {/* NOVO BLOCO DE SCORE */}
+            <div style={{ backgroundColor: 'var(--bg-card, #181a1e)', padding: '20px', borderRadius: '8px', borderLeft: '4px solid var(--dyna-red, #FF2B3D)', marginBottom: '25px' }}>
+              <h2 style={{ margin: '0 0 10px 0', fontSize: '1.2rem' }}>Score (Resultado Real)</h2>
+              <p style={{ margin: '0 0 15px 0', fontSize: '0.85rem', color: 'var(--text-muted, #8a8d94)' }}>Insira o resultado alcançado para calcular a potência gerada.</p>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label>{tipoTreino === 'FOR_TIME' ? 'Tempo Real Efetivado (mm:ss)' : 'Rounds Reais Completados'}</label>
+                {tipoTreino === 'FOR_TIME' ? (
+                  <input type="text" value={tempoReal} onChange={e => setTempoReal(e.target.value)} placeholder="Ex: 12:30" style={{ maxWidth: '250px', fontSize: '1.1rem' }} />
+                ) : (
+                  <input type="number" step="0.1" value={roundsReal} onChange={e => setRoundsReal(Number(e.target.value))} style={{ maxWidth: '250px', fontSize: '1.1rem' }} />
+                )}
+              </div>
+              <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <input 
+                  type="checkbox" 
+                  id="checkbox-scaled"
+                  checked={isScaled}
+                  onChange={(e) => setIsScaled(e.target.checked)}
+                  style={{ width: '18px', height: '18px' }}
+                />
+                <label htmlFor="checkbox-scaled" style={{ color: '#fff', fontSize: '14px' }}>
+                  Marcar como Scaled (Treino Adaptado)
+                </label>
+              </div>
+            </div>
+
+            <h2>Timeline Expandida</h2>
+            <div className="wod-list">
+              {(() => {
+                let rTimeline = (tipoTreino === 'FOR_TIME') ? roundsPrescritos : Math.ceil(roundsReal);
+                if (rTimeline < 1) rTimeline = 1;
+                const rows: any[] = [];
+                const renderRow = (m: ItemLousa, badgeClass: string, badgeText: string, rIdx: number) => {
+                  const rowId = `${m.originalId}-R${rIdx}`;
+                  const cfg = movimentosDB[m.movId];
+                  const st = timelineState[rowId] || { reps: m.reps, start: '', end: '' };
+                  
+                  // 🚨 CORREÇÃO: Voltando com o rows.push para empurrar o HTML para a tela
+                  rows.push(
+                    <div key={rowId} className="wod-item-analise">
+                      <div className={`badge-round ${badgeClass}`}>{badgeText}</div>
+                      <div>
+                        <div style={{ fontWeight: 'bold' }}>{cfg ? cfg.nome : m.movId}</div>
+                        <div style={{ fontSize: '0.75rem', color: '#aaa' }}>
+                          RX: {m.carga > 0 ? `${m.carga}kg` : '--'} {m.extraVal ? `| ${m.extraVal}` : ''}
+                        </div>
+                      </div>
+                      <div><label>Reps</label><input type="number" value={st.reps !== undefined ? st.reps : m.reps} onChange={e => handleTimelineChange(rowId, 'reps', Number(e.target.value))} /></div>
+                      
+                      {/* CAMPO: CARGA REAL */}
+                      <div>
+                        <label>Carga Real</label>
+                        <input 
+                          type="number" 
+                          value={st.carga !== undefined ? st.carga : m.carga} 
+                          onChange={e => handleTimelineChange(rowId, 'carga', Number(e.target.value))}
+                          disabled={!(cfg?.usaCarga)}
+                          style={{ border: isScaled && (st.carga !== undefined ? st.carga : m.carga) < m.carga ? '1px solid var(--dyna-red, #FF2B3D)' : '' }}
+                        />
+                      </div>
+
+                      <div><label>Início</label><input type="text" placeholder="mm:ss" value={st.start || ''} onChange={e => handleTimelineChange(rowId, 'start', e.target.value)} /></div>
+                      <div><label>Fim</label><input type="text" placeholder="mm:ss" value={st.end || ''} onChange={e => handleTimelineChange(rowId, 'end', e.target.value)} /></div>
+                    </div>
+                  );
+                };
+                lousa.filter(m => m.phase === 'buyin').forEach(m => renderRow(m, 'badge-buyin', 'Buy-in', 0));
+                for (let r = 1; r <= rTimeline; r++) lousa.filter(m => m.phase === 'round').forEach(m => renderRow(m, '', `R ${r}`, r));
+                lousa.filter(m => m.phase === 'cashout').forEach(m => renderRow(m, 'badge-cashout', 'Cash-out', 99));
+                return rows;
+              })()}
+            </div>
+
+            <button onClick={processarWOD} style={{ fontSize: '1.1rem', padding: '15px', backgroundColor: 'var(--dyna-red, #FF2B3D)', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', width: '100%', cursor: 'pointer', marginBottom: '20px', marginTop: '10px' }}>
+              ⚡ Processar Dinâmica e Termodinâmica
+            </button>
+
+            {resultado && (
+              <div className="results">
+                <h2>Painel de Resultado Biomecânico</h2>
+                <div className="grid" style={{ marginBottom: 0 }}>
+                  <div style={{ margin: '15px 0' }}><div className="result-value color-mech">{resultado.trabalhoReal.toFixed(0)} J</div><div>Trabalho Mecânico</div></div>
+                  <div style={{ margin: '15px 0' }}><div className="result-value color-metabolic">{resultado.gastoMetabolico.toFixed(0)} kCal</div><div>Gasto Termodinâmico (+ EPOC)</div></div>
+                  <div style={{ margin: '15px 0' }}><div className="result-value" style={{ color: '#aaa' }}>{resultado.potenciaEsp > 0 ? resultado.potenciaEsp.toFixed(1) + ' W' : '-- W'}</div><div>Potência Esperada</div></div>
+                  <div style={{ margin: '15px 0' }}><div className="result-value" style={{ color: '#4caf50' }}>{resultado.potenciaReal > 0 ? resultado.potenciaReal.toFixed(1) + ' W' : '-- W'}</div><div>Potência Real Executada</div></div>
+                </div>
+                <div className="result-detail" dangerouslySetInnerHTML={{ __html: resultado.logDetalhesHTML }} />
+              </div>
+            )}
+            <button 
+              onClick={gerarCardInstagram} 
+              style={{ 
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', 
+                fontSize: '1rem', backgroundColor: '#8a33e2', /* Cor chamativa tipo roxo do Instagram */
+                color: '#fff', border: 'none', fontWeight: 'bold', 
+                padding: '12px 20px', borderRadius: '8px', width: '100%', marginTop: '20px'
+              }}
+            >
+              📸 Compartilhar no Instagram
+            </button>
+          </div>
+        )}
+
+        {/* ABA 3: ATLETA (Nova aba dedicada) */}
+        {activeTab === 'atleta' && (
+          <div className="panel">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+              <h2 style={{ margin: 0 }}>Perfil do Atleta</h2>
+              {selectedAthleteId !== 'me' && <span style={{ background: '#ff9800', color: '#000', padding: '2px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold' }}>Visualizando Aluno</span>}
+            </div>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted, #8a8d94)', marginBottom: '20px' }}>
+              Os dados base são carregados automaticamente do perfil selecionado. Você pode ajustá-los pontualmente para este cálculo sem afetar o cadastro oficial.
+            </p>
+            
+            <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', marginBottom: '15px' }}>
+              <div className="form-group"><label>Estatura (m)</label><input type="number" step="0.01" value={atleta.estatura} onChange={e => setAtleta({ ...atleta, estatura: Number(e.target.value) })} /></div>
+              <div className="form-group"><label>Massa (kg)</label><input type="number" step="0.1" value={atleta.peso} onChange={e => setAtleta({ ...atleta, peso: Number(e.target.value) })} /></div>
+            </div>
+            <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', marginBottom: '15px' }}>
+              <div className="form-group"><label>Sexo Biológico</label><select value={atleta.sexo} onChange={e => setAtleta({ ...atleta, sexo: e.target.value as 'M' | 'F' })}><option value="M">Masculino</option><option value="F">Feminino</option></select></div>
+              <div className="form-group"><label>Nível Técnico</label><select value={atleta.nivelTecnico} onChange={e => setAtleta({ ...atleta, nivelTecnico: e.target.value as any })}><option value="iniciante">Iniciante</option><option value="intermediario">Intermediário</option><option value="avancado">Avançado</option></select></div>
+            </div>
+            <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', marginBottom: '15px' }}>
+              <div className="form-group"><label>Envergadura (m)</label><input type="number" step="0.01" value={atleta.envergadura} onChange={e => setAtleta({ ...atleta, envergadura: Number(e.target.value) })} /></div>
+              <div className="form-group"><label>Alt. Perna (m)</label><input type="number" step="0.01" value={atleta.perna} onChange={e => setAtleta({ ...atleta, perna: Number(e.target.value) })} /></div>
+            </div>
+            <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', marginBottom: 0 }}>
+              <div className="form-group"><label>% Gordura Corporal (BF)</label><input type="number" step="0.1" value={atleta.bf} onChange={e => setAtleta({ ...atleta, bf: Number(e.target.value) })} /></div>
+              <div className="form-group"><label>Transição Global Estimada (seg)</label><input type="number" value={tempoDescanso} onChange={e => setTempoDescanso(Number(e.target.value))} /></div>
+            </div>
+          </div>
+        )}
+
+        {/* ABA 4: HISTÓRICO */}
+        {activeTab === 'historico' && (
+          <div className="panel">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h2>Histórico de Desempenho {selectedAthleteId !== 'me' ? '(Aluno)' : ''}</h2>
+              {selectedAthleteId === 'me' && !userProfile?.is_coach && (
+                <div style={{ display: 'flex', gap: '5px' }}>
+                  <input type="text" placeholder="ID do seu Coach..." value={coachIdInput} onChange={e => setCoachIdInput(e.target.value)} style={{ padding: '8px' }} />
+                  <button onClick={linkToCoach} style={{ width: 'auto', padding: '8px 15px', backgroundColor: '#388e3c' }}>Vincular</button>
+                </div>
+              )}
+            </div>
+
+            {selectedAthleteId === 'me' && (
+              <div style={{ marginBottom: '20px', padding: '10px', background: 'var(--bg-card, #181a1e)', border: '1px dashed var(--line-silver, #26272b)', borderRadius: '4px', fontSize: '0.9rem' }}>
+                <strong>Seu ID de Atleta (Passe para o seu Coach):</strong> <span style={{ color: '#4caf50', userSelect: 'all' }}>{session.user.id}</span>
+              </div>
+            )}
+            
+            {savedWods.length > 0 ? (
+              <>
+                <div style={{ width: '100%', height: 300, marginBottom: '40px', backgroundColor: 'var(--bg-card, #181a1e)', padding: '20px', borderRadius: '8px' }}>
+                  <ResponsiveContainer>
+                    <LineChart data={[...savedWods].reverse()} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#444" />
+                      <XAxis dataKey="created_at" tickFormatter={(tick) => new Date(tick as string).toLocaleDateString('pt-BR')} stroke="#aaa" />
+                      <YAxis yAxisId="left" stroke="#4caf50" />
+                      <YAxis yAxisId="right" orientation="right" stroke="#ff9800" />
+                      <Tooltip labelFormatter={(label) => new Date(label as string).toLocaleDateString('pt-BR')} contentStyle={{ backgroundColor: '#1e1e1e', border: 'none' }} />
+                      <Legend />
+                      <Line yAxisId="left" type="monotone" dataKey="score_watts" name="Potência (Watts)" stroke="#4caf50" strokeWidth={3} activeDot={{ r: 8 }} />
+                      <Line yAxisId="right" type="monotone" dataKey="score_kcal" name="Gasto (kCal)" stroke="#ff9800" strokeWidth={3} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+
+                <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '15px' }}>
+                  {savedWods.map(w => (
+                    <div key={w.id} style={{ background: 'var(--bg-card, #181a1e)', padding: '20px', borderRadius: '8px', borderLeft: '4px solid var(--dyna-burgundy, #7A0F1B)' }}>
+                      <h3 style={{ margin: '0 0 10px 0', fontSize: '1.2rem' }}>{w.title}</h3>
+                      <div style={{ fontSize: '0.9rem', color: 'var(--text-muted, #8a8d94)', marginBottom: '15px' }}>
+                        <strong>Data:</strong> {new Date(w.created_at || '').toLocaleDateString('pt-BR')}<br />
+                        <strong>Resultado:</strong> {(w as any).score_watts?.toFixed(1) || '--'} W | {(w as any).score_kcal?.toFixed(0) || '--'} kCal
+                      </div>
+                      <button onClick={() => carregarDoSupabase(w)} style={{ width: '100%', padding: '10px', backgroundColor: 'var(--line-silver, #26272b)', color: '#fff', border: '1px solid #444', borderRadius: '4px', cursor: 'pointer' }}>Carregar Treino</button>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <p style={{ color: 'var(--text-muted, #8a8d94)', textAlign: 'center', padding: '20px' }}>Nenhum treino salvo para este atleta.</p>
+            )}
+          </div>
+        )}
+      
+      </div> 
+      {/* FECHAMENTO DA DIV DE PADDING */}
+
+      {/* ========================================== */}
+      {/* 📸 MOLDE DO CARD DO INSTAGRAM (ESCONDIDO)  */}
+      {/* ========================================== */}
+      <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
+        <div 
+          id="instagram-card-export" 
+          style={{
+            width: '420px', // Aumentado um pouco para acomodar os gráficos sem cortar
+            backgroundColor: '#111315',
+            color: '#fff',
+            fontFamily: 'sans-serif',
+            padding: '40px 20px',
+            boxSizing: 'border-box',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '20px',
+            backgroundImage: 'linear-gradient(to bottom, #111315, #1a1a1a)'
+          }}
+        >
+          {/* 1. Cabeçalho (Logo) */}
+          <div style={{ textAlign: 'center' }}>
+            <h1 style={{ margin: 0, fontSize: '32px', fontStyle: 'italic', fontWeight: '900', letterSpacing: '1px' }}>DynaWOD</h1>
+            <p style={{ margin: '5px 0 0 0', color: '#8a8d94', fontSize: '13px', fontWeight: 'bold' }}>V2 - RESUMO DE TREINO</p>
+            <p style={{ margin: '2px 0 0 0', color: '#8a8d94', fontSize: '12px' }}>Data: {new Date().toLocaleDateString('pt-BR')}</p>
+          </div>
+
+          {/* 2. Bloco de Prescrição (O Template) */}
+          <div style={{ border: '2px solid #26272b', borderRadius: '12px', padding: '20px', backgroundColor: '#181a1e' }}>
+            <h2 style={{ margin: '0 0 12px 0', fontSize: '20px', display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+              Prescription <span style={{ fontSize: '11px', color: '#8a8d94', fontWeight: 'normal' }}>(PLANTA BAIXA DO WOD)</span>
+            </h2>
+            <div style={{ color: '#d1d5db', fontSize: '16px', lineHeight: '1.6' }}>
+              
+              {/* CORREÇÃO DO FOR_TIME */}
+              <strong style={{ color: '#fff', fontSize: '18px' }}>TREINO {tipoTreino.replace('_', ' ')}</strong><br />
+              
+              TIME CAP: <span style={{ color: '#fff' }}>{tempoAlvo || 'N/A'}</span> • RNDS: <span style={{ color: '#fff' }}>{roundsPrescritos || 'N/A'}</span><br />
+              <span style={{ color: '#8a8d94', fontSize: '14px' }}>Movimentos Cadastrados: {lousa.length}</span>
+            </div>
+          </div>
+
+          {/* 3. Bloco de Resultado (A Execução) */}
+          <div style={{ border: '2px solid var(--dyna-red, #FF2B3D)', borderRadius: '12px', padding: '25px 15px', backgroundColor: '#181a1e', boxShadow: '0 0 25px rgba(255, 43, 61, 0.15)', position: 'relative', marginTop: '10px' }}>
+            
+            <h2 style={{ margin: 0, fontSize: '24px', position: 'absolute', top: '-15px', backgroundColor: '#181a1e', padding: '0 10px', color: 'var(--dyna-red, #FF2B3D)' }}>
+              Resultado
+            </h2>
+            
+            <div style={{ textAlign: 'center', marginBottom: '25px', marginTop: '15px' }}>
+              <span style={{ fontSize: '16px', color: '#8a8d94', fontWeight: 'bold' }}>TEMPO TOTAL:</span>
+              <div style={{ fontSize: '54px', fontWeight: '900', margin: '5px 0', textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>
+                {tempoReal || '00:00'}
+              </div>
+              
+              {/* Etiqueta RX ou Scaled */}
+              {isScaled ? (
+                <span style={{ backgroundColor: '#FF2B3D', color: '#fff', padding: '6px 16px', borderRadius: '20px', fontSize: '16px', fontWeight: '900', letterSpacing: '1px' }}>STATUS: SCALED</span>
+              ) : (
+                <span style={{ backgroundColor: '#22c55e', color: '#fff', padding: '6px 16px', borderRadius: '20px', fontSize: '16px', fontWeight: '900', letterSpacing: '1px' }}>STATUS: RX</span>
+              )}
+            </div>
+
+            {/* Sub-cards de Física e Metabolismo com Gráficos SVG ("Reloginhos") */}
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'space-between' }}>
+              
+              {/* CARD DE POTÊNCIA */}
+              <div style={{ flex: 1, backgroundColor: '#111315', padding: '15px 5px', borderRadius: '10px', textAlign: 'center', border: '1px solid #26272b' }}>
+                <div style={{ fontSize: '11px', color: '#8a8d94', marginBottom: '10px', fontWeight: 'bold' }}>POTÊNCIA MÉDIA</div>
+                
+                {/* SVG: Velocímetro (Speedometer) */}
+                <svg width="70" height="35" viewBox="0 0 100 50" style={{ marginBottom: '8px' }}>
+                  <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="#26272b" strokeWidth="10" />
+                  <path d="M 10 50 A 40 40 0 0 1 70 20" fill="none" stroke="#FF2B3D" strokeWidth="10" strokeLinecap="round" />
+                  <line x1="50" y1="50" x2="65" y2="25" stroke="#fff" strokeWidth="3" strokeLinecap="round" />
+                  <circle cx="50" cy="50" r="4" fill="#fff" />
+                </svg>
+
+                {/* CORREÇÃO: Arredondamento da Potência */}
+                <div style={{ fontSize: '22px', fontWeight: '900' }}>
+                  {resultado ? resultado.potenciaReal.toFixed(0) : 0} <span style={{ fontSize: '12px', fontWeight: 'normal', color: '#8a8d94' }}>W</span>
+                </div>
+              </div>
+              
+              {/* CARD DE GASTO ENERGÉTICO */}
+              <div style={{ flex: 1, backgroundColor: '#111315', padding: '15px 5px', borderRadius: '10px', textAlign: 'center', border: '1px solid #26272b' }}>
+                <div style={{ fontSize: '11px', color: '#8a8d94', marginBottom: '10px', fontWeight: 'bold' }}>GASTO ENERGÉTICO</div>
+                
+                {/* SVG: Medidor de Calorias (Chama) */}
+                <svg width="70" height="35" viewBox="0 0 100 50" style={{ marginBottom: '8px' }}>
+                  <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="#26272b" strokeWidth="10" />
+                  <path d="M 10 50 A 40 40 0 0 1 85 30" fill="none" stroke="#ff9800" strokeWidth="10" strokeLinecap="round" />
+                  <path d="M 50 45 Q 40 45 45 30 Q 50 20 50 15 Q 50 25 55 30 Q 60 45 50 45" fill="#ff9800" />
+                </svg>
+
+                {/* CORREÇÃO: Arredondamento do Metabolismo */}
+                <div style={{ fontSize: '22px', fontWeight: '900' }}>
+                  {resultado ? resultado.gastoMetabolico.toFixed(0) : 0} <span style={{ fontSize: '12px', fontWeight: 'normal', color: '#8a8d94' }}>kcal</span>
+                </div>
+              </div>
+
+            </div>
+          </div>
+          
+          {/* Rodapé */}
+          <div style={{ textAlign: 'center', color: '#52525b', fontSize: '12px', marginTop: '10px' }}>
+            Gerado pelo aplicativo DynaWOD - dynawod.com
+          </div>
+        </div>
+      </div>
+      
+    </div>
+  );
+}
+--- FIM DO ARQUIVO: src\App.tsx ---
+
+========================================
+
+--- INÍCIO DO ARQUIVO: src\data\movements.ts ---
+import type { MovimentoConfig } from '../types';
+
+export const movimentosDB: Record<string, MovimentoConfig> = {
+  'pushup': { nome: 'Push-ups', grupo: 'Empurrada BW', categoria: 'alavanca_parcial', usaCarga: false },
+  'ring_dip_strict': { nome: 'Strict Ring Dip', grupo: 'Empurrada BW', categoria: 'vertical_bw', usaCarga: false },
+  'ring_dip_kipping': { nome: 'Kipping Ring Dip', grupo: 'Empurrada BW', categoria: 'vertical_bw', usaCarga: false },
+  'bar_dip_strict': { nome: 'Strict Bar Dip', grupo: 'Empurrada BW', categoria: 'vertical_bw', usaCarga: false },
+  'bar_dip_kipping': { nome: 'Kipping Bar Dip', grupo: 'Empurrada BW', categoria: 'vertical_bw', usaCarga: false },
+  'hspu_strict': { nome: 'Strict HSPU', grupo: 'Empurrada BW', categoria: 'vertical_bw', usaCarga: false },
+  'hspu_kipping': { nome: 'Kipping HSPU', grupo: 'Empurrada BW', categoria: 'vertical_bw', usaCarga: false },
+  'wf_hspu': { nome: 'Wall-Facing HSPU', grupo: 'Ginástica de Elite', categoria: 'wf_hspu', usaCarga: false },
+  'free_hspu': { nome: 'Freestanding HSPU', grupo: 'Ginástica de Elite', categoria: 'free_hspu', usaCarga: false },
+  'deficit_hspu_strict': { nome: 'Strict Deficit HSPU', grupo: 'Empurrada BW', categoria: 'vertical_bw', usaCarga: false },
+  'deficit_hspu_kipping': { nome: 'Kipping Deficit HSPU', grupo: 'Empurrada BW', categoria: 'vertical_bw', usaCarga: false },
+  'handstand_walk': { nome: 'Handstand Walk', grupo: 'Empurrada BW', categoria: 'hs_walk', usaCarga: false, paramExtra: { label: 'Trecho (m)', val: '10', type: 'number' } },
+  'hs_stairs_up': { nome: 'HS Stairs Ascent', grupo: 'Empurrada BW', categoria: 'hs_incline_up', usaCarga: false, paramExtra: { label: 'Trecho;Alt (m)', val: '5;1', type: 'text' } },
+  'hs_stairs_down': { nome: 'HS Stairs Descent', grupo: 'Empurrada BW', categoria: 'hs_incline_down', usaCarga: false, paramExtra: { label: 'Trecho;Alt (m)', val: '5;1', type: 'text' } },
+  'hs_ramp_up': { nome: 'HS Ramp Ascent', grupo: 'Empurrada BW', categoria: 'hs_incline_up', usaCarga: false, paramExtra: { label: 'Trecho;Alt (m)', val: '5;1', type: 'text' } },
+  'hs_ramp_down': { nome: 'HS Ramp Descent', grupo: 'Empurrada BW', categoria: 'hs_incline_down', usaCarga: false, paramExtra: { label: 'Trecho;Alt (m)', val: '5;1', type: 'text' } },
+  'wall_walk': { nome: 'Wall Walk', grupo: 'Empurrada BW', categoria: 'wall_walk', usaCarga: false },
+  
+  'bench_press': { nome: 'Bench Press', grupo: 'Empurrada Carga', categoria: 'bench_press', usaCarga: true },
+  'push_press': { nome: 'Push Press', grupo: 'Empurrada Carga', categoria: 'lpo_jerk', usaCarga: true },
+  'db_strict_press': { nome: 'Dumbbell Strict Press', grupo: 'LPO Assimétrico', categoria: 'db_press', usaCarga: true },
+  
+  'ring_row': { nome: 'Ring Row', grupo: 'Puxada BW', categoria: 'alavanca_parcial', usaCarga: false },
+  'bulgarian_row_floor': { nome: 'Bulgarian Row (Chão)', grupo: 'Puxada BW', categoria: 'alavanca_parcial', usaCarga: false },
+  'bulgarian_row_susp': { nome: 'Bulgarian Row (Suspensão)', grupo: 'Puxada BW', categoria: 'alavanca_horizontal', usaCarga: false },
+  'pullup_strict': { nome: 'Strict Pull-up', grupo: 'Puxada BW', categoria: 'vertical_bw', usaCarga: false },
+  'pullup_kipping': { nome: 'Kipping Pull-up', grupo: 'Puxada BW', categoria: 'vertical_bw', usaCarga: false },
+  'pullup_butterfly': { nome: 'Butterfly Pull-up', grupo: 'Puxada BW', categoria: 'vertical_bw', usaCarga: false },
+  'c2b_strict': { nome: 'Strict Chest-to-bar', grupo: 'Puxada BW', categoria: 'vertical_bw', usaCarga: false },
+  'c2b_kipping': { nome: 'Kipping Chest-to-bar', grupo: 'Puxada BW', categoria: 'vertical_bw', usaCarga: false },
+  'c2b_butterfly': { nome: 'Butterfly Chest-to-bar', grupo: 'Puxada BW', categoria: 'vertical_bw', usaCarga: false },
+  'bar_pullover': { nome: 'Bar Pullover', grupo: 'Ginástica de Elite', categoria: 'pullover', usaCarga: false },
+  'rope_climb': { nome: 'Rope Climb', grupo: 'Ginástica Vertical', categoria: 'rope_climb', usaCarga: false, paramExtra: { label: 'Altura (m)', val: '4.5', type: 'number' } },
+  'rope_climb_legless': { nome: 'Legless Rope Climb', grupo: 'Ginástica Vertical', categoria: 'rope_climb', usaCarga: false, paramExtra: { label: 'Altura (m)', val: '4.5', type: 'number' } },
+  'rope_ascend_floor': { nome: 'Rope Ascend (Do chão)', grupo: 'Ginástica Vertical', categoria: 'rope_ascend_floor', usaCarga: false },
+  'pegboard': { nome: 'Pegboard Ascent', grupo: 'Ginástica Vertical', categoria: 'pegboard', usaCarga: false, paramExtra: { label: 'Altura (m)', val: '3.0', type: 'number' } },
+  'strict_bmu': { nome: 'Strict BMU', grupo: 'Ginástica Avançada', categoria: 'vertical_bw_total', usaCarga: false },
+  'bar_muscle_up': { nome: 'BMU (Kipping)', grupo: 'Ginástica Avançada', categoria: 'vertical_bw_total', usaCarga: false },
+  'strict_rmu': { nome: 'Strict RMU', grupo: 'Ginástica Avançada', categoria: 'vertical_bw_total', usaCarga: false },
+  'ring_muscle_up': { nome: 'RMU (Kipping)', grupo: 'Ginástica Avançada', categoria: 'vertical_bw_total', usaCarga: false },
+  
+  'air_squat': { nome: 'Air Squat', grupo: 'Agachamento BW', categoria: 'squat_bw', usaCarga: false },
+  'pistol_squat': { nome: 'Pistol Squat (Alt)', grupo: 'Agachamento BW', categoria: 'squat_bw', usaCarga: false },
+  'box_step_up': { nome: 'Box Step-up', grupo: 'Agachamento BW', categoria: 'box_step_up', usaCarga: false, paramExtra: { label: 'Caixa(m) 0=Auto', val: '0', type: 'number' } },
+  'high_box_step_up': { nome: 'High Box Step-up', grupo: 'Agachamento BW', categoria: 'box_step_up', usaCarga: false, isHighBox: true, paramExtra: { label: 'Caixa(m) 0=Auto', val: '0', type: 'number' } },
+  'box_jump': { nome: 'Box Jump', grupo: 'Agachamento BW', categoria: 'box_jump', usaCarga: false, paramExtra: { label: 'Caixa(m) 0=Auto', val: '0', type: 'number' } },
+  'high_box_jump': { nome: 'High Box Jump', grupo: 'Agachamento BW', categoria: 'box_jump', usaCarga: false, isHighBox: true, paramExtra: { label: 'Caixa(m) 0=Auto', val: '0', type: 'number' } },
+  'box_jump_over': { nome: 'Box Jump Over', grupo: 'Agachamento BW', categoria: 'box_jump_over', usaCarga: false, paramExtra: { label: 'Caixa(m) 0=Auto', val: '0', type: 'number' } },
+  'high_box_jump_over': { nome: 'High Box Jump Over', grupo: 'Agachamento BW', categoria: 'box_jump_over', usaCarga: false, isHighBox: true, paramExtra: { label: 'Caixa(m) 0=Auto', val: '0', type: 'number' } },
+  
+  'front_squat': { nome: 'Front Squat', grupo: 'Agachamento Carga', categoria: 'squat_carga', usaCarga: true },
+  'back_squat': { nome: 'Back Squat', grupo: 'Agachamento Carga', categoria: 'squat_carga', usaCarga: true },
+  'overhead_squat': { nome: 'Overhead Squat', grupo: 'Agachamento Carga', categoria: 'squat_carga', usaCarga: true },
+  
+  'walking_lunge': { nome: 'Walking Lunge', grupo: 'Lunges', categoria: 'lunge_bw', usaCarga: false },
+  'lunge_suitcase': { nome: 'Lunge (Suitcase)', grupo: 'Lunges', categoria: 'lunge_carga', usaCarga: true },
+  'lunge_front_rack': { nome: 'Lunge (Front Rack)', grupo: 'Lunges', categoria: 'lunge_carga', usaCarga: true },
+  'lunge_overhead': { nome: 'Lunge (Overhead)', grupo: 'Lunges', categoria: 'lunge_carga', usaCarga: true },
+  
+  'deadlift': { nome: 'Deadlift', grupo: 'LPO / Força', categoria: 'deadlift', usaCarga: true },
+  'clean': { nome: 'Squat Clean', grupo: 'LPO / Força', categoria: 'lpo_floor_squat', usaCarga: true, fatorH: 0.85 },
+  'clean_power': { nome: 'Power Clean', grupo: 'LPO / Força', categoria: 'lpo_floor_power', usaCarga: true, fatorH: 0.85 },
+  'clean_hang_squat': { nome: 'Hang Squat Clean', grupo: 'LPO / Força', categoria: 'lpo_hang_squat', usaCarga: true, fatorH: 0.60 },
+  'clean_hang_power': { nome: 'Hang Power Clean', grupo: 'LPO / Força', categoria: 'lpo_hang_power', usaCarga: true, fatorH: 0.60 },
+  'clean_jerk': { nome: 'Clean & Jerk', grupo: 'LPO / Força', categoria: 'lpo_cj', usaCarga: true },
+  'hang_clean_jerk': { nome: 'Hang Clean & Jerk', grupo: 'LPO / Força', categoria: 'lpo_hang_cj', usaCarga: true },
+  'snatch': { nome: 'Squat Snatch', grupo: 'LPO / Força', categoria: 'lpo_floor_squat', usaCarga: true, fatorH: 1.00 },
+  'snatch_power': { nome: 'Power Snatch', grupo: 'LPO / Força', categoria: 'lpo_floor_power', usaCarga: true, fatorH: 1.00 },
+  'snatch_hang_squat': { nome: 'Hang Squat Snatch', grupo: 'LPO / Força', categoria: 'lpo_hang_squat', usaCarga: true, fatorH: 0.75 },
+  'snatch_hang_power': { nome: 'Hang Power Snatch', grupo: 'LPO / Força', categoria: 'lpo_hang_power', usaCarga: true, fatorH: 0.75 },
+  'push_jerk': { nome: 'Push/Split Jerk', grupo: 'LPO / Força', categoria: 'lpo_jerk', usaCarga: true },
+  
+  'db_snatch': { nome: 'Dumbbell Snatch (Alt)', grupo: 'Cargas Irregulares', categoria: 'lpo_floor_power', usaCarga: true, fatorH: 1.00 },
+  'db_clean': { nome: 'Dumbbell Clean', grupo: 'Cargas Irregulares', categoria: 'lpo_floor_power', usaCarga: true, fatorH: 0.85 },
+  'db_hang_clean': { nome: 'Dumbbell Hang Clean', grupo: 'Cargas Irregulares', categoria: 'lpo_hang_power', usaCarga: true, fatorH: 0.60 },
+  'db_jerk': { nome: 'Dumbbell Push Jerk', grupo: 'Cargas Irregulares', categoria: 'lpo_jerk', usaCarga: true },
+  'db_clean_jerk': { nome: 'DB Clean & Jerk', grupo: 'Cargas Irregulares', categoria: 'db_cj', usaCarga: true },
+  'db_hang_clean_jerk': { nome: 'DB Hang Clean & Jerk', grupo: 'Cargas Irregulares', categoria: 'db_hang_cj', usaCarga: true },
+  'sandbag_clean': { nome: 'Sandbag Clean (Ombro)', grupo: 'LPO Assimétrico', categoria: 'sandbag_clean', usaCarga: true },
+  'dball_over_shoulder': { nome: 'D-Ball / Sandbag Over Shoulder', grupo: 'Hyrox / Strongman', categoria: 'dball_shoulder', usaCarga: true, paramExtra: { label: 'Diâmetro(m)', val: '0.35', type: 'number'} },
+  
+  'turkish_get_up': { nome: 'TGU', grupo: 'Híbridos Complexos', categoria: 'tgu', usaCarga: true },
+  'thruster': { nome: 'Thruster', grupo: 'Híbridos Complexos', categoria: 'lpo_floor_squat', usaCarga: true, fatorH: 1.00 },
+  'wall_ball': { nome: 'Wall Ball', grupo: 'Híbridos Complexos', categoria: 'wall_ball', usaCarga: true, paramExtra: { label: 'Alvo (m)', val: '3.0', type: 'number' } }, 
+  'devil_press': { nome: 'Devil Press', grupo: 'Híbridos Complexos', categoria: 'devil_press', usaCarga: true },
+  
+  'burpee': { nome: 'Burpee Tradicional', grupo: 'Burpees', categoria: 'vertical_hibrido', usaCarga: false },
+  'burpee_line': { nome: 'Burpee Over Line', grupo: 'Burpees', categoria: 'vertical_hibrido_extra', usaCarga: false },
+  'burpee_broad_jump': { nome: 'Burpee Broad Jump', grupo: 'Burpees', categoria: 'burpee_broad_jump', usaCarga: false, paramExtra: { label: 'Dist (m)', val: '1.5', type: 'number' } },
+  'burpee_over_db': { nome: 'Burpee Over DB', grupo: 'Burpees', categoria: 'burpee_over_obj', usaCarga: false, paramExtra: { label: 'Alt DB(m)', val: '0.20', type: 'number' } },
+  'burpee_over_kb': { nome: 'Burpee Over KB', grupo: 'Burpees', categoria: 'burpee_over_obj', usaCarga: false, paramExtra: { label: 'Alt KB(m)', val: '0.30', type: 'number' } },
+  'burpee_box_jump': { nome: 'Burpee Box Jump', grupo: 'Burpees', categoria: 'burpee_box_jump', usaCarga: false, paramExtra: { label: 'Caixa(m) 0=Auto', val: '0', type: 'number' } },
+  'burpee_high_box_jump': { nome: 'Burpee High Box Jump', grupo: 'Burpees', categoria: 'burpee_box_jump', usaCarga: false, isHighBox: true, paramExtra: { label: 'Caixa(m) 0=Auto', val: '0', type: 'number' } },
+  'burpee_box_jump_over': { nome: 'Burpee Box Jump Over', grupo: 'Burpees', categoria: 'burpee_box_jump_over', usaCarga: false, paramExtra: { label: 'Caixa(m) 0=Auto', val: '0', type: 'number' } },
+  'burpee_high_box_jump_over': { nome: 'Burpee High Box Jump Over', grupo: 'Burpees', categoria: 'burpee_box_jump_over', usaCarga: false, isHighBox: true, paramExtra: { label: 'Caixa(m) 0=Auto', val: '0', type: 'number' } },
+  'burpee_pullup': { nome: 'Burpee Pull-up', grupo: 'Burpees', categoria: 'burpee_pullup', usaCarga: false },
+  
+  'kb_swing_am': { nome: 'KB Swing (Amer.)', grupo: 'Hinge BW', categoria: 'arc_carga', usaCarga: true },
+  'kb_swing_russo': { nome: 'KB Swing (Russo)', grupo: 'Hinge BW', categoria: 'arc_carga_parcial', usaCarga: true },
+  'situp': { nome: 'Sit-up (Abmat)', grupo: 'Core BW', categoria: 'core_situp', usaCarga: false }, 
+  'v_ups': { nome: 'V-Ups', grupo: 'Core BW', categoria: 'core_vup', usaCarga: false }, 
+  'ghd_situp': { nome: 'GHD Sit-up', grupo: 'Core BW', categoria: 'core_ghd', usaCarga: false }, 
+  't2b_strict': { nome: 'Strict Toes to Bar', grupo: 'Core BW', categoria: 'core_t2b', usaCarga: false },
+  't2b_kipping': { nome: 'Kipping Toes to Bar', grupo: 'Core BW', categoria: 'core_t2b', usaCarga: false },
+  'k2e_strict': { nome: 'Strict Knees to Elbows', grupo: 'Core BW', categoria: 'core_k2e', usaCarga: false },
+  'k2e_kipping': { nome: 'Kipping Knees to Elbows', grupo: 'Core BW', categoria: 'core_k2e', usaCarga: false },
+  
+  'run': { nome: 'Corrida', grupo: 'Monostrutural', categoria: 'corrida', usaCarga: false, paramExtra: { label: 'Dist (m)', val: '400', type: 'number' } },
+  'air_runner': { nome: 'Curved Treadmill (AirRunner)', grupo: 'Monostrutural', categoria: 'air_runner', usaCarga: false, paramExtra: { label: 'Dist (m)', val: '400', type: 'number' } },
+  'shuttle_run': { nome: 'Shuttle Run', grupo: 'Monostrutural', categoria: 'shuttle_run', usaCarga: false, paramExtra: { label: 'Tiro (m)', val: '7.5', type: 'number' } },
+  'farmers_carry': { nome: 'Farmer\'s Carry', grupo: 'Monostrutural', categoria: 'corrida_carga', usaCarga: true, paramExtra: { label: 'Dist (m)', val: '50', type: 'number' } }, 
+  'yoke_carry': { nome: 'Yoke Carry', grupo: 'Hyrox / Strongman', categoria: 'yoke_carry', usaCarga: true, paramExtra: { label: 'Dist (m)', val: '15', type: 'number' } },
+  'sled_push': { nome: 'Sled Push', grupo: 'Monostrutural', categoria: 'friccao_horizontal_push', usaCarga: true, paramExtra: { label: 'Trecho (m)', val: '12.5', type: 'number' } }, 
+  'sled_pull': { nome: 'Sled Pull', grupo: 'Monostrutural', categoria: 'friccao_horizontal_pull', usaCarga: true, paramExtra: { label: 'Trecho (m)', val: '12.5', type: 'number' } }, 
+  'heavy_sled_pull': { nome: 'Heavy Sled Pull (sem corda)', grupo: 'Hyrox / Strongman', categoria: 'friccao_horizontal_pull_heavy', usaCarga: true, paramExtra: { label: 'Dist (m)', val: '12.5', type: 'number'} },
+  
+  'row': { nome: 'Remo (Concept2)', grupo: 'Ergômetros', categoria: 'remo', usaCarga: false, paramExtra: { label: 'Pace ou Cal', val: '2:00', type: 'text' } },
+  'skierg': { nome: 'SkiErg (Concept2)', grupo: 'Ergômetros', categoria: 'remo', usaCarga: false, paramExtra: { label: 'Pace ou Cal', val: '2:10', type: 'text' } },
+  'bike_erg': { nome: 'BikeErg (Concept2)', grupo: 'Ergômetros', categoria: 'bike', usaCarga: false, paramExtra: { label: 'RPM', val: '70', type: 'number' } },
+  'echo_bike': { nome: 'Rogue Echo Bike', grupo: 'Ergômetros', categoria: 'echo_bike', usaCarga: false, paramExtra: { label: 'RPM', val: '60', type: 'number' } },
+  'assault_bike': { nome: 'Assault AirBike', grupo: 'Ergômetros', categoria: 'assault_bike', usaCarga: false, paramExtra: { label: 'RPM', val: '60', type: 'number' } },
+  
+  'single_under': { nome: 'Single-unders', grupo: 'Corda', categoria: 'vertical_bw_total', usaCarga: false, paramExtra: { label: 'Salto(m)', val: '0.05', type: 'number'} },
+  'su_crossover': { nome: 'SU Crossover', grupo: 'Corda', categoria: 'vertical_bw_total', usaCarga: false, paramExtra: { label: 'Salto(m)', val: '0.08', type: 'number'} },
+  'double_under': { nome: 'Double-unders', grupo: 'Corda', categoria: 'vertical_bw_total', usaCarga: false, paramExtra: { label: 'Salto(m)', val: '0.12', type: 'number'} },
+  'du_crossover': { nome: 'DU Crossover', grupo: 'Corda', categoria: 'vertical_bw_total', usaCarga: false, paramExtra: { label: 'Salto(m)', val: '0.15', type: 'number'} },
+  'heavy_du': { nome: 'Heavy Rope Double-Unders', grupo: 'Corda', categoria: 'heavy_du', usaCarga: false, paramExtra: { label: 'Massa Corda(kg)', val: '1.5', type: 'number'} }
+};
+--- FIM DO ARQUIVO: src\data\movements.ts ---
+
+========================================
+
+--- INÍCIO DO ARQUIVO: src\index.css ---
+:root {
+  --bg-dark: #121212;
+  --bg-card: #181a1e;
+  --text-main: #ffffff;
+  --text-muted: #8a8d94;
+  --dyna-red: #FF2B3D;
+  --dyna-burgundy: #7A0F1B;
+  --line-silver: #26272b;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-dark);
+  color: var(--text-main);
+  font-family: 'Inter', 'SF Pro Text', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.container {
+  max-width: 1150px;
+  width: 100%;
+}
+
+h1 {
+  text-align: center;
+  border-bottom: 2px solid var(--accent);
+  padding-bottom: 10px;
+  margin-bottom: 25px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.panel {
+  background-color: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.panel h2 {
+  margin-top: 0;
+  color: var(--accent);
+  font-size: 1.2rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 10px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+label {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-weight: bold;
+}
+
+input, select, textarea {
+  width: 100%;
+  padding: 10px;
+  background-color: #2c2c2c;
+  border: 1px solid var(--border);
+  color: var(--text-main);
+  border-radius: 4px;
+  font-size: 0.95rem;
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-bottom: 2px solid var(--accent);
+}
+
+input:disabled {
+  background-color: #1a1a1a;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 20px;
+  gap: 5px;
+}
+
+.tab-btn {
+  background: #252525;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-bottom: none;
+  padding: 12px 20px;
+  border-radius: 8px 8px 0 0;
+  cursor: pointer;
+  font-weight: bold;
+  width: auto;
+}
+
+.tab-btn.active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+.wod-list {
+  margin-bottom: 20px;
+}
+
+.wod-item {
+  position: relative;
+  background-color: #252525;
+  padding: 15px;
+  margin-bottom: 10px;
+  border-radius: 4px;
+  display: grid;
+  grid-template-columns: 2fr 0.8fr 1.2fr 1fr auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.wod-item-analise {
+  background-color: #252525;
+  padding: 12px;
+  margin-bottom: 8px;
+  border-radius: 4px;
+  border-left: 4px solid var(--accent);
+  display: grid;
+  grid-template-columns: auto 2fr 0.6fr 0.8fr 0.8fr;
+  gap: 15px;
+  align-items: center;
+}
+
+.badge-round {
+  background: #111;
+  color: var(--accent);
+  padding: 5px 10px;
+  border-radius: 15px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.badge-buyin { color: #f39c12; }
+.badge-cashout { color: #2196f3; }
+
+button {
+  width: 100%;
+  padding: 12px;
+  background-color: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #b71c1c;
+}
+
+.btn-add { background-color: #388e3c; margin-bottom: 15px; }
+.btn-add:hover { background-color: #2e7d32; }
+
+.actions-col {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.btn-action, .btn-remove {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.btn-action { background-color: #444; }
+.btn-remove { background-color: var(--accent); }
+
+.results {
+  margin-top: 10px;
+  background-color: var(--panel-bg);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+}
+
+.result-value {
+  font-size: 2.2rem;
+  font-weight: bold;
+  color: var(--accent);
+}
+
+.result-detail {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin-top: 15px;
+  text-align: left;
+  background: #252525;
+  padding: 10px;
+  border-radius: 4px;
+  line-height: 1.5;
+}
+
+.color-metabolic { color: #f39c12; }
+.color-mech { color: #2196f3; }
+.color-time { color: #9c27b0; }
+.color-transition { color: #888888; }
+
+/* Adaptações para Telas Mórmeis e Dispositivos Móveis */
+@media (max-width: 950px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .wod-item {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .wod-item > div:first-child {
+    grid-column: span 2;
+  }
+
+  .actions-col {
+    grid-column: span 2;
+  }
+
+  .wod-item-analise {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .wod-item-analise > div:first-child,
+  .wod-item-analise > div:nth-child(2) {
+    grid-column: span 2;
+  }
+}
+--- FIM DO ARQUIVO: src\index.css ---
+
+========================================
+
+--- INÍCIO DO ARQUIVO: src\lib\supabase.ts ---
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+--- FIM DO ARQUIVO: src\lib\supabase.ts ---
+
+========================================
+
+--- INÍCIO DO ARQUIVO: src\main.tsx ---
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import './index.css'
+import App from './App.tsx'
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+)
+
+--- FIM DO ARQUIVO: src\main.tsx ---
+
+========================================
+
+--- INÍCIO DO ARQUIVO: src\types.ts ---
+export type Modalidade = 'FOR_TIME' | 'AMRAP' | 'EMOM';
+export type Sexo = 'M' | 'F';
+export type NivelTecnico = 'iniciante' | 'intermediario' | 'avancado';
+export type Tecnica = 'tng' | 'drop';
+export type Phase = 'buyin' | 'round' | 'cashout';
+
+export interface ParamExtraConfig {
+  label: string;
+  val: string;
+  type: string;
+}
+
+export interface MovimentoConfig {
+  nome: string;
+  grupo: string;
+  categoria: string;
+  usaCarga: boolean;
+  fatorH?: number;
+  isHighBox?: boolean;
+  paramExtra?: ParamExtraConfig;
+}
+
+export interface ItemLousa {
+  originalId: string;
+  movId: string;
+  phase: Phase;
+  reps: number;
+  carga: number;
+  tecnica: Tecnica;
+  extraVal: string;
+}
+
+export interface TimelineStateItem {
+  reps: number;
+  start: string;
+  end: string;
+  carga?: number;
+}
+
+export interface AtletaPerfil {
+  estatura: number;
+  peso: number;
+  sexo: Sexo;
+  nivelTecnico: NivelTecnico;
+  envergadura: number;
+  perna: number;
+  bf: number;
+}
+
+export interface ResultadoProcessamento {
+  trabalhoReal: number;
+  gastoMetabolico: number;
+  potenciaEsp: number;
+  potenciaReal: number;
+  logDetalhesHTML: string;
+}
+
+// 1. A Prescrição (O Treino Clássico / Template)
+export interface WodTemplateRecord {
+  id?: string;
+  created_at?: string;
+  title: string;
+  short_code: string;
+  tipo_treino: string;
+  tempo_alvo: string;
+  rounds_prescritos: number;
+  movimentos: any[]; // Se você tiver a interface separada, pode usar Movimento[]
+  creator_id?: string;
+}
+
+// 2. A Execução (O Resultado do Atleta)
+export interface WodResultRecord {
+  id?: string;
+  created_at?: string;
+  template_id: string; // Isso liga o resultado ao WOD clássico!
+  athlete_id?: string;
+  tempo_real: string;
+  rounds_real: number;
+  score_watts: number;
+  score_kcal: number;
+  timeline?: any; 
+  cargas_adaptadas: boolean; // True = Scaled, False = RX
+}
+
+export interface UserProfile {
+  id: string;
+  is_coach: boolean;
+  full_name: string;
+  apelido?: string;
+  coach_id?: string;
+  estatura: number;
+  peso: number;
+  sexo: 'M' | 'F';
+  nivel_tecnico: string;
+  envergadura: number;
+  perna: number;
+  bf: number;
+}
+--- FIM DO ARQUIVO: src\types.ts ---
+
+========================================
+
+--- INÍCIO DO ARQUIVO: src\utils\physicsEngine.ts ---
+import type { AtletaPerfil, MovimentoConfig } from '../types';
+
+const G = 9.81;
+
+export function parseClockTime(str: string | number): number {
+  if (str === undefined || str === null) return -1;
+  const cleanStr = str.toString().trim();
+  if (cleanStr === "") return -1;
+
+  if (!cleanStr.includes(':')) {
+    const val = Number(cleanStr);
+    return (!isNaN(val) && val >= 0) ? val : -1;
+  }
+
+  const parts = cleanStr.split(':').map(p => Number(p.trim()));
+  if (parts.some(p => isNaN(p) || p < 0)) return -1;
+
+  if (parts.length === 2) {
+    return (parts[0] * 60) + parts[1];
+  } else if (parts.length === 3) {
+    return (parts[0] * 3600) + (parts[1] * 60) + parts[2];
+  }
+  return -1;
+}
+
+export function calcularFisica(
+  movId: string,
+  cfg: MovimentoConfig,
+  reps: number,
+  pCarga: number,
+  extraV: string,
+  atleta: AtletaPerfil,
+  tecnica: string,
+  deltaT = 0
+) {
+  const MU_D_TURF_PUSH = 0.33; 
+  const MU_D_TURF_PULL = 0.85;
+  const MASSA_SLED = 43.0; 
+
+  let fTec = 1.0;
+  if (atleta.nivelTecnico === 'iniciante') fTec = 0.85; 
+  if (atleta.nivelTecnico === 'avancado') fTec = 1.10;
+
+  const isM = (atleta.sexo === 'M');
+  
+  const L_arm = atleta.envergadura * 0.45; 
+  const L_perna = atleta.perna;
+  const L_thigh = L_perna * 0.50;
+  const L_shank = L_perna * 0.50;
+  const L_trunk = Math.max(0.1, atleta.estatura - L_perna);
+  const altCoM = atleta.estatura * (isM ? 0.56 : 0.54);
+
+  const m_thigh = atleta.peso * (isM ? 0.2832 : 0.2956);
+  const m_shank_foot = atleta.peso * (isM ? 0.1140 : 0.1220);
+  const m_arms = atleta.peso * (isM ? 0.0988 : 0.0898);
+  const m_sup = Math.max(0, atleta.peso - m_thigh - m_shank_foot); 
+
+  const W_squat_body = (m_sup * G * L_thigh) + (m_thigh * G * (L_thigh * 0.59));
+  const h_puxao = atleta.estatura * 0.60;
+  
+  let tMech = 0, tMetWork = 0, tMetWorkConcIsom = 0, exL = "", P = 0, sErgo = 0, isErgo = false;
+  let isCalorieErgo = false;
+  
+  const extraNum = Number(extraV);
+  const extra = (!isNaN(extraNum) && extraNum > 0) ? extraNum : 0;
+  const extraSafe = extra > 0 ? extra : 1.0;
+  const des = (cfg.paramExtra && cfg.categoria.includes('vertical_bw_total') && extra > 0) 
+              ? extra : (atleta.estatura * (cfg.fatorH || 0.40));
+  
+  const h_box = extra > 0 ? extra : (cfg.isHighBox ? (isM ? 0.75 : 0.60) : (isM ? 0.60 : 0.50));
+  const safeReps = Math.max(1, reps);
+
+  switch(cfg.categoria) {
+      case 'deadlift': 
+          tMech = (pCarga * G * Math.max(0.05, L_perna - 0.225)) + (m_sup * G * (L_trunk * 0.35)); 
+          break;
+      case 'bench_press': 
+          tMech = pCarga * G * (L_arm * 0.82); 
+          break;
+      case 'db_press':
+          tMech = pCarga * G * L_arm;
+          break;
+      case 'wall_ball': {
+          const h_alvo = extra > 0 ? extra : 3.0;
+          const h_fundo = Math.max(0, atleta.estatura - (0.5 * L_trunk) - L_thigh);
+          tMech = W_squat_body + (pCarga * G * Math.max(0, h_alvo - h_fundo)); 
+          exL = ` (${h_alvo.toFixed(2)}m)`; 
+          break;
+      }
+      case 'lpo_floor_squat': 
+          tMech = (pCarga * G * h_puxao) + W_squat_body + (pCarga * G * L_thigh); 
+          break;
+      case 'lpo_floor_power': 
+          tMech = (W_squat_body * 0.30) + (pCarga * G * (atleta.estatura * (cfg.fatorH || 0.85))); 
+          break;
+      case 'lpo_hang_squat': 
+          tMech = (pCarga * G * Math.max(0.1, h_puxao - L_shank)) + W_squat_body + (pCarga * G * L_thigh); 
+          break;
+      case 'lpo_hang_power': 
+          tMech = (W_squat_body * 0.30) + (pCarga * G * Math.max(0.1, (atleta.estatura * (cfg.fatorH || 0.60)) - L_shank)); 
+          break;
+      case 'lpo_cj': 
+          tMech = (pCarga * G * h_puxao) + W_squat_body + (pCarga * G * L_thigh) + 
+                  (pCarga * G * L_arm) + (atleta.peso * G * (L_thigh * 0.30)); 
+          break;
+      case 'lpo_hang_cj': 
+          tMech = (pCarga * G * Math.max(0.1, h_puxao - L_shank)) + W_squat_body + (pCarga * G * L_thigh) + 
+                  (pCarga * G * L_arm) + (atleta.peso * G * (L_thigh * 0.30)); 
+          break;
+      case 'lpo_jerk': 
+          if (movId === 'push_jerk' || movId === 'db_jerk') {
+              tMech = (pCarga * G * (0.65 * L_arm)) + (atleta.peso * G * (L_thigh * 0.50));
+          } else {
+              tMech = (pCarga * G * L_arm) + (atleta.peso * G * (L_thigh * 0.30)); 
+          }
+          break;
+      
+      case 'db_cj': 
+          tMech = ((W_squat_body * 0.30) + (pCarga * G * (atleta.estatura * 0.85))) + 
+                  ((pCarga * G * L_arm) + (atleta.peso * G * (L_thigh * 0.30))); 
+          break;
+      case 'db_hang_cj': 
+          tMech = ((W_squat_body * 0.30) + (pCarga * G * Math.max(0.1, (atleta.estatura * 0.85) - L_shank))) + 
+                  ((pCarga * G * L_arm) + (atleta.peso * G * (L_thigh * 0.30))); 
+          break;
+
+      case 'sandbag_clean': 
+          tMech = (pCarga * G * h_puxao) + (W_squat_body * 0.60); 
+          break;
+      case 'dball_shoulder': {
+          const dball_D = extra > 0 ? extra : 0.35;
+          tMech = (pCarga * G * (atleta.estatura * 0.82 + dball_D * 0.50)) + W_squat_body + (m_sup * G * (L_trunk * 0.30)); 
+          exL = ` (${dball_D.toFixed(2)}m D)`; 
+          break;
+      }
+      case 'devil_press': 
+          tMech = ((atleta.peso - m_arms) * G * L_arm) + (atleta.peso * G * altCoM) + (pCarga * G * (atleta.estatura * 1.10)); 
+          break;
+      case 'tgu': 
+          tMech = (pCarga * G * (atleta.estatura * 1.10)) + (atleta.peso * G * (altCoM * 1.20)); 
+          break;
+      
+      case 'alavanca_parcial': {
+          const h_glen = atleta.estatura * 0.82; 
+          const h_tor = atleta.estatura * 0.05;
+          const proporcaoAlavanca = Math.min(0.85, Math.max(0.50, (altCoM - h_tor) / (h_glen - h_tor)));
+          tMech = (atleta.peso * proporcaoAlavanca) * G * L_arm; 
+          break;
+      }
+      case 'alavanca_horizontal': 
+          tMech = m_sup * G * L_arm; 
+          break;
+      case 'alavanca_inferior': 
+          tMech = (m_thigh + m_shank_foot) * G * L_thigh; 
+          break;
+      
+      case 'vertical_bw': 
+          tMech = (atleta.peso - m_arms) * G * L_arm; 
+          break;
+      case 'wf_hspu': 
+      case 'free_hspu': 
+          tMech = (atleta.peso * 0.95) * G * (L_arm * 0.90); 
+          break;
+
+      case 'vertical_bw_total': 
+          if (['strict_bmu', 'bar_muscle_up', 'strict_rmu', 'ring_muscle_up'].includes(movId)) {
+              tMech = atleta.peso * G * (2.0 * L_arm + (L_trunk * 0.50));
+          } else if (cfg.grupo === 'Corda') { 
+              tMech = atleta.peso * G * des; 
+              exL = ` (Salto ${des.toFixed(2)}m)`; 
+          } else {
+              tMech = atleta.peso * G * (L_arm + (L_trunk * 0.50)); 
+          }
+          break;
+      case 'pullover': 
+          tMech = atleta.peso * G * (altCoM + 2.0 * L_arm); 
+          break;
+
+      case 'squat_bw': 
+          tMech = W_squat_body; 
+          break;
+      case 'squat_carga': 
+          tMech = W_squat_body + (pCarga * G * L_thigh); 
+          break;
+      case 'lunge_bw': 
+          tMech = atleta.peso * G * (L_thigh * 0.85); 
+          break;
+      case 'lunge_carga': 
+          tMech = (atleta.peso + pCarga) * G * (L_thigh * 0.85); 
+          break;
+      case 'hinge_carga': 
+      case 'arc_carga': 
+          tMech = pCarga * G * (atleta.estatura * 0.55); 
+          break;
+      case 'arc_carga_parcial': 
+          tMech = pCarga * G * (atleta.estatura * 0.35); 
+          break;
+
+      case 'core_situp': 
+          tMech = m_sup * G * (L_trunk * 0.45) * Math.sin(75 * Math.PI / 180); 
+          break;
+      case 'core_vup': 
+          tMech = (m_sup * G * (L_trunk * 0.45) * Math.sin(60 * Math.PI / 180)) + 
+                  ((m_thigh + m_shank_foot) * G * (L_perna * 0.45) * Math.sin(60 * Math.PI / 180)); 
+          break;
+      case 'core_ghd': 
+          tMech = m_sup * G * (L_trunk * 0.45) * (Math.sin(75 * Math.PI / 180) - Math.sin(-15 * Math.PI / 180)); 
+          break;
+      case 'core_t2b': 
+          tMech = (m_thigh + m_shank_foot) * G * (L_perna * 0.45) * 2.0; 
+          break;
+      case 'core_k2e': 
+          tMech = (m_thigh + m_shank_foot) * G * (L_thigh * 0.60) * 2.0; 
+          break;
+      
+      case 'wall_walk': 
+          tMech = ((atleta.peso - m_arms) * G * L_arm) + (atleta.peso * G * (altCoM * 1.20)); 
+          break;
+      case 'hs_walk': 
+          tMech = (atleta.peso * G * 0.15) * extraSafe; 
+          exL = ` (${extraSafe.toFixed(1)}m)`; 
+          break;
+      case 'rope_climb': 
+      case 'pegboard': 
+          tMech = atleta.peso * G * extraSafe; 
+          exL = ` (${extraSafe.toFixed(1)}m)`; 
+          break;
+      case 'rope_ascend_floor': 
+          tMech = atleta.peso * G * (atleta.estatura * 0.65); 
+          break;
+      
+      case 'hs_incline_up': {
+          const [d_up, h_up] = (extraV || "5;1").toString().split(';').map(v => Number(v.replace(',','.')) || 0);
+          tMech = (atleta.peso * G * 0.15 * Math.max(1, d_up)) + (atleta.peso * G * Math.max(0, h_up)); 
+          exL = ` (${d_up}m ↗ ${h_up}m)`; 
+          break;
+      }
+      case 'hs_incline_down': {
+          const [d_dn, h_dn] = (extraV || "5;1").toString().split(';').map(v => Number(v.replace(',','.')) || 0);
+          tMech = (atleta.peso * G * 0.15 * Math.max(1, d_dn)) + (atleta.peso * G * Math.max(0, h_dn) * 0.50); 
+          exL = ` (${d_dn}m ↘ ${h_dn}m)`; 
+          break;
+      }
+
+      case 'box_step_up': 
+      case 'box_jump': 
+          tMech = atleta.peso * G * h_box; 
+          exL = ` (${h_box.toFixed(2)}m)`; 
+          break;
+      case 'box_jump_over': 
+          tMech = atleta.peso * G * (h_box * 0.85); 
+          exL = ` (${h_box.toFixed(2)}m)`; 
+          break;
+
+      case 'vertical_hibrido': 
+          tMech = ((atleta.peso - m_arms) * G * L_arm) + (atleta.peso * G * altCoM); 
+          break;
+      case 'vertical_hibrido_extra': 
+          tMech = ((atleta.peso - m_arms) * G * L_arm) + (atleta.peso * G * altCoM) + (atleta.peso * G * 0.10); 
+          break;
+      case 'burpee_broad_jump': 
+          tMech = ((atleta.peso - m_arms) * G * L_arm) + (atleta.peso * G * altCoM) + 
+                  (0.50 * atleta.peso * (extraSafe * G / Math.sin(80 * Math.PI / 180))); 
+          exL = ` (${extraSafe.toFixed(1)}m)`; 
+          break;
+      
+      case 'burpee_over_obj': {
+          const h_obj = extra > 0 ? extra : (movId === 'burpee_over_db' ? 0.20 : 0.30);
+          tMech = ((atleta.peso - m_arms) * G * L_arm) + (atleta.peso * G * (h_obj * 0.85)); 
+          exL = ` (${h_obj.toFixed(2)}m)`; 
+          break;
+      }
+      case 'burpee_box_jump': 
+          tMech = ((atleta.peso - m_arms) * G * L_arm) + (atleta.peso * G * h_box); 
+          exL = ` (${h_box.toFixed(2)}m)`; 
+          break;
+      case 'burpee_box_jump_over': 
+          tMech = ((atleta.peso - m_arms) * G * L_arm) + (atleta.peso * G * (h_box * 0.85)); 
+          exL = ` (${h_box.toFixed(2)}m)`; 
+          break;
+      case 'burpee_pullup': 
+          tMech = ((atleta.peso - m_arms) * G * L_arm) + (atleta.peso * G * altCoM) + ((atleta.peso - m_arms) * G * L_arm); 
+          break;
+
+      case 'friccao_horizontal_push': {
+          const rad30 = 30 * Math.PI / 180;
+          const F_push = (MU_D_TURF_PUSH * (pCarga + MASSA_SLED) * G) / (Math.cos(rad30) - MU_D_TURF_PUSH * Math.sin(rad30));
+          const W_sled_push = F_push * Math.cos(rad30) * extraSafe;
+          tMech = W_sled_push + (atleta.peso * G * 0.15 * extraSafe); 
+          exL = ` (${extraSafe.toFixed(1)}m)`; 
+          break;
+      }
+      case 'friccao_horizontal_pull': {
+          const rad20 = 20 * Math.PI / 180;
+          const F_pull = (MU_D_TURF_PULL * (pCarga + MASSA_SLED) * G) / (Math.cos(rad20) + MU_D_TURF_PULL * Math.sin(rad20));
+          const W_sled_pull = F_pull * Math.cos(rad20) * extraSafe;
+          tMech = W_sled_pull + (atleta.peso * G * 0.15 * extraSafe); 
+          exL = ` (${extraSafe.toFixed(1)}m)`; 
+          break;
+      }
+      case 'friccao_horizontal_pull_heavy': {
+          const F_pull_h = MU_D_TURF_PULL * pCarga * G; 
+          tMech = (F_pull_h * extraSafe) + (atleta.peso * G * 0.15 * extraSafe); 
+          exL = ` (${extraSafe.toFixed(1)}m)`; 
+          break;
+      }
+
+      case 'corrida_carga': 
+      case 'yoke_carry': 
+          tMech = (atleta.peso + pCarga) * G * 0.05 * extraSafe; 
+          exL = ` (${extraSafe.toFixed(1)}m)`; 
+          break;
+      case 'shuttle_run': 
+          tMech = (atleta.peso * G * (0.07 * 0.75 * extraSafe)) + (0.50 * atleta.peso * Math.pow(3.0, 2)); 
+          exL = ` (${extraSafe.toFixed(1)}m)`; 
+          break;
+      case 'corrida': 
+          tMech = atleta.peso * G * (0.07 * 0.75 * extraSafe); 
+          exL = ` (${extraSafe.toFixed(1)}m)`; 
+          break;
+      case 'air_runner': 
+          tMech = atleta.peso * G * 0.09 * extraSafe; 
+          exL = ` (${extraSafe.toFixed(1)}m)`; 
+          break;
+      
+      case 'remo': {
+          const extraStr = (extraV !== undefined && extraV !== null) ? extraV.toString().toLowerCase() : "";
+          if (extraStr.includes('cal')) {
+              const calVal = Math.max(0.1, parseFloat(extraStr) || 0);
+              const tempoUso = deltaT > 0 ? deltaT : Math.max(1.0, calVal * 6.0);
+              P = Math.max(1.0, ((calVal * (3600.0 / tempoUso)) - 300.0) / (4.0 * 0.8604));
+              sErgo = Math.pow(2.80 / P, 1.0 / 3.0); 
+              tMech = (P * tempoUso) / safeReps; 
+              isErgo = true;
+              isCalorieErgo = true;
+              exL = ` (${calVal.toFixed(1)} Cal)`;
+          } else {
+              const parsedTime = parseClockTime(extraV);
+              const t_split = parsedTime > 0 ? parsedTime : 120.0;
+              sErgo = Math.max(0.02, t_split / 500.0); 
+              P = Math.max(1.0, 2.80 / Math.pow(sErgo, 3)); 
+              tMech = P * sErgo; 
+              isErgo = true; 
+              exL = ` (Pace ${extraV || '2:00'})`; 
+          }
+          break;
+      }
+      case 'bike': {
+          const rpmBike = extra > 0 ? extra : 70.0;
+          P = Math.max(1.0, 0.000474 * Math.pow(rpmBike, 3)); 
+          sErgo = 4184.0 / P; 
+          tMech = P * sErgo; 
+          isErgo = true; 
+          exL = ` (${rpmBike.toFixed(0)} RPM)`; 
+          break;
+      }
+      case 'echo_bike': {
+          const echoRpm = Math.max(20.0, extra > 0 ? extra : 60.0);
+          P = 1e-5 * Math.pow(echoRpm, 4) - 0.0011 * Math.pow(echoRpm, 3) + 0.1455 * Math.pow(echoRpm, 2) - 3.3264 * echoRpm + 29.355;
+          P = Math.max(1.0, P);
+          sErgo = 4184.0 / P; 
+          tMech = P * sErgo; 
+          isErgo = true; 
+          exL = ` (${echoRpm.toFixed(0)} RPM)`; 
+          break;
+      }
+      case 'assault_bike': {
+          const abRpm = extra > 0 ? extra : 60.0;
+          P = Math.max(1.0, 0.00342 * Math.pow(abRpm, 3)); 
+          sErgo = 4184.0 / P; 
+          tMech = P * sErgo; 
+          isErgo = true; 
+          exL = ` (${abRpm.toFixed(0)} RPM)`; 
+          break;
+      }
+      case 'heavy_du': {
+          const mC = extra > 0 ? extra : 1.5; 
+          tMech = (atleta.peso * G * 0.10) + (0.50 * (mC * 0.10) * Math.pow(15.0, 2)); 
+          break;
+      }
+      default:
+          tMech = (pCarga > 0 ? pCarga : atleta.peso) * G * 0.5;
+  }
+
+  if (cfg.categoria === 'shuttle_run') { 
+      tMetWork = atleta.peso * (extraSafe / 1000.0) * (1.0 + (12.5 / extraSafe)); 
+      tMetWorkConcIsom = tMetWork; 
+  } else if (cfg.categoria === 'corrida') { 
+      tMetWork = 0.90 * atleta.peso * (extraSafe / 1000.0); 
+      tMetWorkConcIsom = tMetWork; 
+  } else if (cfg.categoria === 'air_runner') { 
+      tMetWork = 1.32 * (0.90 * atleta.peso * (extraSafe / 1000.0)); 
+      tMetWorkConcIsom = tMetWork; 
+  } else if (cfg.categoria === 'corrida_carga' || cfg.categoria === 'yoke_carry') { 
+      const V = deltaT > 0 ? (extraSafe / deltaT) : 1.2; 
+      const kPega = cfg.categoria === 'yoke_carry' ? 1.65 : 1.55; 
+      const M_watts = kPega * (1.5 * atleta.peso + 2.0 * (atleta.peso + pCarga) * Math.pow(pCarga / Math.max(1, atleta.peso), 2) + 1.0 * (atleta.peso + pCarga) * (1.5 * V * V));
+      tMetWork = (M_watts * (deltaT > 0 ? deltaT : (extraSafe / V))) / 4184.0; 
+      tMetWorkConcIsom = tMetWork;
+  } else if (['remo', 'bike'].includes(cfg.categoria)) { 
+      if (isCalorieErgo) { 
+          tMetWork = parseFloat(extraV) / safeReps; 
+          tMetWorkConcIsom = tMetWork; 
+      } else { 
+          tMetWork = ((4.0 * P * 0.8604) / 3600.0) * sErgo; 
+          tMetWorkConcIsom = tMetWork; 
+      }
+  } else if (['echo_bike', 'assault_bike'].includes(cfg.categoria)) { 
+      tMetWork = (P * sErgo) / 4184.0; 
+      tMetWorkConcIsom = tMetWork; 
+  } else {
+      let eta_conc = 0.22 * fTec; 
+      let eta_exc = 1.10; 
+      let k_SSC = 1.0; 
+      let W_exc_ratio = 0.0; 
+      let E_isom = 0.0;      
+      
+      const cA = ['burpee_broad_jump','burpee_box_jump','burpee_box_jump_over','burpee_over_obj',
+                  'burpee_pullup','vertical_hibrido','vertical_hibrido_extra','wall_ball',
+                  'squat_bw','box_step_up', 'box_jump', 'box_jump_over','lunge_bw',
+                  'lunge_carga', 'alavanca_parcial', 'alavanca_horizontal', 'core_situp', 
+                  'core_vup', 'core_ghd', 'core_t2b', 'core_k2e'];
+      
+      if (cfg.nome.includes('Kipping')) k_SSC = 0.80;
+      else if (cfg.nome.includes('Butterfly')) k_SSC = 0.65;
+      else if (cfg.grupo === 'Corda') k_SSC = 0.50; 
+
+      if (cfg.grupo === 'Corda') eta_conc = 0.45 * fTec;
+      else if (cfg.categoria === 'pegboard') eta_conc = 0.06 * fTec;
+      else if (movId === 'strict_rmu') eta_conc = 0.07 * fTec;
+      else if (cfg.categoria === 'wf_hspu') eta_conc = 0.08 * fTec;
+      else if (['handstand_walk','wall_walk', 'hs_incline_up', 'hs_incline_down'].includes(cfg.categoria)) eta_conc = 0.08 * fTec;
+      else if (movId === 'strict_bmu' || movId === 'ring_dip_strict') eta_conc = 0.08 * fTec;
+      else if (cfg.categoria === 'pullover') eta_conc = 0.09 * fTec;
+      else if (cfg.nome.includes('Strict') && (cfg.categoria === 'vertical_bw' || cfg.categoria === 'core_t2b' || cfg.categoria === 'core_k2e' || cfg.categoria === 'alavanca_inferior')) eta_conc = 0.10 * fTec;
+      else if (cfg.nome.includes('Butterfly')) eta_conc = 0.22 * fTec;
+      else if (cfg.nome.includes('Kipping') && cfg.categoria === 'vertical_bw') eta_conc = 0.14 * fTec;
+      else if (cfg.nome.includes('Kipping') && (cfg.categoria === 'core_t2b' || cfg.categoria === 'core_k2e' || cfg.categoria === 'alavanca_inferior')) eta_conc = 0.12 * fTec;
+      else if (cfg.categoria === 'devil_press' || movId === 'overhead_squat' || cfg.categoria === 'core_ghd' || cfg.categoria === 'sandbag_clean') eta_conc = 0.12 * fTec;
+      else if (cfg.categoria === 'dball_shoulder') eta_conc = 0.11 * fTec;
+      else if (cfg.categoria === 'rope_climb' || cfg.categoria === 'rope_ascend_floor') eta_conc = 0.15 * fTec;
+      else if (cfg.categoria.includes('lpo_') || cfg.categoria.includes('db_') || cA.includes(cfg.categoria)) eta_conc = 0.16 * fTec;
+      else if (cfg.categoria.includes('friccao_horizontal')) eta_conc = 0.15 * fTec;
+
+      if (cfg.nome.includes('Strict') && (cfg.categoria === 'vertical_bw' || cfg.categoria === 'core_t2b' || cfg.categoria === 'core_k2e' || cfg.categoria === 'alavanca_inferior')) { 
+          W_exc_ratio = 0.40; 
+      } else if (cfg.nome.includes('Butterfly')) { 
+          W_exc_ratio = 0.05; 
+      } else if (cfg.nome.includes('Kipping') && (cfg.categoria === 'vertical_bw' || cfg.categoria === 'core_t2b' || cfg.categoria === 'core_k2e' || cfg.categoria === 'alavanca_inferior')) { 
+          W_exc_ratio = 0.20; 
+      } else if (cA.includes(cfg.categoria) || cfg.categoria === 'wall_ball' || ['overhead_squat','sandbag_clean','devil_press'].includes(movId)) { 
+          W_exc_ratio = 0.35; 
+      } else if (cfg.categoria === 'burpee_broad_jump') { 
+          W_exc_ratio = 0.60; 
+      } else if (['turkish_get_up','strict_rmu', 'free_hspu'].includes(movId) || cfg.categoria === 'core_ghd' || cfg.nome.includes('Ring')) { 
+          W_exc_ratio = 0.45; 
+      } else if (cfg.categoria.includes('lpo_hang') || cfg.categoria.includes('lpo_floor') || cfg.categoria.includes('lpo_cj') || cfg.categoria.includes('db_') || movId === 'deadlift') { 
+          W_exc_ratio = (tecnica === 'drop') ? 0.00 : 0.40; 
+      }
+
+      const tut_default = deltaT > 0 ? deltaT : 3.0; 
+      if (['pegboard', 'hs_walk', 'wall_walk', 'hs_incline_up', 'hs_incline_down'].includes(cfg.categoria)) { 
+          E_isom = (tMech > 0 ? tMech : atleta.peso * G * 0.50) * tut_default * 0.80; 
+      } else if (['ring_muscle_up', 'strict_rmu'].includes(movId)) { 
+          E_isom = tMech * tut_default * 0.40; 
+      } else if (['overhead_squat', 'turkish_get_up'].includes(movId) || cfg.categoria === 'core_t2b' || cfg.categoria === 'core_ghd') { 
+          E_isom = tMech * tut_default * 0.30; 
+      } else if (cfg.categoria.includes('friccao_horizontal')) { 
+          E_isom = tMech * tut_default * 0.40; 
+      }
+
+      const W_conc = tMech * k_SSC; 
+      const W_exc = tMech * W_exc_ratio;
+      const E_met_conc = W_conc / (Math.max(0.01, eta_conc) * 4184.0);
+      const E_met_exc = W_exc / (eta_exc * 4184.0);
+      const E_met_isom = E_isom / 4184.0;
+
+      tMetWork = E_met_conc + E_met_exc + E_met_isom;
+      tMetWorkConcIsom = E_met_conc + E_met_isom;
+  }
+
+  return { 
+      trabMech: tMech * safeReps, 
+      trabMetabolicoWork: tMetWork * safeReps, 
+      trabMetabolicoConcIsom: tMetWorkConcIsom * safeReps, 
+      infoExtraLog: exL, 
+      isErgo: isErgo, 
+      isCalorieErgo: isCalorieErgo,
+      ergTime: sErgo * safeReps
+  };
+}
+--- FIM DO ARQUIVO: src\utils\physicsEngine.ts ---
+
+========================================
+
+--- INÍCIO DO ARQUIVO: tsconfig.app.json ---
+{
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
+    "target": "es2023",
+    "lib": ["ES2023", "DOM"],
+    "module": "esnext",
+    "types": ["vite/client"],
+    "allowArbitraryExtensions": true,
+    "skipLibCheck": true,
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "jsx": "react-jsx",
+
+    /* Linting */
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "erasableSyntaxOnly": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": ["src"]
+}
+
+--- FIM DO ARQUIVO: tsconfig.app.json ---
+
+========================================
+
+--- INÍCIO DO ARQUIVO: tsconfig.json ---
+{
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.node.json" }
+  ]
+}
+
+--- FIM DO ARQUIVO: tsconfig.json ---
+
+========================================
+
+--- INÍCIO DO ARQUIVO: tsconfig.node.json ---
+{
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",
+    "target": "es2023",
+    "lib": ["ES2023"],
+    "types": ["node"],
+    "skipLibCheck": true,
+
+    /* Bundler mode */
+    "module": "nodenext",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+
+    /* Linting */
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "erasableSyntaxOnly": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": ["vite.config.ts"]
+}
+
+--- FIM DO ARQUIVO: tsconfig.node.json ---
+
+========================================
+
+--- INÍCIO DO ARQUIVO: vite.config.ts ---
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import { VitePWA } from 'vite-plugin-pwa'
+
+export default defineConfig({
+  plugins: [
+    react(),
+    VitePWA({
+      registerType: 'autoUpdate',
+      includeAssets: ['favicon.png', 'apple-touch-icon.png', 'masked-icon.svg'],
+      manifest: {
+        name: 'DynaWOD - Motor Biomecânico',
+        short_name: 'DynaWOD',
+        description: 'Plataforma de cálculo de potência e gasto metabólico real.',
+        theme_color: '#1e1e1e',
+        background_color: '#121212',
+        display: 'standalone',
+        icons: [
+          {
+            src: '/dynawod-192.png',
+            sizes: '192x192',
+            type: 'image/png'
+          },
+          {
+            src: '/dynawod-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any maskable'
+          }
+        ]
+      }
+    })
+  ]
+})
+--- FIM DO ARQUIVO: vite.config.ts ---
+
+========================================
+
