@@ -55,8 +55,16 @@ export function calcularFisica(
   const m_arms = atleta.peso * (isM ? 0.0988 : 0.0898);
   const m_sup = Math.max(0, atleta.peso - m_thigh - m_shank_foot); 
 
-  const W_squat_body = (m_sup * G * L_thigh) + (m_thigh * G * (L_thigh * 0.59));
+  // Refatoração 1: Abdução e rotação externa no agachamento (Cos 20 graus)
+  const anguloAbducaoRad = 20 * (Math.PI / 180);
+  const cosAbducao = Math.cos(anguloAbducaoRad);
+  const W_squat_body = (m_sup * G * (L_thigh * cosAbducao)) + (m_thigh * G * ((L_thigh * 0.59) * cosAbducao));
+  
   const h_puxao = atleta.estatura * 0.60;
+  
+  // Refatoração 2: Energia Cinética Translacional do LPO (1.8 m/s)
+  const velLPO = 1.8; 
+  const energiaCineticaBarra = 0.5 * pCarga * Math.pow(velLPO, 2);
   
   let tMech = 0, tMetWork = 0, tMetWorkConcIsom = 0, exL = "", P = 0, sErgo = 0, isErgo = false;
   let isCalorieErgo = false;
@@ -88,23 +96,23 @@ export function calcularFisica(
           break;
       }
       case 'lpo_floor_squat': 
-          tMech = (pCarga * G * h_puxao) + W_squat_body + (pCarga * G * L_thigh); 
+          tMech = (pCarga * G * h_puxao) + energiaCineticaBarra + W_squat_body + (pCarga * G * L_thigh); 
           break;
       case 'lpo_floor_power': 
-          tMech = (W_squat_body * 0.30) + (pCarga * G * (atleta.estatura * (cfg.fatorH || 0.85))); 
+          tMech = (W_squat_body * 0.30) + energiaCineticaBarra + (pCarga * G * (atleta.estatura * (cfg.fatorH || 0.85))); 
           break;
       case 'lpo_hang_squat': 
-          tMech = (pCarga * G * Math.max(0.1, h_puxao - L_shank)) + W_squat_body + (pCarga * G * L_thigh); 
+          tMech = (pCarga * G * Math.max(0.1, h_puxao - L_shank)) + energiaCineticaBarra + W_squat_body + (pCarga * G * L_thigh); 
           break;
       case 'lpo_hang_power': 
-          tMech = (W_squat_body * 0.30) + (pCarga * G * Math.max(0.1, (atleta.estatura * (cfg.fatorH || 0.60)) - L_shank)); 
+          tMech = (W_squat_body * 0.30) + energiaCineticaBarra + (pCarga * G * Math.max(0.1, (atleta.estatura * (cfg.fatorH || 0.60)) - L_shank)); 
           break;
       case 'lpo_cj': 
-          tMech = (pCarga * G * h_puxao) + W_squat_body + (pCarga * G * L_thigh) + 
+          tMech = (pCarga * G * h_puxao) + energiaCineticaBarra + W_squat_body + (pCarga * G * L_thigh) + 
                   (pCarga * G * L_arm) + (atleta.peso * G * (L_thigh * 0.30)); 
           break;
       case 'lpo_hang_cj': 
-          tMech = (pCarga * G * Math.max(0.1, h_puxao - L_shank)) + W_squat_body + (pCarga * G * L_thigh) + 
+          tMech = (pCarga * G * Math.max(0.1, h_puxao - L_shank)) + energiaCineticaBarra + W_squat_body + (pCarga * G * L_thigh) + 
                   (pCarga * G * L_arm) + (atleta.peso * G * (L_thigh * 0.30)); 
           break;
       case 'lpo_jerk': 
@@ -116,16 +124,16 @@ export function calcularFisica(
           break;
       
       case 'db_cj': 
-          tMech = ((W_squat_body * 0.30) + (pCarga * G * (atleta.estatura * 0.85))) + 
+          tMech = ((W_squat_body * 0.30) + (pCarga * G * (atleta.estatura * 0.85)) + energiaCineticaBarra) + 
                   ((pCarga * G * L_arm) + (atleta.peso * G * (L_thigh * 0.30))); 
           break;
       case 'db_hang_cj': 
-          tMech = ((W_squat_body * 0.30) + (pCarga * G * Math.max(0.1, (atleta.estatura * 0.85) - L_shank))) + 
+          tMech = ((W_squat_body * 0.30) + (pCarga * G * Math.max(0.1, (atleta.estatura * 0.85) - L_shank)) + energiaCineticaBarra) + 
                   ((pCarga * G * L_arm) + (atleta.peso * G * (L_thigh * 0.30))); 
           break;
 
       case 'sandbag_clean': 
-          tMech = (pCarga * G * h_puxao) + (W_squat_body * 0.60); 
+          tMech = (pCarga * G * h_puxao) + energiaCineticaBarra + (W_squat_body * 0.60); 
           break;
       case 'dball_shoulder': {
           const dball_D = extra > 0 ? extra : 0.35;
@@ -283,9 +291,12 @@ export function calcularFisica(
           break;
 
       case 'friccao_horizontal_push': {
-          const rad30 = 30 * Math.PI / 180;
-          const F_push = (MU_D_TURF_PUSH * (pCarga + MASSA_SLED) * G) / (Math.cos(rad30) - MU_D_TURF_PUSH * Math.sin(rad30));
-          const W_sled_push = F_push * Math.cos(rad30) * extraSafe;
+          // Refatoração 3: Ângulo dinâmico baseado na sobrecarga relativa
+          const loadRatio = pCarga / Math.max(1, atleta.peso);
+          const anguloDinamico = Math.max(10, 30 - (loadRatio * 5)); 
+          const radDinamico = anguloDinamico * Math.PI / 180;
+          const F_push = (MU_D_TURF_PUSH * (pCarga + MASSA_SLED) * G) / (Math.cos(radDinamico) - MU_D_TURF_PUSH * Math.sin(radDinamico));
+          const W_sled_push = F_push * Math.cos(radDinamico) * extraSafe;
           tMech = W_sled_push + (atleta.peso * G * 0.15 * extraSafe); 
           exL = ` (${extraSafe.toFixed(1)}m)`; 
           break;
@@ -406,12 +417,13 @@ export function calcularFisica(
           tMetWorkConcIsom = tMetWork; 
       }
   } else if (['echo_bike', 'assault_bike'].includes(cfg.categoria)) { 
-      tMetWork = (P * sErgo) / 4184.0; 
+      // Refatoração 4: Multiplicador biológico 4.0 (Aproximadamente 25% de eficiência)
+      tMetWork = (4.0 * P * sErgo) / 4184.0; 
       tMetWorkConcIsom = tMetWork; 
   } else {
       let eta_conc = 0.22 * fTec; 
       let eta_exc = 1.10; 
-      let k_SSC = 1.0; 
+      // Refatoração 5: Variável abstrata de SSC foi suprimida daqui
       let W_exc_ratio = 0.0; 
       let E_isom = 0.0;      
       
@@ -420,10 +432,6 @@ export function calcularFisica(
                   'squat_bw','box_step_up', 'box_jump', 'box_jump_over','lunge_bw',
                   'lunge_carga', 'alavanca_parcial', 'alavanca_horizontal', 'core_situp', 
                   'core_vup', 'core_ghd', 'core_t2b', 'core_k2e'];
-      
-      if (cfg.nome.includes('Kipping')) k_SSC = 0.80;
-      else if (cfg.nome.includes('Butterfly')) k_SSC = 0.65;
-      else if (cfg.grupo === 'Corda') k_SSC = 0.50; 
 
       if (cfg.grupo === 'Corda') eta_conc = 0.45 * fTec;
       else if (cfg.categoria === 'pegboard') eta_conc = 0.06 * fTec;
@@ -469,8 +477,10 @@ export function calcularFisica(
           E_isom = tMech * tut_default * 0.40; 
       }
 
-      const W_conc = tMech * k_SSC; 
+      // Refatoração 5 (Cont.): Respeito absoluto à termodinâmica gravitacional
+      const W_conc = tMech; 
       const W_exc = tMech * W_exc_ratio;
+      
       const E_met_conc = W_conc / (Math.max(0.01, eta_conc) * 4184.0);
       const E_met_exc = W_exc / (eta_exc * 4184.0);
       const E_met_isom = E_isom / 4184.0;

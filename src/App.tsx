@@ -6,7 +6,7 @@ import type { Session } from '@supabase/supabase-js';
 import type { 
   AtletaPerfil, ItemLousa, Modalidade, 
   ResultadoProcessamento, TimelineStateItem, UserProfile,
-  WodTemplateRecord // 👈 A mágica acontece aqui
+  WodTemplateRecord 
 } from './types';
 import { calcularFisica, parseClockTime } from './utils/physicsEngine';
 import { Trophy, Dumbbell, Copy, Download, Share2, Save, LogOut, X } from 'lucide-react';
@@ -35,16 +35,11 @@ export default function App() {
   const [nomeTreino, setNomeTreino] = useState('');
 
   // === RASTREAMENTO DO WOD ATUAL ===
-  // Substitutos do antigo currentWodId:
   const [currentTemplateId, setCurrentTemplateId] = useState<string | null>(null);
   const [currentResultId, setCurrentResultId] = useState<string | null>(null);
-
-  // Flag para sabermos se o atleta alterou as cargas na lousa
   const [isScaled, setIsScaled] = useState<boolean>(false);
-
   const [currentShortCode, setCurrentShortCode] = useState<string | null>(null);
 
-  // Atleta base que alimenta o motor de física
   const [atleta, setAtleta] = useState<AtletaPerfil>({
     estatura: 1.75, peso: 80, sexo: 'M', nivelTecnico: 'intermediario', envergadura: 1.75, perna: 0.85, bf: 15
   });
@@ -57,7 +52,6 @@ export default function App() {
   const [resultado, setResultado] = useState<ResultadoProcessamento | null>(null);
   const [savedWods, setSavedWods] = useState<WodTemplateRecord[]>([]);
 
-  // Formato do Perfil para o Onboarding
   const [onboardForm, setOnboardForm] = useState({
     full_name: '', apelido: '',is_coach: false, estatura: 1.75, peso: 80, sexo: 'M', 
     nivel_tecnico: 'intermediario', envergadura: 1.75, perna: 0.85, bf: 15
@@ -73,14 +67,12 @@ export default function App() {
 
     try {
       const canvas = await html2canvas(cardElement, {
-        backgroundColor: '#111315', // Cor de fundo do app
-        scale: 2, // Escala 2x garante alta resolução para o Instagram!
-        useCORS: true // Essencial se tiver imagens/logos externos
+        backgroundColor: '#111315', 
+        scale: 2, 
+        useCORS: true 
       });
 
       const image = canvas.toDataURL('image/jpeg', 0.9);
-      
-      // Cria um link falso e clica nele para baixar a imagem
       const link = document.createElement('a');
       link.href = image;
       link.download = `DynaWOD-${currentShortCode || 'Resultado'}.jpg`;
@@ -92,7 +84,6 @@ export default function App() {
     }
   };
 
-  // === EFEITOS ===
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
@@ -110,9 +101,8 @@ export default function App() {
 
   useEffect(() => {
     if (session && userProfile && !isNewUser) fetchWodsFromSupabase();
-  }, [session, userProfile, isNewUser, selectedAthleteId]); // Refetch se mudar o atleta selecionado
+  }, [session, userProfile, isNewUser, selectedAthleteId]);
 
-  // === FUNÇÕES DE LOGIN / PERFIL ===
   const signInWithGoogle = async () => {
     await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
   };
@@ -127,7 +117,7 @@ export default function App() {
     const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single();
     
     if (error || !data) {
-      setIsNewUser(true); // Se não achou perfil, vai pro Onboarding
+      setIsNewUser(true); 
       setLoadingAuth(false);
       return;
     }
@@ -163,7 +153,7 @@ export default function App() {
     if (error) {
       alert('Erro ao salvar perfil: ' + error.message);
     } else {
-      loadProfile(session.user.id); // Recarrega e sai do onboarding
+      loadProfile(session.user.id);
     }
   };
 
@@ -184,18 +174,13 @@ export default function App() {
     }
   };
 
-  // === BANCO DE DADOS (WODs) ===
   const fetchWodsFromSupabase = async () => {
-    // Se for coach e selecionou um aluno, busca os WODs do aluno. Senão, busca os próprios.
     const queryId = selectedAthleteId === 'me' ? session?.user.id : selectedAthleteId;
     
     const { data, error } = await supabase.from('wods').select('*').eq('athlete_id', queryId).order('created_at', { ascending: false });
     if (!error && data) setSavedWods(data as WodTemplateRecord[]);
   };
 
-// === LÓGICA DE SALVAMENTO E COMPARTILHAMENTO ===
-  
-  // Gerador de código curto (Ex: 8XF2A9)
   const generateShortCode = () => Math.random().toString(36).substring(2, 8).toUpperCase();
 
   const salvarNoSupabase = async (isExporting = false) => {
@@ -204,9 +189,6 @@ export default function App() {
     const targetAthleteId = selectedAthleteId === 'me' ? session.user.id : selectedAthleteId;
     const newShortCode = currentShortCode || generateShortCode();
 
-    // ==========================================
-    // 1. PREPARAR DADOS DA PRESCRIÇÃO (TEMPLATE)
-    // ==========================================
     const templatePayload = {
       title: nomeTreino.trim() !== '' ? nomeTreino : `Treino ${tipoTreino} - ${new Date().toLocaleDateString('pt-BR')}`,
       short_code: newShortCode,
@@ -219,7 +201,6 @@ export default function App() {
 
     let activeTemplateId = currentTemplateId;
 
-    // A. Salvar ou Atualizar o Template
     if (activeTemplateId) {
       if (!isExporting && !window.confirm('Deseja sobrescrever as alterações na prescrição deste WOD?')) return null;
       
@@ -234,30 +215,24 @@ export default function App() {
       setCurrentShortCode(data.short_code);
     }
 
-    // ==========================================
-    // 2. PREPARAR DADOS DO RESULTADO (EXECUÇÃO)
-    // ==========================================
-    // Só tentamos salvar um resultado se o atleta tiver preenchido algo real (Tempo ou Rounds)
     const hasResult = tempoReal || roundsReal > 0 || (resultado && resultado.potenciaReal > 0);
 
     if (hasResult) {
       const resultPayload = {
-        template_id: activeTemplateId, // Liga o resultado ao treino!
+        template_id: activeTemplateId, 
         athlete_id: targetAthleteId,
         tempo_real: tempoReal,
         rounds_real: roundsReal,
         score_watts: resultado ? resultado.potenciaReal : 0,
         score_kcal: resultado ? resultado.gastoMetabolico : 0,
         timeline: timelineState,
-        cargas_adaptadas: isScaled // A nova variável que criamos
+        cargas_adaptadas: isScaled
       };
 
       if (currentResultId) {
-        // Atualiza o resultado existente
         const { error } = await supabase.from('wod_results').update(resultPayload).eq('id', currentResultId);
         if (error) console.error('Erro ao atualizar resultado:', error);
       } else {
-        // Cria um resultado novo
         const { data, error } = await supabase.from('wod_results').insert([resultPayload]).select('id').single();
         if (error) {
           console.error('Erro ao salvar resultado:', error);
@@ -269,16 +244,11 @@ export default function App() {
 
     if (!isExporting) alert('Dados salvos com sucesso no DynaWOD!');
     
-    // ATENÇÃO: A função de buscar os WODs vai quebrar agora, porque ela lê da tabela velha!
-    if (typeof fetchWodsFromSupabase === 'function') {
-      // fetchWodsFromSupabase(); // Comentado temporariamente para não dar erro
-    }
-    
     return newShortCode;
   };
 
   const compartilharWod = async () => {
-    const code = await salvarNoSupabase(true); // Salva silenciosamente antes de exportar
+    const code = await salvarNoSupabase(true); 
     if (code) {
       navigator.clipboard.writeText(code);
       alert(`Código do WOD (${code}) copiado para a área de transferência! Envie para seus alunos.`);
@@ -289,7 +259,6 @@ export default function App() {
     const codeToFind = window.prompt('Digite o código de 6 dígitos do WOD:');
     if (!codeToFind) return;
 
-    // 🚨 MUDANÇA AQUI: Agora ele busca na tabela de Templates!
     const { data, error } = await supabase.from('wod_templates').select('*').eq('short_code', codeToFind.toUpperCase()).single();
     
     if (error || !data) {
@@ -303,7 +272,6 @@ export default function App() {
   const clonarWod = () => {
     if (!window.confirm('Deseja usar este treino como base para criar um NOVO WOD seu? O vínculo com o original será quebrado.')) return;
     
-    // Apaga os IDs originais. O React agora acha que é um WOD novo, feito do zero.
     setCurrentTemplateId(null);
     setCurrentShortCode(null);
     setCurrentResultId(null);
@@ -311,7 +279,6 @@ export default function App() {
     alert('Pronto! O WOD foi desvinculado. Faça suas alterações e clique em "Salvar WOD".');
   };
 
-  // === FUNÇÕES DA LOUSA (Mantidas) ===
   const addMovimento = (baseId: string | null = null) => {
     const newId = crypto.randomUUID();
     let newItem: ItemLousa = { originalId: newId, movId: 'air_squat', phase: 'round', reps: 10, carga: 0, tecnica: 'tng', extraVal: '' };
@@ -343,7 +310,6 @@ export default function App() {
     if (rec.movimentos) setLousa(rec.movimentos);
     if (rec.timeline) setTimelineState(rec.timeline);
     
-    // AQUI ESTÁ A MÁGICA DA MEMÓRIA:
     setCurrentTemplateId(rec.id);
     setCurrentShortCode(rec.short_code);
     
@@ -385,19 +351,16 @@ export default function App() {
     const itemsProcessados: any[] = [];
 
     flatItems.forEach(row => {
-      // Trava de segurança caso o movimento não exista no banco local
       const config = movimentosDB[row.movId] || movimentosDB['air_squat']; 
       const state = timelineState[row.rowId] || { reps: row.reps, start: '', end: '' };
       const repsEffective = state.reps !== undefined ? Number(state.reps) : (row.reps || 0);
       
-      // 🚨 MUDANÇA: Lê a carga da timeline (se o aluno mudou), senão usa a do RX
       const cargaEffective = state.carga !== undefined ? Number(state.carga) : (row.carga || 0);
 
       const startSec = parseClockTime(state.start);
       const endSec = parseClockTime(state.end);
       const tempoDefinitivoTemp = (startSec >= 0 && endSec > startSec) ? (endSec - startSec) : 0;
       
-      // 🚨 MUDANÇA: Passamos a 'cargaEffective' para o motor, ao invés da 'row.carga'
       const calc = calcularFisica(row.movId, config, repsEffective, cargaEffective, row.extraVal, atleta, row.tecnica, tempoDefinitivoTemp) || {};
 
       const trabMetabolicoWork = calc.trabMetabolicoWork || 0;
@@ -419,7 +382,7 @@ export default function App() {
         reps: repsEffective, 
         labelRounds: row.badgeText, 
         tempoDefinitivo: tempoDefinitivoTemp, 
-        transicaoEspecifica, 
+        transicaoEspecifica: tempoDefinitivoTemp > 0 && startSec >= lastEndSec ? startSec - lastEndSec : 0, 
         phase: row.phase 
       });
     });
@@ -428,8 +391,14 @@ export default function App() {
     const desc = tempoDescanso || 0;
     const tempoDisponivel = Math.max(0, tempoTotalReferencia - somaTempoDeterminadoGlobal - totalTransicaoGlobal - desc);
     
+    // Refatoração do Fator EPOC baseado na Potência Estimada Dinâmica
+    const refTempoEstimado = tempoTotalReferencia > 0 ? tempoTotalReferencia : tAlvoSec;
+    const tempoLiquidoEstimado = Math.max(1, refTempoEstimado - desc - totalTransicaoGlobal);
+    const potRealEstimada = tempoLiquidoEstimado > 0 ? (trabalhoMechTotalReal / tempoLiquidoEstimado) : 0;
+    const limiarPotencia = potRealEstimada / (atleta?.peso || 80);
+    const fatorEPOC = 1.05 + Math.min(0.20, limiarPotencia * 0.03);
+
     let logDetalhes = "", lastPhase: string | null = null;
-    const fatorEPOC = 1.15;
     let tempoTotalExecucaoEfetiva = 0;
 
     itemsProcessados.forEach(item => {
@@ -494,10 +463,8 @@ export default function App() {
     });
   };
 
-  // === RENDER: CARREGAMENTO ===
   if (loadingAuth) return <div style={{textAlign: 'center', marginTop: '50px'}}>Iniciando...</div>;
 
-  // === RENDER: TELA DE LOGIN ===
   if (!session) {
     return (
       <div className="container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '80vh' }}>
@@ -519,7 +486,6 @@ export default function App() {
     );
   }
 
-  // === RENDER: TELA DE ONBOARDING ===
   if (isNewUser) {
     return (
       <div className="container" style={{ maxWidth: '600px' }}>
@@ -562,28 +528,13 @@ export default function App() {
     );
   }
 
-  // === RENDER: APLICAÇÃO PRINCIPAL ===
   return (
     <div className="container" style={{ padding: 0, maxWidth: '1200px', margin: '0 auto' }}> 
       
-      {/* NOVO CABEÇALHO DYNAWOD */}
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 24px', backgroundColor: 'var(--bg-dark, #0a0a0a)', borderBottom: '1px solid var(--line-silver, #26272b)', marginBottom: '24px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          
-          {/* O símbolo da Mitocôndria (que você já tinha) */}
-          <img 
-            src="/favicon.png" 
-            alt="Símbolo DynaWOD" 
-            style={{ height: '40px', objectFit: 'contain' }} 
-          />
-          
-          {/* A escrita oficial em Imagem (Substituindo o texto antigo) */}
-          <img 
-            src="/dynawod-texto.png"
-            alt="DynaWOD Tipografia" 
-            style={{ height: '28px', objectFit: 'contain' }} /* Ajuste o 28px se precisar dela maior ou menor */
-          />
-          
+          <img src="/favicon.png" alt="Símbolo DynaWOD" style={{ height: '40px', objectFit: 'contain' }} />
+          <img src="/dynawod-texto.png" alt="DynaWOD Tipografia" style={{ height: '28px', objectFit: 'contain' }} />
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
@@ -602,7 +553,6 @@ export default function App() {
 
       <div style={{ padding: '0 24px' }}>
         
-        {/* NAVEGAÇÃO DE ABAS ATUALIZADA */}
         <div className="tabs">
           <button className={`tab-btn ${activeTab === 'prescricao' ? 'active' : ''}`} onClick={() => setActiveTab('prescricao')}>1. Lousa</button>
           <button className={`tab-btn ${activeTab === 'analise' ? 'active' : ''}`} onClick={() => setActiveTab('analise')}>2. Análise</button>
@@ -610,22 +560,13 @@ export default function App() {
           <button className={`tab-btn ${activeTab === 'historico' ? 'active' : ''}`} onClick={() => setActiveTab('historico')}>4. Histórico</button>
         </div>
 
-        {/* ABA 1: LOUSA (Agora contém o Domínio de Tempo) */}
         {activeTab === 'prescricao' && (
           <div className="panel">
-            
-            {/* DOMÍNIO DE TEMPO */}
             <h2>Estrutura do Treino</h2>
             <div className="grid" style={{ gridTemplateColumns: '1fr 1fr 1fr', marginBottom: '10px', gap: '15px' }}>
-              {/* NOVO CAMPO DE NOME DO TREINO */}
               <div className="form-group" style={{ marginBottom: '15px' }}>
                 <label>Nome do Treino (Opcional)</label>
-                <input 
-                  type="text" 
-                  value={nomeTreino} 
-                  onChange={e => setNomeTreino(e.target.value)} 
-                  placeholder="Ex: Murph, Fran, Open 24.1..." 
-                />
+                <input type="text" value={nomeTreino} onChange={e => setNomeTreino(e.target.value)} placeholder="Ex: Murph, Fran, Open 24.1..." />
               </div>
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label>Modalidade</label>
@@ -647,7 +588,6 @@ export default function App() {
 
             <hr style={{ borderColor: 'var(--line-silver, #26272b)', margin: '25px 0' }} />
 
-            {/* QUADRO DE MOVIMENTOS */}
             <h2>Quadro de Movimentos</h2>
             <button className="btn-add" onClick={() => addMovimento()} style={{ backgroundColor: 'transparent', color: 'var(--dyna-red, #FF2B3D)', border: '1px dashed var(--dyna-red, #FF2B3D)', padding: '10px 15px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', width: '100%', marginBottom: '15px' }}>+ Adicionar Exercício</button>
             
@@ -699,42 +639,30 @@ export default function App() {
             )}
             
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
-                
-                {/* Botão Importar */}
                 <button onClick={importarWod} style={{ flex: '1 1 140px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '1rem', backgroundColor: 'var(--bg-card, #181a1e)', color: '#fff', border: '1px solid var(--line-silver, #26272b)' }}>
                   <Download size={22} style={{ flexShrink: 0 }} /> 
-                  <span>Importar</span> {/* Encurtei um pouco o texto para melhorar o visual no mobile */}
+                  <span>Importar</span>
                 </button>
-                
-                {/* Botão Copiar (Compartilhar) */}
                 <button onClick={compartilharWod} style={{ flex: '1 1 140px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '1rem', backgroundColor: 'var(--dyna-burgundy, #7A0F1B)', color: '#fff', border: 'none', fontWeight: '600' }}>
                   <Share2 size={22} style={{ flexShrink: 0 }} /> 
                   <span>Copiar</span>
                 </button>
-
-                {/* NOVO: Botão Duplicar (Só aparece se já existir um WOD carregado) */}
                 {currentTemplateId && (
                   <button onClick={clonarWod} style={{ flex: '1 1 140px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '1rem', backgroundColor: '#3b82f6', color: '#fff', border: 'none', fontWeight: 'bold' }}>
                     <Copy size={22} style={{ flexShrink: 0 }} /> 
                     <span>Duplicar</span>
                   </button>
                 )}
-                
-                {/* Botão Salvar / Atualizar */}
                 <button onClick={() => salvarNoSupabase(false)} style={{ flex: '1 1 140px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '1rem', backgroundColor: 'var(--dyna-red, #FF2B3D)', color: '#fff', border: 'none', fontWeight: 'bold' }}>
                   <Save size={22} style={{ flexShrink: 0 }} /> 
                   <span>{currentTemplateId ? 'Atualizar WOD' : 'Salvar WOD'}</span>
                 </button>
-                
               </div>
           </div>
         )}
 
-        {/* ABA 2: ANÁLISE (Agora com o Score de destaque no topo) */}
         {activeTab === 'analise' && (
           <div className="panel">
-            
-            {/* NOVO BLOCO DE SCORE */}
             <div style={{ backgroundColor: 'var(--bg-card, #181a1e)', padding: '20px', borderRadius: '8px', borderLeft: '4px solid var(--dyna-red, #FF2B3D)', marginBottom: '25px' }}>
               <h2 style={{ margin: '0 0 10px 0', fontSize: '1.2rem' }}>Score (Resultado Real)</h2>
               <p style={{ margin: '0 0 15px 0', fontSize: '0.85rem', color: 'var(--text-muted, #8a8d94)' }}>Insira o resultado alcançado para calcular a potência gerada.</p>
@@ -771,7 +699,6 @@ export default function App() {
                   const cfg = movimentosDB[m.movId];
                   const st = timelineState[rowId] || { reps: m.reps, start: '', end: '' };
                   
-                  // 🚨 CORREÇÃO: Voltando com o rows.push para empurrar o HTML para a tela
                   rows.push(
                     <div key={rowId} className="wod-item-analise">
                       <div className={`badge-round ${badgeClass}`}>{badgeText}</div>
@@ -783,7 +710,6 @@ export default function App() {
                       </div>
                       <div><label>Reps</label><input type="number" value={st.reps !== undefined ? st.reps : m.reps} onChange={e => handleTimelineChange(rowId, 'reps', e.target.value === '' ? '' : Number(e.target.value))} /></div>
                       
-                      {/* CAMPO: CARGA REAL */}
                       <div>
                         <label>Carga Real</label>
                         <input 
@@ -827,7 +753,7 @@ export default function App() {
               onClick={gerarCardInstagram} 
               style={{ 
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', 
-                fontSize: '1rem', backgroundColor: '#8a33e2', /* Cor chamativa tipo roxo do Instagram */
+                fontSize: '1rem', backgroundColor: '#8a33e2',
                 color: '#fff', border: 'none', fontWeight: 'bold', 
                 padding: '12px 20px', borderRadius: '8px', width: '100%', marginTop: '20px'
               }}
@@ -837,7 +763,6 @@ export default function App() {
           </div>
         )}
 
-        {/* ABA 3: ATLETA (Nova aba dedicada) */}
         {activeTab === 'atleta' && (
           <div className="panel">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
@@ -867,7 +792,6 @@ export default function App() {
           </div>
         )}
 
-        {/* ABA 4: HISTÓRICO */}
         {activeTab === 'historico' && (
           <div className="panel">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -923,16 +847,12 @@ export default function App() {
         )}
       
       </div> 
-      {/* FECHAMENTO DA DIV DE PADDING */}
 
-      {/* ========================================== */}
-      {/* 📸 MOLDE DO CARD DO INSTAGRAM (ESCONDIDO)  */}
-      {/* ========================================== */}
       <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
         <div 
           id="instagram-card-export" 
           style={{
-            width: '420px', // Aumentado um pouco para acomodar os gráficos sem cortar
+            width: '420px', 
             backgroundColor: '#111315',
             color: '#fff',
             fontFamily: 'sans-serif',
@@ -944,21 +864,18 @@ export default function App() {
             backgroundImage: 'linear-gradient(to bottom, #111315, #1a1a1a)'
           }}
         >
-          {/* 1. Cabeçalho (Logo) */}
           <div style={{ textAlign: 'center' }}>
             <h1 style={{ margin: 0, fontSize: '32px', fontStyle: 'italic', fontWeight: '900', letterSpacing: '1px' }}>DynaWOD</h1>
             <p style={{ margin: '5px 0 0 0', color: '#8a8d94', fontSize: '13px', fontWeight: 'bold' }}>V2 - RESUMO DE TREINO</p>
             <p style={{ margin: '2px 0 0 0', color: '#8a8d94', fontSize: '12px' }}>Data: {new Date().toLocaleDateString('pt-BR')}</p>
           </div>
 
-          {/* 2. Bloco de Prescrição (O Template) */}
           <div style={{ border: '2px solid #26272b', borderRadius: '12px', padding: '20px', backgroundColor: '#181a1e' }}>
             <h2 style={{ margin: '0 0 12px 0', fontSize: '20px', display: 'flex', alignItems: 'baseline', gap: '8px' }}>
               Prescription <span style={{ fontSize: '11px', color: '#8a8d94', fontWeight: 'normal' }}>(PLANTA BAIXA DO WOD)</span>
             </h2>
             <div style={{ color: '#d1d5db', fontSize: '16px', lineHeight: '1.6' }}>
               
-              {/* CORREÇÃO DO FOR_TIME */}
               <strong style={{ color: '#fff', fontSize: '18px' }}>TREINO {tipoTreino.replace('_', ' ')}</strong><br />
               
               TIME CAP: <span style={{ color: '#fff' }}>{tempoAlvo || 'N/A'}</span> • RNDS: <span style={{ color: '#fff' }}>{roundsPrescritos || 'N/A'}</span><br />
@@ -966,7 +883,6 @@ export default function App() {
             </div>
           </div>
 
-          {/* 3. Bloco de Resultado (A Execução) */}
           <div style={{ border: '2px solid var(--dyna-red, #FF2B3D)', borderRadius: '12px', padding: '25px 15px', backgroundColor: '#181a1e', boxShadow: '0 0 25px rgba(255, 43, 61, 0.15)', position: 'relative', marginTop: '10px' }}>
             
             <h2 style={{ margin: 0, fontSize: '24px', position: 'absolute', top: '-15px', backgroundColor: '#181a1e', padding: '0 10px', color: 'var(--dyna-red, #FF2B3D)' }}>
@@ -979,7 +895,6 @@ export default function App() {
                 {tempoReal || '00:00'}
               </div>
               
-              {/* Etiqueta RX ou Scaled */}
               {isScaled ? (
                 <span style={{ backgroundColor: '#FF2B3D', color: '#fff', padding: '6px 16px', borderRadius: '20px', fontSize: '16px', fontWeight: '900', letterSpacing: '1px' }}>STATUS: SCALED</span>
               ) : (
@@ -987,14 +902,11 @@ export default function App() {
               )}
             </div>
 
-            {/* Sub-cards de Física e Metabolismo com Gráficos SVG ("Reloginhos") */}
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'space-between' }}>
               
-              {/* CARD DE POTÊNCIA */}
               <div style={{ flex: 1, backgroundColor: '#111315', padding: '15px 5px', borderRadius: '10px', textAlign: 'center', border: '1px solid #26272b' }}>
                 <div style={{ fontSize: '11px', color: '#8a8d94', marginBottom: '10px', fontWeight: 'bold' }}>POTÊNCIA MÉDIA</div>
                 
-                {/* SVG: Velocímetro (Speedometer) */}
                 <svg width="70" height="35" viewBox="0 0 100 50" style={{ marginBottom: '8px' }}>
                   <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="#26272b" strokeWidth="10" />
                   <path d="M 10 50 A 40 40 0 0 1 70 20" fill="none" stroke="#FF2B3D" strokeWidth="10" strokeLinecap="round" />
@@ -1002,24 +914,20 @@ export default function App() {
                   <circle cx="50" cy="50" r="4" fill="#fff" />
                 </svg>
 
-                {/* CORREÇÃO: Arredondamento da Potência */}
                 <div style={{ fontSize: '22px', fontWeight: '900' }}>
                   {resultado ? resultado.potenciaReal.toFixed(0) : 0} <span style={{ fontSize: '12px', fontWeight: 'normal', color: '#8a8d94' }}>W</span>
                 </div>
               </div>
               
-              {/* CARD DE GASTO ENERGÉTICO */}
               <div style={{ flex: 1, backgroundColor: '#111315', padding: '15px 5px', borderRadius: '10px', textAlign: 'center', border: '1px solid #26272b' }}>
                 <div style={{ fontSize: '11px', color: '#8a8d94', marginBottom: '10px', fontWeight: 'bold' }}>GASTO ENERGÉTICO</div>
                 
-                {/* SVG: Medidor de Calorias (Chama) */}
                 <svg width="70" height="35" viewBox="0 0 100 50" style={{ marginBottom: '8px' }}>
                   <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="#26272b" strokeWidth="10" />
                   <path d="M 10 50 A 40 40 0 0 1 85 30" fill="none" stroke="#ff9800" strokeWidth="10" strokeLinecap="round" />
                   <path d="M 50 45 Q 40 45 45 30 Q 50 20 50 15 Q 50 25 55 30 Q 60 45 50 45" fill="#ff9800" />
                 </svg>
 
-                {/* CORREÇÃO: Arredondamento do Metabolismo */}
                 <div style={{ fontSize: '22px', fontWeight: '900' }}>
                   {resultado ? resultado.gastoMetabolico.toFixed(0) : 0} <span style={{ fontSize: '12px', fontWeight: 'normal', color: '#8a8d94' }}>kcal</span>
                 </div>
@@ -1028,7 +936,6 @@ export default function App() {
             </div>
           </div>
           
-          {/* Rodapé */}
           <div style={{ textAlign: 'center', color: '#52525b', fontSize: '12px', marginTop: '10px' }}>
             Gerado pelo aplicativo DynaWOD - dynawod.com
           </div>

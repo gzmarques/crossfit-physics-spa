@@ -337,6 +337,7 @@ export default function App() {
   const [roundsReal, setRoundsReal] = useState(0);
   const [tempoReal, setTempoReal] = useState('');
   const [tempoDescanso, setTempoDescanso] = useState(0);
+  const [nomeTreino, setNomeTreino] = useState('');
 
   // === RASTREAMENTO DO WOD ATUAL ===
   // Substitutos do antigo currentWodId:
@@ -512,7 +513,7 @@ export default function App() {
     // 1. PREPARAR DADOS DA PRESCRIÇÃO (TEMPLATE)
     // ==========================================
     const templatePayload = {
-      title: `Treino ${tipoTreino} - ${new Date().toLocaleDateString('pt-BR')}`,
+      title: nomeTreino.trim() !== '' ? nomeTreino : `Treino ${tipoTreino} - ${new Date().toLocaleDateString('pt-BR')}`,
       short_code: newShortCode,
       tipo_treino: tipoTreino,
       tempo_alvo: tempoAlvo,
@@ -633,7 +634,8 @@ export default function App() {
   };
   const removeMovimento = (id: string) => setLousa(lousa.filter(m => m.originalId !== id));
   const updateMovimento = (id: string, field: keyof ItemLousa, val: any) => setLousa(lousa.map(item => item.originalId === id ? { ...item, [field]: val } : item));
-  const handleTimelineChange = (rowId: string, field: keyof TimelineStateItem, val: any) => setTimelineState(prev => ({ ...prev, [rowId]: { ...(prev[rowId] || { reps: 0, start: '', end: '' }), [field]: val } }));
+  const handleTimelineChange = (rowId: string, field: keyof TimelineStateItem, val: any) => 
+    setTimelineState(prev => ({ ...prev, [rowId]: { ...(prev[rowId] || {}), [field]: val } }));
   const carregarDoSupabase = (rec: any) => {
     setTipoTreino(rec.tipo_treino); 
     setTempoAlvo(rec.tempo_alvo); 
@@ -651,6 +653,9 @@ export default function App() {
     setCurrentShortCode(rec.short_code);
     
     setActiveTab('prescricao');
+
+    if (rec.title && !rec.title.startsWith('Treino')) setNomeTreino(rec.title);
+    else setNomeTreino('');
   };
 
   const processarWOD = () => {
@@ -763,7 +768,7 @@ export default function App() {
       const totalKcalLinha = (trabMetWork * fatorEPOC) + gastoBasalLinha;
       
       let strPot = "", strTmp = "";
-      const trabMechLinha = item.trabMechLinha || 0;
+      const trabMechLinha = item.trabMech || 0;
       const extraLog = item.infoExtraLog || '';
 
       if (tempoParaPotencia > 0) {
@@ -917,6 +922,16 @@ export default function App() {
             {/* DOMÍNIO DE TEMPO */}
             <h2>Estrutura do Treino</h2>
             <div className="grid" style={{ gridTemplateColumns: '1fr 1fr 1fr', marginBottom: '10px', gap: '15px' }}>
+              {/* NOVO CAMPO DE NOME DO TREINO */}
+              <div className="form-group" style={{ marginBottom: '15px' }}>
+                <label>Nome do Treino (Opcional)</label>
+                <input 
+                  type="text" 
+                  value={nomeTreino} 
+                  onChange={e => setNomeTreino(e.target.value)} 
+                  placeholder="Ex: Murph, Fran, Open 24.1..." 
+                />
+              </div>
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label>Modalidade</label>
                 <select value={tipoTreino} onChange={e => setTipoTreino(e.target.value as Modalidade)}>
@@ -1071,7 +1086,7 @@ export default function App() {
                           RX: {m.carga > 0 ? `${m.carga}kg` : '--'} {m.extraVal ? `| ${m.extraVal}` : ''}
                         </div>
                       </div>
-                      <div><label>Reps</label><input type="number" value={st.reps !== undefined ? st.reps : m.reps} onChange={e => handleTimelineChange(rowId, 'reps', Number(e.target.value))} /></div>
+                      <div><label>Reps</label><input type="number" value={st.reps !== undefined ? st.reps : m.reps} onChange={e => handleTimelineChange(rowId, 'reps', e.target.value === '' ? '' : Number(e.target.value))} /></div>
                       
                       {/* CAMPO: CARGA REAL */}
                       <div>
@@ -1079,7 +1094,7 @@ export default function App() {
                         <input 
                           type="number" 
                           value={st.carga !== undefined ? st.carga : m.carga} 
-                          onChange={e => handleTimelineChange(rowId, 'carga', Number(e.target.value))}
+                          onChange={e => handleTimelineChange(rowId, 'carga', e.target.value === '' ? '' : Number(e.target.value))}
                           disabled={!(cfg?.usaCarga)}
                           style={{ border: isScaled && (st.carga !== undefined ? st.carga : m.carga) < m.carga ? '1px solid var(--dyna-red, #FF2B3D)' : '' }}
                         />
