@@ -54,26 +54,31 @@ export interface ResultadoProcessamento {
   logDetalhesHTML: string;
 }
 
-export interface WodDatabaseRecord {
+// 1. A Prescrição (O Treino Clássico / Template)
+export interface WodTemplateRecord {
   id?: string;
-  short_code?: string;
   created_at?: string;
   title: string;
-  tipo_treino: Modalidade;
+  short_code: string;
+  tipo_treino: string;
   tempo_alvo: string;
   rounds_prescritos: number;
-  rounds_real?: number;
-  tempo_real?: string;
-  tempo_descanso?: number;
-  atleta: AtletaPerfil;
-  movimentos: ItemLousa[];
-  timeline?: Record<string, TimelineStateItem>;
-  score_watts?: number;
-  score_kcal?: number;
+  movimentos: any[]; // Se você tiver a interface separada, pode usar Movimento[]
+  creator_id?: string;
+}
+
+// 2. A Execução (O Resultado do Atleta)
+export interface WodResultRecord {
+  id?: string;
+  created_at?: string;
+  template_id: string; // Isso liga o resultado ao WOD clássico!
   athlete_id?: string;
-  user_id?: string;
-  currentWodId?: string;
-  currentShortCode?: string;
+  tempo_real: string;
+  rounds_real: number;
+  score_watts: number;
+  score_kcal: number;
+  timeline?: any; 
+  cargas_adaptadas: boolean; // True = Scaled, False = RX
 }
 
 export interface UserProfile {
