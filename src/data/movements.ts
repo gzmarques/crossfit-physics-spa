@@ -44,8 +44,8 @@ export const movimentosDB: Record<string, MovimentoConfig> = {
   
   'air_squat': { nome: 'Air Squat', grupo: 'Agachamento BW', categoria: 'squat_bw', usaCarga: false },
   'pistol_squat': { nome: 'Pistol Squat (Alt)', grupo: 'Agachamento BW', categoria: 'squat_bw', usaCarga: false, isUnilateral: true },
-'box_step_up': { nome: 'Box Step-up', grupo: 'Agachamento BW', categoria: 'box_step_up', usaCarga: false, paramExtra: { label: 'Caixa(m) 0=Auto', val: '0', type: 'number' }, isUnilateral: true },
-'high_box_step_up': { nome: 'High Box Step-up', grupo: 'Agachamento BW', categoria: 'box_step_up', usaCarga: false, isHighBox: true, paramExtra: { label: 'Caixa(m) 0=Auto', val: '0', type: 'number' }, isUnilateral: true },
+  'box_step_up': { nome: 'Box Step-up', grupo: 'Agachamento BW', categoria: 'box_step_up', usaCarga: false, paramExtra: { label: 'Caixa(m) 0=Auto', val: '0', type: 'number' }, isUnilateral: true },
+  'high_box_step_up': { nome: 'High Box Step-up', grupo: 'Agachamento BW', categoria: 'box_step_up', usaCarga: false, isHighBox: true, paramExtra: { label: 'Caixa(m) 0=Auto', val: '0', type: 'number' }, isUnilateral: true },
   'box_jump': { nome: 'Box Jump', grupo: 'Agachamento BW', categoria: 'box_jump', usaCarga: false, paramExtra: { label: 'Caixa(m) 0=Auto', val: '0', type: 'number' } },
   'high_box_jump': { nome: 'High Box Jump', grupo: 'Agachamento BW', categoria: 'box_jump', usaCarga: false, isHighBox: true, paramExtra: { label: 'Caixa(m) 0=Auto', val: '0', type: 'number' } },
   'box_jump_over': { nome: 'Box Jump Over', grupo: 'Agachamento BW', categoria: 'box_jump_over', usaCarga: false, paramExtra: { label: 'Caixa(m) 0=Auto', val: '0', type: 'number' } },
@@ -111,11 +111,46 @@ export const movimentosDB: Record<string, MovimentoConfig> = {
   'run': { nome: 'Corrida', grupo: 'Monostrutural', categoria: 'corrida', usaCarga: false, paramExtra: { label: 'Dist (m)', val: '400', type: 'number' } },
   'air_runner': { nome: 'Curved Treadmill (AirRunner)', grupo: 'Monostrutural', categoria: 'air_runner', usaCarga: false, paramExtra: { label: 'Dist (m)', val: '400', type: 'number' } },
   'shuttle_run': { nome: 'Shuttle Run', grupo: 'Monostrutural', categoria: 'shuttle_run', usaCarga: false, paramExtra: { label: 'Tiro (m)', val: '7.5', type: 'number' } },
-  'farmers_carry': { nome: 'Farmer\'s Carry', grupo: 'Monostrutural', categoria: 'corrida_carga', usaCarga: true, paramExtra: { label: 'Dist (m)', val: '50', type: 'number' } }, 
-  'yoke_carry': { nome: 'Yoke Carry', grupo: 'Hyrox / Strongman', categoria: 'yoke_carry', usaCarga: true, paramExtra: { label: 'Dist (m)', val: '15', type: 'number' } },
-  'sled_push': { nome: 'Sled Push', grupo: 'Monostrutural', categoria: 'friccao_horizontal_push', usaCarga: true, paramExtra: { label: 'Trecho (m)', val: '12.5', type: 'number' } }, 
-  'sled_pull': { nome: 'Sled Pull', grupo: 'Monostrutural', categoria: 'friccao_horizontal_pull', usaCarga: true, paramExtra: { label: 'Trecho (m)', val: '12.5', type: 'number' } }, 
-  'heavy_sled_pull': { nome: 'Heavy Sled Pull (sem corda)', grupo: 'Hyrox / Strongman', categoria: 'friccao_horizontal_pull_heavy', usaCarga: true, paramExtra: { label: 'Dist (m)', val: '12.5', type: 'number'} },
+  'farmers_carry': { 
+    nome: 'Farmer\'s Carry', grupo: 'Monostrutural', categoria: 'corrida_carga', usaCarga: true, 
+    paramExtra: { label: 'Trecho (m)', val: '10', type: 'number' },
+    paramExtra2: { 
+      label: 'Terreno (η)', val: '1.0', type: 'select', 
+      options: [ {label: 'Ginásio/Alcatrão', value: '1.0'}, {label: 'Terra/Cascalho', value: '1.1'}, {label: 'Grama/Turf', value: '1.2'}, {label: 'Areia Solta', value: '2.1'} ] 
+    }
+  }, 
+  'yoke_carry': { 
+    nome: 'Yoke Carry', grupo: 'Hyrox / Strongman', categoria: 'yoke_carry', usaCarga: true, 
+    paramExtra: { label: 'Trecho (m)', val: '10', type: 'number' },
+    paramExtra2: { 
+      label: 'Terreno (η)', val: '1.0', type: 'select', 
+      options: [ {label: 'Ginásio/Alcatrão', value: '1.0'}, {label: 'Terra/Cascalho', value: '1.1'}, {label: 'Grama/Turf', value: '1.2'}, {label: 'Areia Solta', value: '2.1'} ] 
+    }
+  },
+  'sled_push': { 
+    nome: 'Sled Push', grupo: 'Monostrutural', categoria: 'friccao_horizontal_push', usaCarga: true, 
+    paramExtra: { label: 'Trecho (m)', val: '10', type: 'number' },
+    paramExtra2: { 
+      label: 'Superfície (μ)', val: '0.35', type: 'select', 
+      options: [ {label: 'Grama Sintética', value: '0.35'}, {label: 'Grama Natural', value: '0.50'}, {label: 'Asfalto', value: '0.65'}, {label: 'Emborrachado', value: '0.85'} ] 
+    } 
+  }, 
+  'sled_pull': { 
+    nome: 'Sled Pull', grupo: 'Monostrutural', categoria: 'friccao_horizontal_pull', usaCarga: true, 
+    paramExtra: { label: 'Trecho (m)', val: '10', type: 'number' },
+    paramExtra2: { 
+      label: 'Superfície (μ)', val: '0.35', type: 'select', 
+      options: [ {label: 'Grama Sintética', value: '0.35'}, {label: 'Grama Natural', value: '0.50'}, {label: 'Asfalto', value: '0.65'}, {label: 'Emborrachado', value: '0.85'} ] 
+    } 
+  }, 
+  'heavy_sled_pull': { 
+    nome: 'Heavy Sled Pull', grupo: 'Hyrox / Strongman', categoria: 'friccao_horizontal_pull_heavy', usaCarga: true, 
+    paramExtra: { label: 'Trecho (m)', val: '10', type: 'number' },
+    paramExtra2: { 
+      label: 'Superfície (μ)', val: '0.35', type: 'select', 
+      options: [ {label: 'Grama Sintética', value: '0.35'}, {label: 'Grama Natural', value: '0.50'}, {label: 'Asfalto', value: '0.65'}, {label: 'Emborrachado', value: '0.85'} ] 
+    } 
+  },
   
   'row': { nome: 'Remo (Concept2)', grupo: 'Ergômetros', categoria: 'remo', usaCarga: false, paramExtra: { label: 'Pace ou Cal', val: '2:00', type: 'text' } },
   'skierg': { nome: 'SkiErg (Concept2)', grupo: 'Ergômetros', categoria: 'remo', usaCarga: false, paramExtra: { label: 'Pace ou Cal', val: '2:10', type: 'text' } },

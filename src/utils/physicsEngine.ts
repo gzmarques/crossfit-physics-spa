@@ -29,17 +29,29 @@ export function calcularFisica(
   reps: number,
   pCarga: number,
   extraV: string,
+  extraV2: string,
   atleta: AtletaPerfil,
   tecnica: string,
-  deltaT = 0
+  deltaT = 0,
+  tempoAcumulado = 0 // Variável latente de falência sistêmica
 ) {
-  const MU_D_TURF_PUSH = 0.33; 
-  const MU_D_TURF_PULL = 0.85;
+
   const MASSA_SLED = 43.0; 
 
   let fTec = 1.0;
-  if (atleta.nivelTecnico === 'iniciante') fTec = 0.85; 
-  if (atleta.nivelTecnico === 'avancado') fTec = 1.10;
+  let kDegradacao = 0.00015; // Constante de declínio celular para perfil Intermediário
+
+  if (atleta.nivelTecnico === 'iniciante') { 
+      fTec = 0.85; 
+      kDegradacao = 0.00025; // Maior suscetibilidade à falha 
+  } 
+  if (atleta.nivelTecnico === 'avancado') { 
+      fTec = 1.10; 
+      kDegradacao = 0.00008; // Maior resiliência oxidativa
+  }
+
+  // Degradação exponencial biológica (fTec cai conforme o WOD avança)
+  fTec = fTec * Math.exp(-kDegradacao * tempoAcumulado);
 
   const isM = (atleta.sexo === 'M');
   
@@ -56,24 +68,35 @@ export function calcularFisica(
   const m_sup = Math.max(0, atleta.peso - m_thigh - m_shank_foot); 
 
   // --- NOVA REFATORAÇÃO 1: Unilateralidade e Abdução ---
-  const anguloAbducaoRad = 20 * (Math.PI / 180);
-  const cosAbducao = Math.cos(anguloAbducaoRad);
+  // --- REFATORAÇÃO DE ANTROPOMETRIA: Dominância de Quadril vs Joelho ---
+  // Calcula o rácio entre o Fêmur e o Tronco. Fêmures longos geram maior inclinação do tronco (Hip Dominant).
+  const racioFemurTronco = L_thigh / L_trunk;
+  
+  // O ângulo de inclinação do tronco aumenta proporcionalmente ao tamanho do fêmur
+  // Um rácio normal (aprox. 1.0) gera ~20 graus de abdução/inclinação basal.
+  const anguloInclinacaoTroncoRad = (20 * racioFemurTronco) * (Math.PI / 180);
+  const cosInclinacao = Math.cos(anguloInclinacaoTroncoRad);
+  
+  // Penalidade de Torque Lombar: Se o tronco inclina mais, o centro de massa desloca-se, aumentando o trabalho isolado
+  const fatorTorqueLombar = 1.0 + Math.max(0, (racioFemurTronco - 1.0) * 0.15);
+
   let W_squat_body = 0;
   
   if (cfg.isUnilateral) {
-    W_squat_body = (m_sup * G * (L_thigh * cosAbducao)) + 
-                   ((m_thigh / 2) * G * ((L_thigh * 0.59) * cosAbducao)) + 
+    W_squat_body = ((m_sup * G * (L_thigh * cosInclinacao)) * fatorTorqueLombar) + 
+                   ((m_thigh / 2) * G * ((L_thigh * 0.59) * cosInclinacao)) + 
                    ((m_thigh / 2) * G * L_thigh); 
   } else {
-    W_squat_body = (m_sup * G * (L_thigh * cosAbducao)) + (m_thigh * G * ((L_thigh * 0.59) * cosAbducao));
+    W_squat_body = ((m_sup * G * (L_thigh * cosInclinacao)) * fatorTorqueLombar) + 
+                   (m_thigh * G * ((L_thigh * 0.59) * cosInclinacao));
   }
   
   const h_puxao = atleta.estatura * 0.60;
   
   // --- NOVA REFATORAÇÃO 2: Curva Força-Velocidade logarítmica para o LPO ---
-  const loadRatio = pCarga / Math.max(1, atleta.peso);
-  const velMax = 2.2; 
-  const velLPO = Math.max(1.1, velMax - (0.8 * Math.log(1 + loadRatio)));
+const loadRatio = pCarga / Math.max(1, atleta.peso);
+  const velMaxAlometrico = 1.6 + (L_arm * 0.40) + (L_perna * 0.30); 
+  const velLPO = Math.max(1.1, velMaxAlometrico - (0.8 * Math.log(1 + loadRatio)));
   const energiaCineticaBarra = 0.5 * pCarga * Math.pow(velLPO, 2);
   const dissipacaoExcentricaGRF = energiaCineticaBarra * 0.15; // Choque térmico
   
@@ -308,36 +331,57 @@ export function calcularFisica(
           break;
 
       case 'friccao_horizontal_push': {
-          // Refatoração 3: Ângulo dinâmico baseado na sobrecarga relativa
+          const trecho = Number(extraV) || 10;
+          const mu_push = Number(extraV2) || 0.35; 
+
           const loadRatio = pCarga / Math.max(1, atleta.peso);
           const anguloDinamico = Math.max(10, 30 - (loadRatio * 5)); 
           const radDinamico = anguloDinamico * Math.PI / 180;
-          const F_push = (MU_D_TURF_PUSH * (pCarga + MASSA_SLED) * G) / (Math.cos(radDinamico) - MU_D_TURF_PUSH * Math.sin(radDinamico));
-          const W_sled_push = F_push * Math.cos(radDinamico) * extraSafe;
-          tMech = W_sled_push + (atleta.peso * G * 0.15 * extraSafe); 
-          exL = ` (${extraSafe.toFixed(1)}m)`; 
+          
+          const F_push = (mu_push * (pCarga + MASSA_SLED) * G) / (Math.cos(radDinamico) - mu_push * Math.sin(radDinamico));
+          const W_sled_push = F_push * Math.cos(radDinamico) * trecho;
+          
+          tMech = W_sled_push + (atleta.peso * G * 0.15 * trecho); 
+          exL = ` (${safeReps}x ${trecho}m | μ:${mu_push})`; 
           break;
       }
       case 'friccao_horizontal_pull': {
+          const trecho = Number(extraV) || 10;
+          const mu_pull = Number(extraV2) || 0.35; 
+
           const rad20 = 20 * Math.PI / 180;
-          const F_pull = (MU_D_TURF_PULL * (pCarga + MASSA_SLED) * G) / (Math.cos(rad20) + MU_D_TURF_PULL * Math.sin(rad20));
-          const W_sled_pull = F_pull * Math.cos(rad20) * extraSafe;
-          tMech = W_sled_pull + (atleta.peso * G * 0.15 * extraSafe); 
-          exL = ` (${extraSafe.toFixed(1)}m)`; 
+          const F_pull = (mu_pull * (pCarga + MASSA_SLED) * G) / (Math.cos(rad20) + mu_pull * Math.sin(rad20));
+          const W_sled_pull = F_pull * Math.cos(rad20) * trecho;
+          
+          tMech = W_sled_pull + (atleta.peso * G * 0.15 * trecho); 
+          exL = ` (${safeReps}x ${trecho}m | μ:${mu_pull})`; 
           break;
       }
       case 'friccao_horizontal_pull_heavy': {
-          const F_pull_h = MU_D_TURF_PULL * pCarga * G; 
-          tMech = (F_pull_h * extraSafe) + (atleta.peso * G * 0.15 * extraSafe); 
-          exL = ` (${extraSafe.toFixed(1)}m)`; 
+          const trecho = Number(extraV) || 10;
+          const mu_pullH = Number(extraV2) || 0.35; 
+
+          const F_pull_h = mu_pullH * pCarga * G; 
+          tMech = (F_pull_h * trecho) + (atleta.peso * G * 0.15 * trecho); 
+          exL = ` (${safeReps}x ${trecho}m | μ:${mu_pullH})`; 
           break;
       }
 
       case 'corrida_carga': 
-      case 'yoke_carry': 
-          tMech = (atleta.peso + pCarga) * G * 0.05 * extraSafe; 
-          exL = ` (${extraSafe.toFixed(1)}m)`; 
+      case 'yoke_carry': {
+          const racioSobrecarga = pCarga / Math.max(1, atleta.peso);
+          const oscilacaoDinamica = 0.05 + (0.02 * racioSobrecarga); 
+          // O cálculo aqui é feito para 1 metro. No final do motor, ele multiplica pelo safeReps (que agora é a distância total).
+          tMech = (atleta.peso + pCarga) * G * oscilacaoDinamica; 
+          
+          let nomeTerreno = "Ginásio";
+          if (extraV === '1.1') nomeTerreno = "Terra";
+          if (extraV === '1.2') nomeTerreno = "Turf";
+          if (extraV === '2.1') nomeTerreno = "Areia";
+          if (extraV === '4.1') nomeTerreno = "Neve";
+          exL = ` (${safeReps}m em ${nomeTerreno})`; 
           break;
+      }
       case 'shuttle_run': 
           tMech = (atleta.peso * G * (0.07 * 0.75 * extraSafe)) + (0.50 * atleta.peso * Math.pow(3.0, 2)); 
           exL = ` (${extraSafe.toFixed(1)}m)`; 
@@ -423,10 +467,47 @@ export function calcularFisica(
       tMetWork = 1.32 * (0.90 * atleta.peso * (extraSafe / 1000.0)); 
       tMetWorkConcIsom = tMetWork; 
   } else if (cfg.categoria === 'corrida_carga' || cfg.categoria === 'yoke_carry') { 
-      const V = deltaT > 0 ? (extraSafe / deltaT) : 1.2; 
-      const kPega = cfg.categoria === 'yoke_carry' ? 1.65 : 1.55; 
-      const M_watts = kPega * (1.5 * atleta.peso + 2.0 * (atleta.peso + pCarga) * Math.pow(pCarga / Math.max(1, atleta.peso), 2) + 1.0 * (atleta.peso + pCarga) * (1.5 * V * V));
-      tMetWork = (M_watts * (deltaT > 0 ? deltaT : (extraSafe / V))) / 4184.0; 
+
+      const distanciaDinamica = safeReps; // O usuário digitou a distância no campo Reps/Mts
+      const eta = Number(extraV) || 1.0;  // O valor selecionado no dropdown
+
+      // 1. Definição estrita das grandezas do modelo de Pandolf
+      const W = atleta.peso; // Peso corporal basal do atleta (kg)
+      const L = pCarga;      // Massa da carga transportada (kg)
+      const V = deltaT > 0 ? (extraSafe / deltaT) : 1.2; // Velocidade de translação (m/s)
+      
+      // 2. Fatores exógenos (Terreno e Topografia)
+      const G_grade = 0; // Gradiente de elevação em %. (0 = plano). Expansível futuramente.
+
+      // 3. Fator de assimetria e tensão miofascial
+      // Compensa a dispersão de força necessária para estabilizar o Farmer's Carry ou Yoke
+      const kAssimetria = cfg.categoria === 'yoke_carry' ? 1.30 : 1.20; 
+
+      // 4. Decomposição da Equação de Pandolf (1977) Modificada
+      // Componente A: Custo metabólico basal para sustentação bípede
+      const custoBasal = 1.5 * W;
+
+      // Componente B: A crucial Penalidade Quadrática da Carga
+      const penalidadeCarga = 2.0 * (W + L) * Math.pow(L / Math.max(1, W), 2);
+
+      // Componente C: Custo de translação espacial perante o coeficiente de terreno
+      const custoTranslacao = eta * (W + L) * (1.5 * Math.pow(V, 2) + 0.35 * V * G_grade);
+
+      // Componente D: Correção de Santee (aplicável exclusivamente em declives para abater a tensão)
+      let correcaoSantee = 0;
+      if (G_grade < 0) {
+          correcaoSantee = eta * (W + L) * ((V * G_grade * 0.35) - (Math.pow(V * G_grade, 2) / W));
+      }
+
+      // 5. Agregação Termodinâmica (M_W) expressa em Watts Metabólicos
+      const M_watts = kAssimetria * (custoBasal + penalidadeCarga + custoTranslacao + correcaoSantee);
+      const tempoExecucao = deltaT > 0 ? deltaT : (distanciaDinamica / V);
+
+      // 6. Conversão do dispêndio absoluto (Joules térmicos) para kCal (1 kCal = 4184 Joules)
+      // Como o return final da função multiplica tMetWork por safeReps,
+      // precisamos dividir o total pelo safeReps aqui para que o resultado não seja duplicado.
+      const trabalhoMetabolicoTotal = (M_watts * tempoExecucao) / 4184.0;
+      tMetWork = trabalhoMetabolicoTotal / safeReps; 
       tMetWorkConcIsom = tMetWork;
   } else if (['remo', 'bike'].includes(cfg.categoria)) { 
       if (isCalorieErgo) { 

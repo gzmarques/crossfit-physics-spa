@@ -281,7 +281,7 @@ export default function App() {
 
   const addMovimento = (baseId: string | null = null) => {
     const newId = crypto.randomUUID();
-    let newItem: ItemLousa = { originalId: newId, movId: 'air_squat', phase: 'round', reps: 10, carga: 0, tecnica: 'tng', extraVal: '' };
+    let newItem: ItemLousa = { originalId: newId, movId: 'air_squat', phase: 'round', reps: 10, carga: 0, tecnica: 'tng', extraVal: '', extraVal2: '' };
     if (baseId) {
       const idx = lousa.findIndex(m => m.originalId === baseId);
       if (idx !== -1) {
@@ -334,7 +334,7 @@ export default function App() {
       const cfg = movimentosDB[m.movId];
       if (!cfg) return;
       const mult = (m.phase === 'round') ? (roundsPrescritos || 1) : 1;
-      const calc = calcularFisica(m.movId, cfg, m.reps, m.carga, m.extraVal, atleta, m.tecnica, 0);
+      const calc = calcularFisica(m.movId, cfg, m.reps, m.carga, m.extraVal, m.extraVal2 || '', atleta, m.tecnica, 0);
       const trab = calc?.trabMech || 0;
       trabalhoMechTotalEsp += trab * mult;
     });
@@ -343,11 +343,13 @@ export default function App() {
     if (roundsTimeline < 1) roundsTimeline = 1;
 
     const flatItems: any[] = [];
-    lousa.filter(m => m.phase === 'buyin').forEach(m => flatItems.push({ rowId: `${m.originalId}-R0`, movId: m.movId, reps: m.reps, carga: m.carga, extraVal: m.extraVal, phase: 'buyin', tecnica: m.tecnica, badgeText: 'Buy-in', badgeClass: 'badge-buyin' }));
-    for (let r = 1; r <= roundsTimeline; r++) lousa.filter(m => m.phase === 'round').forEach(m => flatItems.push({ rowId: `${m.originalId}-R${r}`, movId: m.movId, reps: m.reps, carga: m.carga, extraVal: m.extraVal, phase: 'round', tecnica: m.tecnica, badgeText: `R ${r}`, badgeClass: '' }));
-    lousa.filter(m => m.phase === 'cashout').forEach(m => flatItems.push({ rowId: `${m.originalId}-R99`, movId: m.movId, reps: m.reps, carga: m.carga, extraVal: m.extraVal, phase: 'cashout', tecnica: m.tecnica, badgeText: 'Cash-out', badgeClass: 'badge-cashout' }));
+    lousa.filter(m => m.phase === 'buyin').forEach(m => flatItems.push({ rowId: `${m.originalId}-R0`, movId: m.movId, reps: m.reps, carga: m.carga, extraVal: m.extraVal, extraVal2: m.extraVal2, phase: 'buyin', tecnica: m.tecnica, badgeText: 'Buy-in', badgeClass: 'badge-buyin' }));
+    for (let r = 1; r <= roundsTimeline; r++) lousa.filter(m => m.phase === 'round').forEach(m => flatItems.push({ rowId: `${m.originalId}-R${r}`, movId: m.movId, reps: m.reps, carga: m.carga, extraVal: m.extraVal, extraVal2: m.extraVal2, phase: 'round', tecnica: m.tecnica, badgeText: `R ${r}`, badgeClass: '' }));
+    lousa.filter(m => m.phase === 'cashout').forEach(m => flatItems.push({ rowId: `${m.originalId}-R99`, movId: m.movId, reps: m.reps, carga: m.carga, extraVal: m.extraVal, extraVal2: m.extraVal2, phase: 'cashout', tecnica: m.tecnica, badgeText: 'Cash-out', badgeClass: 'badge-cashout' }));
 
     let somaTempoDeterminadoGlobal = 0, totalTransicaoGlobal = 0, trabalhoMechTotalReal = 0, gastoMetabolicoLiquidoTotal = 0, metabolicoRestanteGlobal = 0, lastEndSec = -1;
+    let tempoDecorridoEstimado = 0; // Acumulador da linha do tempo para degradação celular
+    
     const itemsProcessados: any[] = [];
 
     flatItems.forEach(row => {
@@ -361,7 +363,8 @@ export default function App() {
       const endSec = parseClockTime(state.end);
       const tempoDefinitivoTemp = (startSec >= 0 && endSec > startSec) ? (endSec - startSec) : 0;
       
-      const calc = calcularFisica(row.movId, config, repsEffective, cargaEffective, row.extraVal, atleta, row.tecnica, tempoDefinitivoTemp) || {};
+      // Injeção da variável latente de falha no motor biomecânico
+      const calc = calcularFisica(row.movId, config, repsEffective, cargaEffective, row.extraVal, row.extraVal2, atleta, row.tecnica, tempoDefinitivoTemp, tempoDecorridoEstimado) || {};
 
       const trabMetabolicoWork = calc.trabMetabolicoWork || 0;
       const trabMetabolicoConcIsom = calc.trabMetabolicoConcIsom || 0;
@@ -375,6 +378,10 @@ export default function App() {
         lastEndSec = -1; metabolicoRestanteGlobal += trabMetabolicoConcIsom; 
       }
       
+      // Atualização do eixo temporal: Incrementa a carga de estresse (3s por repetição como heurística base caso deltaT seja omisso)
+      const tempoDesgasteIteracao = tempoDefinitivoTemp > 0 ? tempoDefinitivoTemp : (repsEffective * 3.0);
+      tempoDecorridoEstimado += (tempoDesgasteIteracao + transicaoEspecifica);
+
       trabalhoMechTotalReal += trabMech;
       itemsProcessados.push({ 
         ...calc, 
@@ -619,7 +626,24 @@ export default function App() {
                         <select value={item.tecnica} onChange={e => updateMovimento(item.originalId, 'tecnica', e.target.value)}><option value="tng">T&G</option><option value="drop">Drop</option></select>
                       </div>
                     </div>
-                    <div><label>{cfg.paramExtra ? cfg.paramExtra.label : 'Param.'}</label><input type="text" disabled={!cfg.paramExtra} value={item.extraVal} onChange={e => updateMovimento(item.originalId, 'extraVal', e.target.value)} /></div>
+                    <div>
+                      <div style={{ display: 'flex', gap: '5px' }}>
+                        <div style={{ flex: 1 }}>
+                          <label>{cfg.paramExtra ? cfg.paramExtra.label : 'Param.'}</label>
+                          <input type="text" disabled={!cfg.paramExtra} value={item.extraVal || ''} onChange={e => updateMovimento(item.originalId, 'extraVal', e.target.value)} />
+                        </div>
+                        {cfg.paramExtra2 && (
+                          <div style={{ flex: 1 }}>
+                            <label>{cfg.paramExtra2.label}</label>
+                            <select value={item.extraVal2 || cfg.paramExtra2.val} onChange={e => updateMovimento(item.originalId, 'extraVal2', e.target.value)}>
+                              {cfg.paramExtra2.options?.map(opt => (
+                                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                     <div className="actions-col">
                       <button className="btn-action" onClick={() => addMovimento(item.originalId)} title="Duplicar">
                         <Copy size={"1.2em"} color="var(--line-silver)" />

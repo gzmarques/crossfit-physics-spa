@@ -4,10 +4,16 @@ export type NivelTecnico = 'iniciante' | 'intermediario' | 'avancado';
 export type Tecnica = 'tng' | 'drop';
 export type Phase = 'buyin' | 'round' | 'cashout';
 
+export interface ParamExtraOption {
+  label: string;
+  value: string;
+}
+
 export interface ParamExtraConfig {
   label: string;
   val: string;
-  type: string;
+  type: 'number' | 'text' | 'select';
+  options?: ParamExtraOption[];
 }
 
 export interface MovimentoConfig {
@@ -18,6 +24,7 @@ export interface MovimentoConfig {
   fatorH?: number;
   isHighBox?: boolean;
   paramExtra?: ParamExtraConfig;
+  paramExtra2?: ParamExtraConfig;
   isUnilateral?: boolean;
 }
 
@@ -29,6 +36,7 @@ export interface ItemLousa {
   carga: number;
   tecnica: Tecnica;
   extraVal: string;
+  extraVal2?: string;
 }
 
 export interface TimelineStateItem {
