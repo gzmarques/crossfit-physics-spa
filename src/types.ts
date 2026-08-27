@@ -59,6 +59,7 @@ export interface AtletaPerfil {
   idade?: number;
   circTorax?: number; // em metros (ex: 1.10)
   circCoxa?: number;  // em metros (ex: 0.65)
+  mobilidade?: number; // ESCALA 0 a 100 (100 = Perfeita, < 100 = Encurtamentos)
 }
 
 export interface ResultadoProcessamento {

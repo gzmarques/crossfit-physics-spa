@@ -849,6 +849,20 @@ export default function App() {
                       <label>Circ. Coxa (m)</label>
                       <input type="number" step="0.01" placeholder="Ex: 0.65" value={atleta.circCoxa || ''} onChange={e => setAtleta({ ...atleta, circCoxa: Number(e.target.value) })} />
                     </div>
+                    <div className="form-group" style={{ marginTop: '15px', marginBottom: 0 }}>
+                      <label>Mobilidade Funcional (ROM) - {atleta.mobilidade || 100}%</label>
+                      <input 
+                        type="range" 
+                        min="50" max="100" 
+                        value={atleta.mobilidade || 100} 
+                        onChange={e => setAtleta({ ...atleta, mobilidade: Number(e.target.value) })} 
+                        style={{ width: '100%' }}
+                      />
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#8a8d94' }}>
+                        <span>Encurtado (50%)</span>
+                        <span>Flexibilidade Perfeita (100%)</span>
+                      </div>
+                    </div>
                   </div>
                 </>
               )}

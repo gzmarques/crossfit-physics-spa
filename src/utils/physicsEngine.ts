@@ -50,19 +50,35 @@ export function calcularFisica(
       kDegradacao = 0.00008; // Maior resiliência oxidativa
   }
 
-  // Degradação exponencial biológica (fTec cai conforme o WOD avança)
+  // --- CORREÇÃO IMPLÍCITA: Penalidade Etária na Degradação ---
+  // A partir dos 30 anos, a eficiência de recuperação de ATP decai ligeiramente, acelerando o 'k'
+  if (atleta.usaAntropometriaAvancada && atleta.idade && atleta.idade > 30) {
+      const fatorEnvelhecimento = 1.0 + ((atleta.idade - 30) * 0.015); // +1.5% de degradação por ano após os 30
+      kDegradacao *= fatorEnvelhecimento;
+  }
+
+  // Degradação exponencial biológica
   fTec = fTec * Math.exp(-kDegradacao * tempoAcumulado);
 
   const isM = (atleta.sexo === 'M');
+  
+  // --- CORREÇÃO IMPLÍCITA: Ajuste do Centro de Massa (CoM) via Tórax ---
+  let altCoM = atleta.estatura * (isM ? 0.56 : 0.54);
+  if (atleta.usaAntropometriaAvancada && atleta.circTorax) {
+      // Tórax largo eleva o centro de massa, exigindo mais equilíbrio e trabalho mecânico global
+      const proporcaoToraxAltura = atleta.circTorax / atleta.estatura;
+      if (proporcaoToraxAltura > 0.60) {
+          altCoM *= 1.02; // Sobe o centro de gravidade em 2%
+      }
+  }
   
   const L_arm = atleta.envergadura * 0.45; 
   const L_perna = atleta.perna;
   const L_thigh = L_perna * 0.50;
   const L_shank = L_perna * 0.50;
   const L_trunk = Math.max(0.1, atleta.estatura - L_perna);
-  const altCoM = atleta.estatura * (isM ? 0.56 : 0.54);
 
-let m_thigh = 0;
+  let m_thigh = 0;
   let m_shank_foot = 0;
   let m_arms = 0;
 
@@ -109,7 +125,16 @@ let m_thigh = 0;
   const cosInclinacao = Math.cos(anguloInclinacaoTroncoRad);
   
   // Penalidade de Torque Lombar: Se o tronco inclina mais, o centro de massa desloca-se, aumentando o trabalho isolado
-  const fatorTorqueLombar = 1.0 + Math.max(0, (racioFemurTronco - 1.0) * 0.15);
+  let fatorTorqueLombar = 1.0 + Math.max(0, (racioFemurTronco - 1.0) * 0.15);
+
+  // --- CORREÇÃO IMPLÍCITA: Sobretaxa Computacional por Má Mobilidade (ROM) ---
+  // Se o ROM for inferior a 100%, o atleta luta contra os próprios tecidos conectivos (encurtamento),
+  // gerando atrito interno maciço que aumenta o torque lombar e o desperdício mecânico.
+  const mobilidadeFuncional = (atleta.mobilidade !== undefined && atleta.mobilidade > 0) ? atleta.mobilidade : 100;
+  if (mobilidadeFuncional < 100) {
+      const penalidadeROM = (100 - mobilidadeFuncional) * 0.005; // 0.5% a mais de trabalho por cada ponto perdido
+      fatorTorqueLombar += penalidadeROM;
+  }
 
   let W_squat_body = 0;
   
@@ -124,15 +149,33 @@ let m_thigh = 0;
   
   const h_puxao = atleta.estatura * 0.60;
   
-  // --- NOVA REFATORAÇÃO 2: Curva Força-Velocidade logarítmica para o LPO ---
-const loadRatio = pCarga / Math.max(1, atleta.peso);
+  // --- NOVA REFATORAÇÃO 2: Injeção de Telemetria VBT no LPO ---
+  const loadRatio = pCarga / Math.max(1, atleta.peso);
   const velMaxAlometrico = 1.6 + (L_arm * 0.40) + (L_perna * 0.30); 
-  const velLPO = Math.max(1.1, velMaxAlometrico - (0.8 * Math.log(1 + loadRatio)));
+  
+  // Verifica se um valor de VBT (m/s) foi inserido na interface via extraV
+  const extraNumVBT = Number(extraV);
+  const vbtVelocity = (!isNaN(extraNumVBT) && extraNumVBT > 0) ? extraNumVBT : 0;
+
+  // Substitui a estimativa teórica pela velocidade real lida pelo acelerómetro, se disponível
+  const velLPO = vbtVelocity > 0 
+      ? vbtVelocity 
+      : Math.max(1.1, velMaxAlometrico - (0.8 * Math.log(1 + loadRatio)));
+      
   const energiaCineticaBarra = 0.5 * pCarga * Math.pow(velLPO, 2);
   const dissipacaoExcentricaGRF = energiaCineticaBarra * 0.15; // Choque térmico
   
-  // --- NOVA REFATORAÇÃO 3: Fator SSC (Ciclo Alongamento-Encurtamento) ---
-  const fatorSSC = ['burpee_box_jump', 'burpee_high_box_jump', 'burpee_box_jump_over', 'burpee_high_box_jump_over', 'box_jump', 'high_box_jump', 'box_jump_over', 'high_box_jump_over'].includes(cfg.categoria) ? 0.82 : 1.0; 
+  // --- NOVA REFATORAÇÃO 3: Fator SSC (Ciclo Alongamento-Encurtamento) Dinâmico ---
+  // A restituição elástica da fáscia degrada com a fadiga (tempoAcumulado). 
+  // Começa garantindo 18% de poupança (fator 0.82) e tende assintoticamente a 1.00 (zero poupança).
+  let fatorSSC = 1.0;
+  const categoriasSalto = ['burpee_box_jump', 'burpee_high_box_jump', 'burpee_box_jump_over', 'burpee_high_box_jump_over', 'box_jump', 'high_box_jump', 'box_jump_over', 'high_box_jump_over'];
+  
+  if (categoriasSalto.includes(cfg.categoria)) {
+      // Utilizamos a mesma constante celular (kDegradacao) para alinhar a falha miofascial à falha técnica
+      const poupancaElastica = 0.18 * Math.exp(-kDegradacao * tempoAcumulado);
+      fatorSSC = 1.0 - poupancaElastica;
+  }
 
   // ==========================================================
   // DECLARAÇÕES ORIGINAIS E VARIÁVEIS RESTAURADAS (Não apagar)
@@ -428,9 +471,12 @@ const loadRatio = pCarga / Math.max(1, atleta.peso);
       
       case 'remo': {
           const extraStr = (extraV !== undefined && extraV !== null) ? extraV.toString().toLowerCase() : "";
+          let tempoTrabalho = 0;
+
           if (extraStr.includes('cal')) {
               const calVal = Math.max(0.1, parseFloat(extraStr) || 0);
               const tempoUso = deltaT > 0 ? deltaT : Math.max(1.0, calVal * 6.0);
+              tempoTrabalho = tempoUso;
               P = Math.max(1.0, ((calVal * (3600.0 / tempoUso)) - 300.0) / (4.0 * 0.8604));
               sErgo = Math.pow(2.80 / P, 1.0 / 3.0); 
               tMech = (P * tempoUso) / safeReps; 
@@ -441,11 +487,21 @@ const loadRatio = pCarga / Math.max(1, atleta.peso);
               const parsedTime = parseClockTime(extraV);
               const t_split = parsedTime > 0 ? parsedTime : 120.0;
               sErgo = Math.max(0.02, t_split / 500.0); 
+              tempoTrabalho = sErgo; 
               P = Math.max(1.0, 2.80 / Math.pow(sErgo, 3)); 
               tMech = P * sErgo; 
               isErgo = true; 
               exL = ` (Pace ${extraV || '2:00'})`; 
           }
+
+          // --- NOVA REFATORAÇÃO 5: Penalidade Cinética Translatória (Concept2) ---
+          // O ecrã da máquina omite o esforço invisível para deslocar a própria massa.
+          // O Remo exige translação total no monotrilho (fator 0.35), SkiErg exige oscilação de tronco (fator 0.15).
+          const fatorTranslacao = movId === 'row' ? 0.35 : 0.15;
+          const penalidadeTranslacao = atleta.peso * fatorTranslacao * tempoTrabalho;
+          
+          tMech += (penalidadeTranslacao / safeReps);
+
           break;
       }
       case 'bike': {
@@ -621,8 +677,23 @@ const loadRatio = pCarga / Math.max(1, atleta.peso);
       
       const E_met_isom = E_isom / 4184.0;
 
-      tMetWork = E_met_conc + E_met_exc + E_met_isom;
-      tMetWorkConcIsom = E_met_conc + E_met_isom;
+      // --- NOVA REFATORAÇÃO 4: Balanço W' (W-prime) e Potência Crítica (CP) ---
+      // A lógica e os parâmetros iniciais são validados.
+      const CP = atleta.peso * (atleta.nivelTecnico === 'avancado' ? 4.5 : atleta.nivelTecnico === 'intermediario' ? 3.0 : 2.0);
+      
+      // Processamento padrão aplicado para transição direta ao balanço térmico.
+      const tut_metabolico = deltaT > 0 ? deltaT : 3.0;
+      const potencia_execucao = (W_conc + W_exc + E_isom) / tut_metabolico;
+      
+      let W_prime_expenditure = 0;
+      if (potencia_execucao > CP) {
+          W_prime_expenditure = (potencia_execucao - CP) * tut_metabolico;
+      }
+      
+      const custoExtraMetabolicoWPrime = W_prime_expenditure / 4184.0;
+
+      tMetWork = E_met_conc + E_met_exc + E_met_isom + (custoExtraMetabolicoWPrime * 1.25);
+      tMetWorkConcIsom = E_met_conc + E_met_isom + (custoExtraMetabolicoWPrime * 1.25);
   }
 
   return { 
