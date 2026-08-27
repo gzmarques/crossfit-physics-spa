@@ -811,10 +811,49 @@ export default function App() {
               <div className="form-group"><label>Envergadura (m)</label><input type="number" step="0.01" value={atleta.envergadura} onChange={e => setAtleta({ ...atleta, envergadura: Number(e.target.value) })} /></div>
               <div className="form-group"><label>Alt. Perna (m)</label><input type="number" step="0.01" value={atleta.perna} onChange={e => setAtleta({ ...atleta, perna: Number(e.target.value) })} /></div>
             </div>
-            <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', marginBottom: 0 }}>
+            <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', marginBottom: '20px' }}>
               <div className="form-group"><label>% Gordura Corporal (BF)</label><input type="number" step="0.1" value={atleta.bf} onChange={e => setAtleta({ ...atleta, bf: Number(e.target.value) })} /></div>
               <div className="form-group"><label>Transição Global Estimada (seg)</label><input type="number" value={tempoDescanso} onChange={e => setTempoDescanso(Number(e.target.value))} /></div>
             </div>
+
+            {/* --- INÍCIO DA SEÇÃO DE ANTROPOMETRIA AVANÇADA --- */}
+            <div style={{ backgroundColor: '#111', padding: '15px', borderRadius: '8px', border: '1px solid var(--line-silver, #26272b)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: atleta.usaAntropometriaAvancada ? '15px' : '0' }}>
+                <input 
+                  type="checkbox" 
+                  id="check-avancada"
+                  checked={atleta.usaAntropometriaAvancada || false}
+                  onChange={(e) => setAtleta({ ...atleta, usaAntropometriaAvancada: e.target.checked })}
+                  style={{ width: '20px', height: '20px', cursor: 'pointer' }}
+                />
+                <label htmlFor="check-avancada" style={{ margin: 0, fontSize: '1rem', color: '#fff', cursor: 'pointer' }}>
+                  Habilitar Antropometria Avançada (Laboratorial)
+                </label>
+              </div>
+
+              {atleta.usaAntropometriaAvancada && (
+                <>
+                  <p style={{ fontSize: '0.85rem', color: '#ff9800', marginBottom: '15px' }}>
+                    <strong>Atenção:</strong> Ao preencher estes dados, o motor ignorará a alometria padrão de De Leva e recalculará o seu centro de gravidade e massas segmentares de forma dinâmica.
+                  </p>
+                  <div className="grid" style={{ gridTemplateColumns: '1fr 1fr 1fr', marginBottom: 0 }}>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label>Idade (anos)</label>
+                      <input type="number" value={atleta.idade || ''} onChange={e => setAtleta({ ...atleta, idade: Number(e.target.value) })} />
+                    </div>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label>Circ. Tórax (m)</label>
+                      <input type="number" step="0.01" placeholder="Ex: 1.10" value={atleta.circTorax || ''} onChange={e => setAtleta({ ...atleta, circTorax: Number(e.target.value) })} />
+                    </div>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label>Circ. Coxa (m)</label>
+                      <input type="number" step="0.01" placeholder="Ex: 0.65" value={atleta.circCoxa || ''} onChange={e => setAtleta({ ...atleta, circCoxa: Number(e.target.value) })} />
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+            {/* --- FIM DA SEÇÃO DE ANTROPOMETRIA AVANÇADA --- */}
           </div>
         )}
 

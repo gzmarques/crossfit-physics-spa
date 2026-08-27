@@ -54,6 +54,11 @@ export interface AtletaPerfil {
   envergadura: number;
   perna: number;
   bf: number;
+  // --- NOVAS VARIÁVEIS DE ANTROPOMETRIA AVANÇADA ---
+  usaAntropometriaAvancada?: boolean;
+  idade?: number;
+  circTorax?: number; // em metros (ex: 1.10)
+  circCoxa?: number;  // em metros (ex: 0.65)
 }
 
 export interface ResultadoProcessamento {

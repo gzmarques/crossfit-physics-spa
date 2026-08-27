@@ -62,9 +62,40 @@ export function calcularFisica(
   const L_trunk = Math.max(0.1, atleta.estatura - L_perna);
   const altCoM = atleta.estatura * (isM ? 0.56 : 0.54);
 
-  const m_thigh = atleta.peso * (isM ? 0.2832 : 0.2956);
-  const m_shank_foot = atleta.peso * (isM ? 0.1140 : 0.1220);
-  const m_arms = atleta.peso * (isM ? 0.0988 : 0.0898);
+let m_thigh = 0;
+  let m_shank_foot = 0;
+  let m_arms = 0;
+
+  if (atleta.usaAntropometriaAvancada && atleta.circCoxa) {
+      // --- VIA AVANÇADA (Alometria Volumétrica Dinâmica) ---
+      // 1. Densidade corporal (rho) calculada pelo percentual de gordura.
+      // Indivíduos magros têm densidade próxima a 1060 kg/m³, caindo para ~1000 kg/m³ com alto BF.
+      const densidadeKgM3 = 1060 - (atleta.bf * 1.5); 
+      
+      // 2. Volume da coxa cilíndrica: V = (C^2 / 4π) * Altura
+      const volumeCoxaM3 = (Math.pow(atleta.circCoxa, 2) / (4 * Math.PI)) * L_thigh;
+      
+      // Massa = Densidade x Volume (multiplicado por 2 pois temos duas pernas)
+      // Nota: as tabelas de De Leva tratam a massa dos membros de forma agregada (bilateral) no cálculo de trabalho.
+      m_thigh = (volumeCoxaM3 * densidadeKgM3) * 2;
+      
+      // 3. Proporção anatómica funcional para a perna/pé.
+      // Historicamente, a massa da perna+pé corresponde a cerca de 40.2% da massa da coxa num atleta treinado.
+      m_shank_foot = m_thigh * 0.402;
+      
+      // 4. Os braços mantêm o padrão alométrico caso não haja input para circunferência de braço
+      m_arms = atleta.peso * (isM ? 0.0988 : 0.0898);
+  } else {
+      // --- VIA PADRÃO (Constantes de De Leva Originais) ---
+      m_thigh = atleta.peso * (isM ? 0.2832 : 0.2956);
+      m_shank_foot = atleta.peso * (isM ? 0.1140 : 0.1220);
+      m_arms = atleta.peso * (isM ? 0.0988 : 0.0898);
+  }
+
+  // --- LEI DA CONSERVAÇÃO DAS MASSAS ---
+  // A massa superior é o peso total deduzido da massa inferior e braços (conforme centro de massa do tronco).
+  // Se o modelo avançado calcular coxas hipertróficas, o sistema reduz o peso do tronco para manter 
+  // a coerência absoluta com a balança (peso inserido pelo usuário).
   const m_sup = Math.max(0, atleta.peso - m_thigh - m_shank_foot); 
 
   // --- NOVA REFATORAÇÃO 1: Unilateralidade e Abdução ---
