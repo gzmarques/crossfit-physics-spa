@@ -129,8 +129,8 @@ export default function App() {
   const [savedWods, setSavedWods] = useState<WodTemplateRecord[]>([]);
 
   const [onboardForm, setOnboardForm] = useState({
-    full_name: '', apelido: '',is_coach: false, estatura: 1.75, peso: 80, sexo: 'M', 
-    nivel_tecnico: 'intermediario', envergadura: 1.75, perna: 0.85, bf: 15
+    full_name: '', apelido: '', is_coach: false, estatura: 1.75, peso: 80, sexo: 'M', 
+    nivel_tecnico: 'intermediario', envergadura: 1.75, perna: 0.85, bf: 15, data_nascimento: ''
   });
 
   // === REFERÊNCIAS E FUNÇÕES DO DRAG AND DROP ===
@@ -191,13 +191,15 @@ export default function App() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      if (session) loadProfile(session.user.id);
+      // Aqui passamos o session.user inteiro em vez de session.user.id
+      if (session) loadProfile(session.user);
       else setLoadingAuth(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
-      if (session) loadProfile(session.user.id);
+      // Aqui passamos o session.user inteiro
+      if (session) loadProfile(session.user);
     });
 
     return () => subscription.unsubscribe();
@@ -217,11 +219,17 @@ export default function App() {
     setSavedWods([]);
   };
 
-  const loadProfile = async (userId: string) => {
-    const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single();
+  // Função loadProfile atualizada na íntegra para receber o objeto user
+  const loadProfile = async (user: any) => {
+    const { data, error } = await supabase.from('profiles').select('*').eq('id', user.id).single();
     
     if (error || !data) {
       setIsNewUser(true); 
+      // Puxa o nome do Google (user_metadata) automaticamente para o state onboardForm
+      setOnboardForm(prev => ({ 
+        ...prev, 
+        full_name: user.user_metadata?.full_name || user.user_metadata?.name || '' 
+      }));
       setLoadingAuth(false);
       return;
     }
@@ -230,7 +238,7 @@ export default function App() {
     syncAtletaState(data);
     
     if (data.is_coach) {
-      const { data: athletes } = await supabase.from('profiles').select('*').eq('coach_id', userId);
+      const { data: athletes } = await supabase.from('profiles').select('*').eq('coach_id', user.id);
       if (athletes) setMyAthletes(athletes as UserProfile[]);
     }
     
@@ -242,12 +250,19 @@ export default function App() {
     setAtleta({
       estatura: prof.estatura, peso: prof.peso, sexo: prof.sexo,
       nivelTecnico: prof.nivel_tecnico, envergadura: prof.envergadura,
-      perna: prof.perna, bf: prof.bf
+      perna: prof.perna, bf: prof.bf, dataNascimento: prof.data_nascimento
     });
   };
 
   const saveOnboardingProfile = async () => {
     if (!session) return;
+
+    // Trava de obrigatoriedade
+    if (!onboardForm.full_name || !onboardForm.data_nascimento) {
+      alert('⚠️ Por favor, preencha seu Nome Completo e a Data de Nascimento. O motor precisa da sua idade exata para calibrar o desgaste metabólico.');
+      return;
+    }
+
     const payload = {
       id: session.user.id,
       ...onboardForm
@@ -257,7 +272,7 @@ export default function App() {
     if (error) {
       alert('Erro ao salvar perfil: ' + error.message);
     } else {
-      loadProfile(session.user.id);
+      loadProfile(session.user); // Usa o user inteiro, como ajustamos na etapa anterior
     }
   };
 
@@ -265,7 +280,7 @@ export default function App() {
     if (!session || !coachIdInput) return;
     const { error } = await supabase.from('profiles').update({ coach_id: coachIdInput }).eq('id', session.user.id);
     if (error) alert('Erro ao vincular coach. Verifique o ID.');
-    else { alert('Coach vinculado com sucesso!'); loadProfile(session.user.id); }
+    else { alert('Coach vinculado com sucesso!'); loadProfile(session.user); }
   };
 
   const salvarPerfilAtleta = async () => {
@@ -281,7 +296,8 @@ export default function App() {
       nivel_tecnico: atleta.nivelTecnico,
       envergadura: atleta.envergadura,
       perna: atleta.perna,
-      bf: atleta.bf
+      bf: atleta.bf,
+      data_nascimento: atleta.dataNascimento
     };
 
     const { error } = await supabase.from('profiles').update(payload).eq('id', targetId);
@@ -671,6 +687,7 @@ export default function App() {
             <div className="form-group" style={{ marginBottom: 0 }}><label>Envergadura (m)</label><input type="number" step="0.01" placeholder="Ex: 1.75" value={onboardForm.envergadura || ''} onChange={e => setOnboardForm({...onboardForm, envergadura: e.target.value as unknown as number})} /></div>
             <div className="form-group" style={{ marginBottom: 0 }}><label>Alt. Perna (m)</label><input type="number" step="0.01" placeholder="Ex: 0.85" value={onboardForm.perna || ''} onChange={e => setOnboardForm({...onboardForm, perna: e.target.value as unknown as number})} /></div>
             <div className="form-group" style={{ marginBottom: 0 }}><label>% BF</label><input type="number" placeholder="Ex: 15" value={onboardForm.bf || ''} onChange={e => setOnboardForm({...onboardForm, bf: e.target.value as unknown as number})} /></div>
+            <div className="form-group" style={{ marginBottom: 0 }}><label>Data de Nascimento</label><input type="date" value={onboardForm.data_nascimento} onChange={e => setOnboardForm({...onboardForm, data_nascimento: e.target.value})} /></div>
           </div>
 
           <button onClick={saveOnboardingProfile} style={{ marginTop: '20px', width: '100%', fontSize: '1.2rem', padding: '15px' }}>Salvar Perfil e Entrar</button>
@@ -1009,8 +1026,8 @@ export default function App() {
                   </p>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', alignItems: 'end' }}>
                     <div className="form-group" style={{ marginBottom: 0 }}>
-                      <label>Idade (anos)</label>
-                      <input type="number" value={atleta.idade || ''} onChange={e => setAtleta({ ...atleta, idade: e.target.value as unknown as number })} />
+                      <label>Data de Nasc.</label>
+                      <input type="date" value={atleta.dataNascimento || ''} onChange={e => setAtleta({ ...atleta, dataNascimento: e.target.value })} />
                     </div>
                     <div className="form-group" style={{ marginBottom: 0 }}>
                       <label>Circ. Tórax (m)</label>

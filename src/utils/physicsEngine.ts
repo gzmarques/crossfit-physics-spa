@@ -52,9 +52,20 @@ export function calcularFisica(
 
   // --- CORREÇÃO IMPLÍCITA: Penalidade Etária na Degradação ---
   // A partir dos 30 anos, a eficiência de recuperação de ATP decai ligeiramente, acelerando o 'k'
-  if (atleta.usaAntropometriaAvancada && atleta.idade && atleta.idade > 30) {
-      const fatorEnvelhecimento = 1.0 + ((atleta.idade - 30) * 0.015); // +1.5% de degradação por ano após os 30
-      kDegradacao *= fatorEnvelhecimento;
+  let idadeAtual = 0;
+  if (atleta.usaAntropometriaAvancada && atleta.dataNascimento) {
+      const hoje = new Date();
+      const nascimento = new Date(atleta.dataNascimento);
+      idadeAtual = hoje.getFullYear() - nascimento.getFullYear();
+      const m = hoje.getMonth() - nascimento.getMonth();
+      if (m < 0 || (m === 0 && hoje.getDate() < nascimento.getDate())) {
+          idadeAtual--;
+      }
+
+      if (idadeAtual > 30) {
+          const fatorEnvelhecimento = 1.0 + ((idadeAtual - 30) * 0.015); // +1.5% de degradação por ano após os 30
+          kDegradacao *= fatorEnvelhecimento;
+      }
   }
 
   // Degradação exponencial biológica
