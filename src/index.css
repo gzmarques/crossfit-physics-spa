@@ -121,13 +121,33 @@ input:disabled {
 .wod-item {
   position: relative;
   background-color: #252525;
-  padding: 15px;
+  padding: 15px 15px 15px 40px; /* Padding esquerdo aumentado para o pegador */
   margin-bottom: 10px;
   border-radius: 4px;
   display: grid;
   grid-template-columns: 2fr 0.8fr 1.2fr 1fr auto;
   gap: 12px;
   align-items: end;
+  cursor: grab;
+  transition: box-shadow 0.2s, background-color 0.2s, opacity 0.2s;
+}
+
+.wod-item:active { 
+  cursor: grabbing; 
+}
+
+.drag-handle {
+  position: absolute; 
+  left: 0; 
+  top: 0; 
+  bottom: 0; 
+  width: 25px;
+  background-color: var(--dyna-red);
+  border-radius: 4px 0 0 4px;
+  display: flex; 
+  align-items: center; 
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .wod-item-analise {

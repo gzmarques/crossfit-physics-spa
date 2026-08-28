@@ -134,6 +134,34 @@ export default function App() {
     nivel_tecnico: 'intermediario', envergadura: 1.75, perna: 0.85, bf: 15
   });
 
+  // === REFERÊNCIAS E FUNÇÕES DO DRAG AND DROP ===
+  const dragItem = useRef<number | null>(null);
+  const dragOverItem = useRef<number | null>(null);
+
+  const handleDragStart = (index: number) => {
+    dragItem.current = index;
+  };
+
+  const handleDragEnter = (index: number) => {
+    dragOverItem.current = index;
+  };
+
+  const handleDragEnd = (e: React.DragEvent<HTMLDivElement>) => {
+    e.currentTarget.style.opacity = '1';
+    
+    if (dragItem.current !== null && dragOverItem.current !== null && dragItem.current !== dragOverItem.current) {
+      const newLousa = [...lousa];
+      const draggedItemContent = newLousa[dragItem.current];
+      // Remove o item da posição original
+      newLousa.splice(dragItem.current, 1);
+      // Insere o item na nova posição
+      newLousa.splice(dragOverItem.current, 0, draggedItemContent);
+      setLousa(newLousa);
+    }
+    dragItem.current = null;
+    dragOverItem.current = null;
+  };
+
   const gerarCardInstagram = async () => {
     const cardElement = document.getElementById('instagram-card-export');
     
@@ -678,10 +706,30 @@ export default function App() {
             <button className="btn-add" onClick={() => addMovimento()} style={{ backgroundColor: 'transparent', color: 'var(--dyna-red, #FF2B3D)', border: '1px dashed var(--dyna-red, #FF2B3D)', padding: '10px 15px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', width: '100%', marginBottom: '15px' }}>+ Adicionar Exercício</button>
             
             <div className="wod-list">
-              {lousa.map((item) => {
+              {lousa.map((item, index) => {
                 const cfg = movimentosDB[item.movId] || movimentosDB['pushup'];
                 return (
-                  <div key={item.originalId} className="wod-item">
+                  <div 
+                    key={item.originalId} 
+                    className="wod-item"
+                    draggable
+                    onDragStart={(e) => {
+                      handleDragStart(index);
+                      e.currentTarget.style.opacity = '0.5';
+                    }}
+                    onDragEnter={() => handleDragEnter(index)}
+                    onDragEnd={handleDragEnd}
+                    onDragOver={(e) => e.preventDefault()}
+                  >
+                    {/* Pegador Lateral (Drag Handle) */}
+                    <div className="drag-handle">
+                      <svg width="10" height="20" viewBox="0 0 8 20" fill="currentColor">
+                        <circle cx="2" cy="2" r="1.5"/><circle cx="6" cy="2" r="1.5"/>
+                        <circle cx="2" cy="10" r="1.5"/><circle cx="6" cy="10" r="1.5"/>
+                        <circle cx="2" cy="18" r="1.5"/><circle cx="6" cy="18" r="1.5"/>
+                      </svg>
+                    </div>
+
                     <div>
                       <label>Fase</label>
                       <select value={item.phase} onChange={e => updateMovimento(item.originalId, 'phase', e.target.value)}>
@@ -697,14 +745,23 @@ export default function App() {
                         />
                       </div>
                     </div>
-                    <div><label>Reps/Mts</label><input type="number" value={item.reps} onChange={e => updateMovimento(item.originalId, 'reps', Number(e.target.value))} /></div>
+                    
+                    <div>
+                      <label>Reps/Mts</label>
+                      <input type="number" value={item.reps} onChange={e => updateMovimento(item.originalId, 'reps', Number(e.target.value))} />
+                    </div>
+                    
                     <div>
                       <label>Carga/Téc.</label>
                       <div style={{ display: 'flex', gap: '5px' }}>
                         <input type="number" disabled={!cfg.usaCarga} value={item.carga} onChange={e => updateMovimento(item.originalId, 'carga', Number(e.target.value))} />
-                        <select value={item.tecnica} onChange={e => updateMovimento(item.originalId, 'tecnica', e.target.value)}><option value="tng">T&G</option><option value="drop">Drop</option></select>
+                        <select value={item.tecnica} onChange={e => updateMovimento(item.originalId, 'tecnica', e.target.value)}>
+                          <option value="tng">T&G</option>
+                          <option value="drop">Drop</option>
+                        </select>
                       </div>
                     </div>
+                    
                     <div>
                       <div style={{ display: 'flex', gap: '5px' }}>
                         <div style={{ flex: 1 }}>
@@ -723,6 +780,7 @@ export default function App() {
                         )}
                       </div>
                     </div>
+                    
                     <div className="actions-col">
                       <button className="btn-action" onClick={() => addMovimento(item.originalId)} title="Duplicar">
                         <Copy size={"1.2em"} color="var(--line-silver)" />
