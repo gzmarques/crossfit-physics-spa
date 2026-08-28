@@ -269,6 +269,42 @@ export default function App() {
     else { alert('Coach vinculado com sucesso!'); loadProfile(session.user.id); }
   };
 
+  const salvarPerfilAtleta = async () => {
+    if (!session) return;
+    
+    // Define se estamos atualizando o próprio usuário ou um aluno dele
+    const targetId = selectedAthleteId === 'me' ? session.user.id : selectedAthleteId;
+
+    const payload = {
+      estatura: atleta.estatura,
+      peso: atleta.peso,
+      sexo: atleta.sexo,
+      nivel_tecnico: atleta.nivelTecnico,
+      envergadura: atleta.envergadura,
+      perna: atleta.perna,
+      bf: atleta.bf
+    };
+
+    const { error } = await supabase.from('profiles').update(payload).eq('id', targetId);
+
+    if (error) {
+      alert('Erro ao atualizar perfil oficial: ' + error.message);
+    } else {
+      alert('Perfil oficial atualizado com sucesso no banco de dados!');
+      
+      // Recarrega os dados para manter a interface sincronizada
+      if (targetId === session.user.id) {
+        loadProfile(session.user.id);
+      } else {
+        // Se for um coach editando o aluno, recarrega a lista de alunos
+        supabase.from('profiles').select('*').eq('coach_id', session.user.id)
+          .then(({ data }) => {
+            if (data) setMyAthletes(data as UserProfile[]);
+          });
+      }
+    }
+  };
+
   const handleAthleteChange = (targetId: string) => {
     setSelectedAthleteId(targetId);
     if (targetId === 'me' && userProfile) {
@@ -936,8 +972,8 @@ export default function App() {
               <h2 style={{ margin: 0 }}>Perfil do Atleta</h2>
               {selectedAthleteId !== 'me' && <span style={{ background: '#ff9800', color: '#000', padding: '2px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold' }}>Visualizando Aluno</span>}
             </div>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted, #8a8d94)', marginBottom: '20px' }}>
-              Os dados base são carregados automaticamente do perfil selecionado. Você pode ajustá-los pontualmente para este cálculo sem afetar o cadastro oficial.
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted, #8a8d94)', marginBottom: '10px' }}>
+              Os dados base são carregados do perfil selecionado. Você pode ajustá-los apenas para simular um cálculo pontual, ou clicar no botão no final da página para salvar as alterações definitivamente no banco de dados.
             </p>
 
             <p style={{ color: '#ff9800', fontSize: '0.85rem', marginBottom: '20px', backgroundColor: '#332b00', padding: '10px', borderRadius: '4px', borderLeft: '3px solid #ff9800' }}>
@@ -1013,6 +1049,30 @@ export default function App() {
               )}
             </div>
             {/* --- FIM DA SEÇÃO DE ANTROPOMETRIA AVANÇADA --- */}
+            
+            <hr style={{ borderColor: 'var(--line-silver, #26272b)', margin: '25px 0' }} />
+            
+            <button 
+              onClick={salvarPerfilAtleta} 
+              style={{ 
+                fontSize: '1.1rem', 
+                padding: '15px', 
+                backgroundColor: '#388e3c', 
+                color: '#fff', 
+                border: 'none', 
+                borderRadius: '8px', 
+                fontWeight: 'bold', 
+                width: '100%', 
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '10px'
+              }}
+            >
+              <Save size={22} />
+              Atualizar Perfil Oficial no Banco de Dados
+            </button>
           </div>
         )}
 
