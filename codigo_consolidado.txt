@@ -429,1127 +429,1123 @@ CONTEÚDO DOS ARQUIVOS
  108 |   const [roundsPrescritos, setRoundsPrescritos] = useState(3);
  109 |   const [roundsReal, setRoundsReal] = useState(0);
  110 |   const [tempoReal, setTempoReal] = useState('');
- 111 |   const [tempoDescanso, setTempoDescanso] = useState(0);
- 112 |   const [nomeTreino, setNomeTreino] = useState('');
- 113 | 
- 114 |   // === RASTREAMENTO DO WOD ATUAL ===
- 115 |   const [currentTemplateId, setCurrentTemplateId] = useState<string | null>(null);
- 116 |   const [currentResultId, setCurrentResultId] = useState<string | null>(null);
- 117 |   const [isScaled, setIsScaled] = useState<boolean>(false);
- 118 |   const [currentShortCode, setCurrentShortCode] = useState<string | null>(null);
- 119 | 
- 120 |   const [atleta, setAtleta] = useState<AtletaPerfil>({
- 121 |     estatura: 1.75, peso: 80, sexo: 'M', nivelTecnico: 'intermediario', envergadura: 1.75, perna: 0.85, bf: 15
- 122 |   });
- 123 | 
- 124 |   const [lousa, setLousa] = useState<ItemLousa[]>([
- 125 |     { originalId: crypto.randomUUID(), movId: 'thruster', phase: 'round', reps: 21, carga: 43, tecnica: 'tng', extraVal: '' }
- 126 |   ]);
- 127 |   const [timelineState, setTimelineState] = useState<Record<string, TimelineStateItem>>({});
- 128 |   
- 129 |   const [resultado, setResultado] = useState<ResultadoProcessamento | null>(null);
- 130 |   const [savedWods, setSavedWods] = useState<WodTemplateRecord[]>([]);
- 131 | 
- 132 |   const [onboardForm, setOnboardForm] = useState({
- 133 |     full_name: '', apelido: '',is_coach: false, estatura: 1.75, peso: 80, sexo: 'M', 
- 134 |     nivel_tecnico: 'intermediario', envergadura: 1.75, perna: 0.85, bf: 15
- 135 |   });
- 136 | 
- 137 |   // === REFERÊNCIAS E FUNÇÕES DO DRAG AND DROP ===
- 138 |   const dragItem = useRef<number | null>(null);
- 139 |   const dragOverItem = useRef<number | null>(null);
- 140 | 
- 141 |   const handleDragStart = (index: number) => {
- 142 |     dragItem.current = index;
- 143 |   };
- 144 | 
- 145 |   const handleDragEnter = (index: number) => {
- 146 |     dragOverItem.current = index;
- 147 |   };
- 148 | 
- 149 |   const handleDragEnd = (e: React.DragEvent<HTMLDivElement>) => {
- 150 |     e.currentTarget.style.opacity = '1';
- 151 |     
- 152 |     if (dragItem.current !== null && dragOverItem.current !== null && dragItem.current !== dragOverItem.current) {
- 153 |       const newLousa = [...lousa];
- 154 |       const draggedItemContent = newLousa[dragItem.current];
- 155 |       // Remove o item da posição original
- 156 |       newLousa.splice(dragItem.current, 1);
- 157 |       // Insere o item na nova posição
- 158 |       newLousa.splice(dragOverItem.current, 0, draggedItemContent);
- 159 |       setLousa(newLousa);
- 160 |     }
- 161 |     dragItem.current = null;
- 162 |     dragOverItem.current = null;
- 163 |   };
- 164 | 
- 165 |   const gerarCardInstagram = async () => {
- 166 |     const cardElement = document.getElementById('instagram-card-export');
- 167 |     
- 168 |     if (!cardElement) {
- 169 |       alert('Erro: Card não encontrado na tela.');
- 170 |       return;
- 171 |     }
- 172 | 
- 173 |     try {
- 174 |       const canvas = await html2canvas(cardElement, {
- 175 |         backgroundColor: '#111315', 
- 176 |         scale: 2, 
- 177 |         useCORS: true 
- 178 |       });
- 179 | 
- 180 |       const image = canvas.toDataURL('image/jpeg', 0.9);
- 181 |       const link = document.createElement('a');
- 182 |       link.href = image;
- 183 |       link.download = `DynaWOD-${currentShortCode || 'Resultado'}.jpg`;
- 184 |       link.click();
- 185 |       
- 186 |     } catch (error) {
- 187 |       console.error('Erro ao gerar imagem:', error);
- 188 |       alert('Ops! Não foi possível gerar a imagem.');
- 189 |     }
- 190 |   };
- 191 | 
- 192 |   useEffect(() => {
- 193 |     supabase.auth.getSession().then(({ data: { session } }) => {
- 194 |       setSession(session);
- 195 |       if (session) loadProfile(session.user.id);
- 196 |       else setLoadingAuth(false);
- 197 |     });
- 198 | 
- 199 |     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
- 200 |       setSession(session);
- 201 |       if (session) loadProfile(session.user.id);
- 202 |     });
- 203 | 
- 204 |     return () => subscription.unsubscribe();
- 205 |   }, []);
- 206 | 
- 207 |   useEffect(() => {
- 208 |     if (session && userProfile && !isNewUser) fetchWodsFromSupabase();
- 209 |   }, [session, userProfile, isNewUser, selectedAthleteId]);
- 210 | 
- 211 |   const signInWithGoogle = async () => {
- 212 |     await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
- 213 |   };
- 214 | 
- 215 |   const signOut = async () => {
- 216 |     await supabase.auth.signOut();
- 217 |     setUserProfile(null);
- 218 |     setSavedWods([]);
- 219 |   };
- 220 | 
- 221 |   const loadProfile = async (userId: string) => {
- 222 |     const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single();
- 223 |     
- 224 |     if (error || !data) {
- 225 |       setIsNewUser(true); 
- 226 |       setLoadingAuth(false);
- 227 |       return;
- 228 |     }
- 229 | 
- 230 |     setUserProfile(data as UserProfile);
- 231 |     syncAtletaState(data);
- 232 |     
- 233 |     if (data.is_coach) {
- 234 |       const { data: athletes } = await supabase.from('profiles').select('*').eq('coach_id', userId);
- 235 |       if (athletes) setMyAthletes(athletes as UserProfile[]);
- 236 |     }
- 237 |     
- 238 |     setIsNewUser(false);
- 239 |     setLoadingAuth(false);
- 240 |   };
- 241 | 
- 242 |   const syncAtletaState = (prof: any) => {
- 243 |     setAtleta({
- 244 |       estatura: prof.estatura, peso: prof.peso, sexo: prof.sexo,
- 245 |       nivelTecnico: prof.nivel_tecnico, envergadura: prof.envergadura,
- 246 |       perna: prof.perna, bf: prof.bf
- 247 |     });
- 248 |   };
- 249 | 
- 250 |   const saveOnboardingProfile = async () => {
- 251 |     if (!session) return;
- 252 |     const payload = {
- 253 |       id: session.user.id,
- 254 |       ...onboardForm
- 255 |     };
- 256 |     
- 257 |     const { error } = await supabase.from('profiles').insert([payload]);
- 258 |     if (error) {
- 259 |       alert('Erro ao salvar perfil: ' + error.message);
- 260 |     } else {
- 261 |       loadProfile(session.user.id);
- 262 |     }
- 263 |   };
- 264 | 
- 265 |   const linkToCoach = async () => {
- 266 |     if (!session || !coachIdInput) return;
- 267 |     const { error } = await supabase.from('profiles').update({ coach_id: coachIdInput }).eq('id', session.user.id);
- 268 |     if (error) alert('Erro ao vincular coach. Verifique o ID.');
- 269 |     else { alert('Coach vinculado com sucesso!'); loadProfile(session.user.id); }
- 270 |   };
- 271 | 
- 272 |   const salvarPerfilAtleta = async () => {
- 273 |     if (!session) return;
- 274 |     
- 275 |     // Define se estamos atualizando o próprio usuário ou um aluno dele
- 276 |     const targetId = selectedAthleteId === 'me' ? session.user.id : selectedAthleteId;
- 277 | 
- 278 |     const payload = {
- 279 |       estatura: atleta.estatura,
- 280 |       peso: atleta.peso,
- 281 |       sexo: atleta.sexo,
- 282 |       nivel_tecnico: atleta.nivelTecnico,
- 283 |       envergadura: atleta.envergadura,
- 284 |       perna: atleta.perna,
- 285 |       bf: atleta.bf
- 286 |     };
- 287 | 
- 288 |     const { error } = await supabase.from('profiles').update(payload).eq('id', targetId);
- 289 | 
- 290 |     if (error) {
- 291 |       alert('Erro ao atualizar perfil oficial: ' + error.message);
- 292 |     } else {
- 293 |       alert('Perfil oficial atualizado com sucesso no banco de dados!');
- 294 |       
- 295 |       // Recarrega os dados para manter a interface sincronizada
- 296 |       if (targetId === session.user.id) {
- 297 |         loadProfile(session.user.id);
- 298 |       } else {
- 299 |         // Se for um coach editando o aluno, recarrega a lista de alunos
- 300 |         supabase.from('profiles').select('*').eq('coach_id', session.user.id)
- 301 |           .then(({ data }) => {
- 302 |             if (data) setMyAthletes(data as UserProfile[]);
- 303 |           });
- 304 |       }
- 305 |     }
- 306 |   };
- 307 | 
- 308 |   const handleAthleteChange = (targetId: string) => {
- 309 |     setSelectedAthleteId(targetId);
- 310 |     if (targetId === 'me' && userProfile) {
- 311 |       syncAtletaState(userProfile);
- 312 |     } else {
- 313 |       const athlete = myAthletes.find(a => a.id === targetId);
- 314 |       if (athlete) syncAtletaState(athlete);
- 315 |     }
- 316 |   };
- 317 | 
- 318 |   const fetchWodsFromSupabase = async () => {
- 319 |     const queryId = selectedAthleteId === 'me' ? session?.user.id : selectedAthleteId;
- 320 |     
- 321 |     const { data, error } = await supabase.from('wods').select('*').eq('athlete_id', queryId).order('created_at', { ascending: false });
- 322 |     if (!error && data) setSavedWods(data as WodTemplateRecord[]);
- 323 |   };
- 324 | 
- 325 |   const generateShortCode = () => Math.random().toString(36).substring(2, 8).toUpperCase();
- 326 | 
- 327 |   const salvarNoSupabase = async (isExporting = false) => {
- 328 |     if (!session || !userProfile) return null;
- 329 |     
- 330 |     const targetAthleteId = selectedAthleteId === 'me' ? session.user.id : selectedAthleteId;
- 331 |     const newShortCode = currentShortCode || generateShortCode();
- 332 | 
- 333 |     const templatePayload = {
- 334 |       title: nomeTreino.trim() !== '' ? nomeTreino : `Treino ${tipoTreino} - ${new Date().toLocaleDateString('pt-BR')}`,
- 335 |       short_code: newShortCode,
- 336 |       tipo_treino: tipoTreino,
- 337 |       tempo_alvo: tempoAlvo,
- 338 |       rounds_prescritos: roundsPrescritos,
- 339 |       movimentos: lousa,
- 340 |       creator_id: session.user.id
- 341 |     };
- 342 | 
- 343 |     let activeTemplateId = currentTemplateId;
- 344 | 
- 345 |     if (activeTemplateId) {
- 346 |       if (!isExporting && !window.confirm('Deseja sobrescrever as alterações na prescrição deste WOD?')) return null;
- 347 |       
- 348 |       const { error } = await supabase.from('wod_templates').update(templatePayload).eq('id', activeTemplateId);
- 349 |       if (error) { alert('Erro ao atualizar Template: ' + error.message); return null; }
- 350 |     } else {
- 351 |       const { data, error } = await supabase.from('wod_templates').insert([templatePayload]).select('id, short_code').single();
- 352 |       if (error) { alert('Erro ao criar Template: ' + error.message); return null; }
- 353 |       
- 354 |       activeTemplateId = data.id;
- 355 |       setCurrentTemplateId(data.id);
- 356 |       setCurrentShortCode(data.short_code);
- 357 |     }
- 358 | 
- 359 |     const hasResult = tempoReal || roundsReal > 0 || (resultado && resultado.potenciaReal > 0);
- 360 | 
- 361 |     if (hasResult) {
- 362 |       const resultPayload = {
- 363 |         template_id: activeTemplateId, 
- 364 |         athlete_id: targetAthleteId,
- 365 |         tempo_real: tempoReal,
- 366 |         rounds_real: roundsReal,
- 367 |         score_watts: resultado ? resultado.potenciaReal : 0,
- 368 |         score_kcal: resultado ? resultado.gastoMetabolico : 0,
- 369 |         timeline: timelineState,
- 370 |         cargas_adaptadas: isScaled
- 371 |       };
- 372 | 
- 373 |       if (currentResultId) {
- 374 |         const { error } = await supabase.from('wod_results').update(resultPayload).eq('id', currentResultId);
- 375 |         if (error) console.error('Erro ao atualizar resultado:', error);
- 376 |       } else {
- 377 |         const { data, error } = await supabase.from('wod_results').insert([resultPayload]).select('id').single();
- 378 |         if (error) {
- 379 |           console.error('Erro ao salvar resultado:', error);
- 380 |         } else {
- 381 |           setCurrentResultId(data.id);
- 382 |         }
- 383 |       }
- 384 |     }
- 385 | 
- 386 |     if (!isExporting) alert('Dados salvos com sucesso no DynaWOD!');
- 387 |     
- 388 |     return newShortCode;
- 389 |   };
- 390 | 
- 391 |   const compartilharWod = async () => {
- 392 |     const code = await salvarNoSupabase(true); 
- 393 |     if (code) {
- 394 |       navigator.clipboard.writeText(code);
- 395 |       alert(`Código do WOD (${code}) copiado para a área de transferência! Envie para seus alunos.`);
- 396 |     }
- 397 |   };
- 398 | 
- 399 |   const importarWod = async () => {
- 400 |     const codeToFind = window.prompt('Digite o código de 6 dígitos do WOD:');
- 401 |     if (!codeToFind) return;
- 402 | 
- 403 |     const { data, error } = await supabase.from('wod_templates').select('*').eq('short_code', codeToFind.toUpperCase()).single();
- 404 |     
- 405 |     if (error || !data) {
- 406 |       alert('WOD não encontrado. Verifique o código.');
- 407 |       return;
- 408 |     }
- 409 | 
- 410 |     carregarDoSupabase(data);
- 411 |   };
- 412 | 
- 413 |   const clonarWod = () => {
- 414 |     if (!window.confirm('Deseja usar este treino como base para criar um NOVO WOD seu? O vínculo com o original será quebrado.')) return;
- 415 |     
- 416 |     setCurrentTemplateId(null);
- 417 |     setCurrentShortCode(null);
- 418 |     setCurrentResultId(null);
- 419 |     
- 420 |     alert('Pronto! O WOD foi desvinculado. Faça suas alterações e clique em "Salvar WOD".');
- 421 |   };
- 422 | 
- 423 |   const addMovimento = (baseId: string | null = null) => {
- 424 |     const newId = crypto.randomUUID();
- 425 |     let newItem: ItemLousa = { originalId: newId, movId: 'air_squat', phase: 'round', reps: 10, carga: 0, tecnica: 'tng', extraVal: '', extraVal2: '' };
- 426 |     if (baseId) {
- 427 |       const idx = lousa.findIndex(m => m.originalId === baseId);
- 428 |       if (idx !== -1) {
- 429 |         newItem = { ...lousa[idx], originalId: newId };
- 430 |         const updated = [...lousa];
- 431 |         updated.splice(idx + 1, 0, newItem);
- 432 |         setLousa(updated);
- 433 |         return;
- 434 |       }
- 435 |     }
- 436 |     setLousa([...lousa, newItem]);
- 437 |   };
- 438 |   const removeMovimento = (id: string) => setLousa(lousa.filter(m => m.originalId !== id));
- 439 |   const updateMovimento = (id: string, field: keyof ItemLousa, val: any) => setLousa(lousa.map(item => item.originalId === id ? { ...item, [field]: val } : item));
- 440 |   const handleTimelineChange = (rowId: string, field: keyof TimelineStateItem, val: any) => 
- 441 |     setTimelineState(prev => ({ ...prev, [rowId]: { ...(prev[rowId] || {}), [field]: val } }));
- 442 |   const carregarDoSupabase = (rec: any) => {
- 443 |     setTipoTreino(rec.tipo_treino); 
- 444 |     setTempoAlvo(rec.tempo_alvo); 
- 445 |     setRoundsPrescritos(rec.rounds_prescritos);
- 446 |     
- 447 |     if (rec.rounds_real !== undefined) setRoundsReal(rec.rounds_real);
- 448 |     if (rec.tempo_real) setTempoReal(rec.tempo_real);
- 449 |     if (rec.tempo_descanso) setTempoDescanso(rec.tempo_descanso);
- 450 |     if (rec.atleta) setAtleta(rec.atleta);
- 451 |     if (rec.movimentos) setLousa(rec.movimentos);
- 452 |     if (rec.timeline) setTimelineState(rec.timeline);
- 453 |     
- 454 |     setCurrentTemplateId(rec.id);
- 455 |     setCurrentShortCode(rec.short_code);
- 456 |     
- 457 |     setActiveTab('prescricao');
- 458 | 
- 459 |     if (rec.title && !rec.title.startsWith('Treino')) setNomeTreino(rec.title);
- 460 |     else setNomeTreino('');
- 461 |   };
- 462 | 
- 463 |   const processarWOD = () => {
- 464 |     const rawTempoAlvo = parseClockTime(tempoAlvo);
- 465 |     const tAlvoSec = rawTempoAlvo > 0 ? rawTempoAlvo : 0;
- 466 |     const rawTempoReal = parseClockTime(tempoReal);
- 467 |     const tRealSec = rawTempoReal > 0 ? rawTempoReal : 0;
- 468 | 
- 469 |     const ffm = (atleta?.peso || 80) * (1.0 - ((atleta?.bf || 15) / 100.0));
- 470 |     const bmrDia = 370.0 + (21.6 * ffm);
- 471 |     const bmrSec = bmrDia / 86400.0;
- 472 | 
- 473 |     let trabalhoMechTotalEsp = 0;
- 474 |     lousa.forEach(m => {
- 475 |       const cfg = movimentosDB[m.movId];
- 476 |       if (!cfg) return;
- 477 |       const mult = (m.phase === 'round') ? (roundsPrescritos || 1) : 1;
- 478 |       const calc = calcularFisica(m.movId, cfg, m.reps, m.carga, m.extraVal, m.extraVal2 || '', atleta, m.tecnica, 0);
- 479 |       const trab = calc?.trabMech || 0;
- 480 |       trabalhoMechTotalEsp += trab * mult;
- 481 |     });
- 482 | 
- 483 |     let roundsTimeline = (tipoTreino === 'FOR_TIME') ? (roundsPrescritos || 1) : Math.ceil(roundsReal || 1);
- 484 |     if (roundsTimeline < 1) roundsTimeline = 1;
- 485 | 
- 486 |     const flatItems: any[] = [];
- 487 |     lousa.filter(m => m.phase === 'buyin').forEach(m => flatItems.push({ rowId: `${m.originalId}-R0`, movId: m.movId, reps: m.reps, carga: m.carga, extraVal: m.extraVal, extraVal2: m.extraVal2, phase: 'buyin', tecnica: m.tecnica, badgeText: 'Buy-in', badgeClass: 'badge-buyin' }));
- 488 |     for (let r = 1; r <= roundsTimeline; r++) lousa.filter(m => m.phase === 'round').forEach(m => flatItems.push({ rowId: `${m.originalId}-R${r}`, movId: m.movId, reps: m.reps, carga: m.carga, extraVal: m.extraVal, extraVal2: m.extraVal2, phase: 'round', tecnica: m.tecnica, badgeText: `R ${r}`, badgeClass: '' }));
- 489 |     lousa.filter(m => m.phase === 'cashout').forEach(m => flatItems.push({ rowId: `${m.originalId}-R99`, movId: m.movId, reps: m.reps, carga: m.carga, extraVal: m.extraVal, extraVal2: m.extraVal2, phase: 'cashout', tecnica: m.tecnica, badgeText: 'Cash-out', badgeClass: 'badge-cashout' }));
- 490 | 
- 491 |     let somaTempoDeterminadoGlobal = 0, totalTransicaoGlobal = 0, trabalhoMechTotalReal = 0, gastoMetabolicoLiquidoTotal = 0, metabolicoRestanteGlobal = 0, lastEndSec = -1;
- 492 |     let tempoDecorridoEstimado = 0; // Acumulador da linha do tempo para degradação celular
- 493 |     
- 494 |     const itemsProcessados: any[] = [];
- 495 | 
- 496 |     flatItems.forEach(row => {
- 497 |       const config = movimentosDB[row.movId] || movimentosDB['air_squat']; 
- 498 |       const state = timelineState[row.rowId] || { reps: row.reps, start: '', end: '' };
- 499 |       const repsEffective = state.reps !== undefined ? Number(state.reps) : (row.reps || 0);
- 500 |       
- 501 |       const cargaEffective = state.carga !== undefined ? Number(state.carga) : (row.carga || 0);
- 502 | 
- 503 |       const startSec = parseClockTime(state.start);
- 504 |       const endSec = parseClockTime(state.end);
- 505 |       const tempoDefinitivoTemp = (startSec >= 0 && endSec > startSec) ? (endSec - startSec) : 0;
- 506 |       
- 507 |       // Injeção da variável latente de falha no motor biomecânico
- 508 |       const calc = calcularFisica(row.movId, config, repsEffective, cargaEffective, row.extraVal, row.extraVal2, atleta, row.tecnica, tempoDefinitivoTemp, tempoDecorridoEstimado) || {};
- 509 | 
- 510 |       const trabMetabolicoWork = calc.trabMetabolicoWork || 0;
- 511 |       const trabMetabolicoConcIsom = calc.trabMetabolicoConcIsom || 0;
- 512 |       const trabMech = calc.trabMech || 0;
- 513 | 
- 514 |       let transicaoEspecifica = 0;
- 515 |       if (tempoDefinitivoTemp > 0) {
- 516 |         if (lastEndSec >= 0 && startSec >= lastEndSec) { transicaoEspecifica = startSec - lastEndSec; totalTransicaoGlobal += transicaoEspecifica; }
- 517 |         lastEndSec = endSec; somaTempoDeterminadoGlobal += tempoDefinitivoTemp; gastoMetabolicoLiquidoTotal += trabMetabolicoWork;
- 518 |       } else { 
- 519 |         lastEndSec = -1; metabolicoRestanteGlobal += trabMetabolicoConcIsom; 
- 520 |       }
- 521 |       
- 522 |       // Atualização do eixo temporal: Incrementa a carga de estresse (3s por repetição como heurística base caso deltaT seja omisso)
- 523 |       const tempoDesgasteIteracao = tempoDefinitivoTemp > 0 ? tempoDefinitivoTemp : (repsEffective * 3.0);
- 524 |       tempoDecorridoEstimado += (tempoDesgasteIteracao + transicaoEspecifica);
- 525 | 
- 526 |       trabalhoMechTotalReal += trabMech;
- 527 |       itemsProcessados.push({ 
- 528 |         ...calc, 
- 529 |         nome: config.nome || row.movId, 
- 530 |         reps: repsEffective, 
- 531 |         labelRounds: row.badgeText, 
- 532 |         tempoDefinitivo: tempoDefinitivoTemp, 
- 533 |         transicaoEspecifica: tempoDefinitivoTemp > 0 && startSec >= lastEndSec ? startSec - lastEndSec : 0, 
- 534 |         phase: row.phase 
- 535 |       });
- 536 |     });
- 537 | 
- 538 |     const tempoTotalReferencia = (tipoTreino === 'FOR_TIME' && tRealSec > 0) ? tRealSec : tAlvoSec;
- 539 |     const desc = tempoDescanso || 0;
- 540 |     const tempoDisponivel = Math.max(0, tempoTotalReferencia - somaTempoDeterminadoGlobal - totalTransicaoGlobal - desc);
- 541 |     
- 542 |     // Refatoração 4: Fator EPOC Sigmoidal baseado na fadiga termodinâmica extrema
- 543 |     const refTempoEstimado = tempoTotalReferencia > 0 ? tempoTotalReferencia : tAlvoSec;
- 544 |     const tempoLiquidoEstimado = Math.max(1, refTempoEstimado - desc - totalTransicaoGlobal);
- 545 |     const potRealEstimada = tempoLiquidoEstimado > 0 ? (trabalhoMechTotalReal / tempoLiquidoEstimado) : 0;
- 546 |     const limiarPotencia = potRealEstimada / (atleta?.peso || 80);
- 547 |     
- 548 |     // Função sigmoide: Teto dinâmico máximo de 40% (1.40) com inflexão aos 3.5 W/kg
- 549 |     const fatorEPOC = 1.0 + (0.40 / (1.0 + Math.exp(-1.5 * (limiarPotencia - 3.5))));
+ 111 |   const [nomeTreino, setNomeTreino] = useState('');
+ 112 | 
+ 113 |   // === RASTREAMENTO DO WOD ATUAL ===
+ 114 |   const [currentTemplateId, setCurrentTemplateId] = useState<string | null>(null);
+ 115 |   const [currentResultId, setCurrentResultId] = useState<string | null>(null);
+ 116 |   const [isScaled, setIsScaled] = useState<boolean>(false);
+ 117 |   const [currentShortCode, setCurrentShortCode] = useState<string | null>(null);
+ 118 | 
+ 119 |   const [atleta, setAtleta] = useState<AtletaPerfil>({
+ 120 |     estatura: 1.75, peso: 80, sexo: 'M', nivelTecnico: 'intermediario', envergadura: 1.75, perna: 0.85, bf: 15
+ 121 |   });
+ 122 | 
+ 123 |   const [lousa, setLousa] = useState<ItemLousa[]>([
+ 124 |     { originalId: crypto.randomUUID(), movId: 'thruster', phase: 'round', reps: 21, carga: 43, tecnica: 'tng', extraVal: '' }
+ 125 |   ]);
+ 126 |   const [timelineState, setTimelineState] = useState<Record<string, TimelineStateItem>>({});
+ 127 |   
+ 128 |   const [resultado, setResultado] = useState<ResultadoProcessamento | null>(null);
+ 129 |   const [savedWods, setSavedWods] = useState<WodTemplateRecord[]>([]);
+ 130 | 
+ 131 |   const [onboardForm, setOnboardForm] = useState({
+ 132 |     full_name: '', apelido: '',is_coach: false, estatura: 1.75, peso: 80, sexo: 'M', 
+ 133 |     nivel_tecnico: 'intermediario', envergadura: 1.75, perna: 0.85, bf: 15
+ 134 |   });
+ 135 | 
+ 136 |   // === REFERÊNCIAS E FUNÇÕES DO DRAG AND DROP ===
+ 137 |   const dragItem = useRef<number | null>(null);
+ 138 |   const dragOverItem = useRef<number | null>(null);
+ 139 | 
+ 140 |   const handleDragStart = (index: number) => {
+ 141 |     dragItem.current = index;
+ 142 |   };
+ 143 | 
+ 144 |   const handleDragEnter = (index: number) => {
+ 145 |     dragOverItem.current = index;
+ 146 |   };
+ 147 | 
+ 148 |   const handleDragEnd = (e: React.DragEvent<HTMLDivElement>) => {
+ 149 |     e.currentTarget.style.opacity = '1';
+ 150 |     
+ 151 |     if (dragItem.current !== null && dragOverItem.current !== null && dragItem.current !== dragOverItem.current) {
+ 152 |       const newLousa = [...lousa];
+ 153 |       const draggedItemContent = newLousa[dragItem.current];
+ 154 |       // Remove o item da posição original
+ 155 |       newLousa.splice(dragItem.current, 1);
+ 156 |       // Insere o item na nova posição
+ 157 |       newLousa.splice(dragOverItem.current, 0, draggedItemContent);
+ 158 |       setLousa(newLousa);
+ 159 |     }
+ 160 |     dragItem.current = null;
+ 161 |     dragOverItem.current = null;
+ 162 |   };
+ 163 | 
+ 164 |   const gerarCardInstagram = async () => {
+ 165 |     const cardElement = document.getElementById('instagram-card-export');
+ 166 |     
+ 167 |     if (!cardElement) {
+ 168 |       alert('Erro: Card não encontrado na tela.');
+ 169 |       return;
+ 170 |     }
+ 171 | 
+ 172 |     try {
+ 173 |       const canvas = await html2canvas(cardElement, {
+ 174 |         backgroundColor: '#111315', 
+ 175 |         scale: 2, 
+ 176 |         useCORS: true 
+ 177 |       });
+ 178 | 
+ 179 |       const image = canvas.toDataURL('image/jpeg', 0.9);
+ 180 |       const link = document.createElement('a');
+ 181 |       link.href = image;
+ 182 |       link.download = `DynaWOD-${currentShortCode || 'Resultado'}.jpg`;
+ 183 |       link.click();
+ 184 |       
+ 185 |     } catch (error) {
+ 186 |       console.error('Erro ao gerar imagem:', error);
+ 187 |       alert('Ops! Não foi possível gerar a imagem.');
+ 188 |     }
+ 189 |   };
+ 190 | 
+ 191 |   useEffect(() => {
+ 192 |     supabase.auth.getSession().then(({ data: { session } }) => {
+ 193 |       setSession(session);
+ 194 |       if (session) loadProfile(session.user.id);
+ 195 |       else setLoadingAuth(false);
+ 196 |     });
+ 197 | 
+ 198 |     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+ 199 |       setSession(session);
+ 200 |       if (session) loadProfile(session.user.id);
+ 201 |     });
+ 202 | 
+ 203 |     return () => subscription.unsubscribe();
+ 204 |   }, []);
+ 205 | 
+ 206 |   useEffect(() => {
+ 207 |     if (session && userProfile && !isNewUser) fetchWodsFromSupabase();
+ 208 |   }, [session, userProfile, isNewUser, selectedAthleteId]);
+ 209 | 
+ 210 |   const signInWithGoogle = async () => {
+ 211 |     await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
+ 212 |   };
+ 213 | 
+ 214 |   const signOut = async () => {
+ 215 |     await supabase.auth.signOut();
+ 216 |     setUserProfile(null);
+ 217 |     setSavedWods([]);
+ 218 |   };
+ 219 | 
+ 220 |   const loadProfile = async (userId: string) => {
+ 221 |     const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single();
+ 222 |     
+ 223 |     if (error || !data) {
+ 224 |       setIsNewUser(true); 
+ 225 |       setLoadingAuth(false);
+ 226 |       return;
+ 227 |     }
+ 228 | 
+ 229 |     setUserProfile(data as UserProfile);
+ 230 |     syncAtletaState(data);
+ 231 |     
+ 232 |     if (data.is_coach) {
+ 233 |       const { data: athletes } = await supabase.from('profiles').select('*').eq('coach_id', userId);
+ 234 |       if (athletes) setMyAthletes(athletes as UserProfile[]);
+ 235 |     }
+ 236 |     
+ 237 |     setIsNewUser(false);
+ 238 |     setLoadingAuth(false);
+ 239 |   };
+ 240 | 
+ 241 |   const syncAtletaState = (prof: any) => {
+ 242 |     setAtleta({
+ 243 |       estatura: prof.estatura, peso: prof.peso, sexo: prof.sexo,
+ 244 |       nivelTecnico: prof.nivel_tecnico, envergadura: prof.envergadura,
+ 245 |       perna: prof.perna, bf: prof.bf
+ 246 |     });
+ 247 |   };
+ 248 | 
+ 249 |   const saveOnboardingProfile = async () => {
+ 250 |     if (!session) return;
+ 251 |     const payload = {
+ 252 |       id: session.user.id,
+ 253 |       ...onboardForm
+ 254 |     };
+ 255 |     
+ 256 |     const { error } = await supabase.from('profiles').insert([payload]);
+ 257 |     if (error) {
+ 258 |       alert('Erro ao salvar perfil: ' + error.message);
+ 259 |     } else {
+ 260 |       loadProfile(session.user.id);
+ 261 |     }
+ 262 |   };
+ 263 | 
+ 264 |   const linkToCoach = async () => {
+ 265 |     if (!session || !coachIdInput) return;
+ 266 |     const { error } = await supabase.from('profiles').update({ coach_id: coachIdInput }).eq('id', session.user.id);
+ 267 |     if (error) alert('Erro ao vincular coach. Verifique o ID.');
+ 268 |     else { alert('Coach vinculado com sucesso!'); loadProfile(session.user.id); }
+ 269 |   };
+ 270 | 
+ 271 |   const salvarPerfilAtleta = async () => {
+ 272 |     if (!session) return;
+ 273 |     
+ 274 |     // Define se estamos atualizando o próprio usuário ou um aluno dele
+ 275 |     const targetId = selectedAthleteId === 'me' ? session.user.id : selectedAthleteId;
+ 276 | 
+ 277 |     const payload = {
+ 278 |       estatura: atleta.estatura,
+ 279 |       peso: atleta.peso,
+ 280 |       sexo: atleta.sexo,
+ 281 |       nivel_tecnico: atleta.nivelTecnico,
+ 282 |       envergadura: atleta.envergadura,
+ 283 |       perna: atleta.perna,
+ 284 |       bf: atleta.bf
+ 285 |     };
+ 286 | 
+ 287 |     const { error } = await supabase.from('profiles').update(payload).eq('id', targetId);
+ 288 | 
+ 289 |     if (error) {
+ 290 |       alert('Erro ao atualizar perfil oficial: ' + error.message);
+ 291 |     } else {
+ 292 |       alert('Perfil oficial atualizado com sucesso no banco de dados!');
+ 293 |       
+ 294 |       // Recarrega os dados para manter a interface sincronizada
+ 295 |       if (targetId === session.user.id) {
+ 296 |         loadProfile(session.user.id);
+ 297 |       } else {
+ 298 |         // Se for um coach editando o aluno, recarrega a lista de alunos
+ 299 |         supabase.from('profiles').select('*').eq('coach_id', session.user.id)
+ 300 |           .then(({ data }) => {
+ 301 |             if (data) setMyAthletes(data as UserProfile[]);
+ 302 |           });
+ 303 |       }
+ 304 |     }
+ 305 |   };
+ 306 | 
+ 307 |   const handleAthleteChange = (targetId: string) => {
+ 308 |     setSelectedAthleteId(targetId);
+ 309 |     if (targetId === 'me' && userProfile) {
+ 310 |       syncAtletaState(userProfile);
+ 311 |     } else {
+ 312 |       const athlete = myAthletes.find(a => a.id === targetId);
+ 313 |       if (athlete) syncAtletaState(athlete);
+ 314 |     }
+ 315 |   };
+ 316 | 
+ 317 |   const fetchWodsFromSupabase = async () => {
+ 318 |     const queryId = selectedAthleteId === 'me' ? session?.user.id : selectedAthleteId;
+ 319 |     
+ 320 |     const { data, error } = await supabase.from('wods').select('*').eq('athlete_id', queryId).order('created_at', { ascending: false });
+ 321 |     if (!error && data) setSavedWods(data as WodTemplateRecord[]);
+ 322 |   };
+ 323 | 
+ 324 |   const generateShortCode = () => Math.random().toString(36).substring(2, 8).toUpperCase();
+ 325 | 
+ 326 |   const salvarNoSupabase = async (isExporting = false) => {
+ 327 |     if (!session || !userProfile) return null;
+ 328 |     
+ 329 |     const targetAthleteId = selectedAthleteId === 'me' ? session.user.id : selectedAthleteId;
+ 330 |     const newShortCode = currentShortCode || generateShortCode();
+ 331 | 
+ 332 |     const templatePayload = {
+ 333 |       title: nomeTreino.trim() !== '' ? nomeTreino : `Treino ${tipoTreino} - ${new Date().toLocaleDateString('pt-BR')}`,
+ 334 |       short_code: newShortCode,
+ 335 |       tipo_treino: tipoTreino,
+ 336 |       tempo_alvo: tempoAlvo,
+ 337 |       rounds_prescritos: roundsPrescritos,
+ 338 |       movimentos: lousa,
+ 339 |       creator_id: session.user.id
+ 340 |     };
+ 341 | 
+ 342 |     let activeTemplateId = currentTemplateId;
+ 343 | 
+ 344 |     if (activeTemplateId) {
+ 345 |       if (!isExporting && !window.confirm('Deseja sobrescrever as alterações na prescrição deste WOD?')) return null;
+ 346 |       
+ 347 |       const { error } = await supabase.from('wod_templates').update(templatePayload).eq('id', activeTemplateId);
+ 348 |       if (error) { alert('Erro ao atualizar Template: ' + error.message); return null; }
+ 349 |     } else {
+ 350 |       const { data, error } = await supabase.from('wod_templates').insert([templatePayload]).select('id, short_code').single();
+ 351 |       if (error) { alert('Erro ao criar Template: ' + error.message); return null; }
+ 352 |       
+ 353 |       activeTemplateId = data.id;
+ 354 |       setCurrentTemplateId(data.id);
+ 355 |       setCurrentShortCode(data.short_code);
+ 356 |     }
+ 357 | 
+ 358 |     const hasResult = tempoReal || roundsReal > 0 || (resultado && resultado.potenciaReal > 0);
+ 359 | 
+ 360 |     if (hasResult) {
+ 361 |       const resultPayload = {
+ 362 |         template_id: activeTemplateId, 
+ 363 |         athlete_id: targetAthleteId,
+ 364 |         tempo_real: tempoReal,
+ 365 |         rounds_real: roundsReal,
+ 366 |         score_watts: resultado ? resultado.potenciaReal : 0,
+ 367 |         score_kcal: resultado ? resultado.gastoMetabolico : 0,
+ 368 |         timeline: timelineState,
+ 369 |         cargas_adaptadas: isScaled
+ 370 |       };
+ 371 | 
+ 372 |       if (currentResultId) {
+ 373 |         const { error } = await supabase.from('wod_results').update(resultPayload).eq('id', currentResultId);
+ 374 |         if (error) console.error('Erro ao atualizar resultado:', error);
+ 375 |       } else {
+ 376 |         const { data, error } = await supabase.from('wod_results').insert([resultPayload]).select('id').single();
+ 377 |         if (error) {
+ 378 |           console.error('Erro ao salvar resultado:', error);
+ 379 |         } else {
+ 380 |           setCurrentResultId(data.id);
+ 381 |         }
+ 382 |       }
+ 383 |     }
+ 384 | 
+ 385 |     if (!isExporting) alert('Dados salvos com sucesso no DynaWOD!');
+ 386 |     
+ 387 |     return newShortCode;
+ 388 |   };
+ 389 | 
+ 390 |   const compartilharWod = async () => {
+ 391 |     const code = await salvarNoSupabase(true); 
+ 392 |     if (code) {
+ 393 |       navigator.clipboard.writeText(code);
+ 394 |       alert(`Código do WOD (${code}) copiado para a área de transferência! Envie para seus alunos.`);
+ 395 |     }
+ 396 |   };
+ 397 | 
+ 398 |   const importarWod = async () => {
+ 399 |     const codeToFind = window.prompt('Digite o código de 6 dígitos do WOD:');
+ 400 |     if (!codeToFind) return;
+ 401 | 
+ 402 |     const { data, error } = await supabase.from('wod_templates').select('*').eq('short_code', codeToFind.toUpperCase()).single();
+ 403 |     
+ 404 |     if (error || !data) {
+ 405 |       alert('WOD não encontrado. Verifique o código.');
+ 406 |       return;
+ 407 |     }
+ 408 | 
+ 409 |     carregarDoSupabase(data);
+ 410 |   };
+ 411 | 
+ 412 |   const clonarWod = () => {
+ 413 |     if (!window.confirm('Deseja usar este treino como base para criar um NOVO WOD seu? O vínculo com o original será quebrado.')) return;
+ 414 |     
+ 415 |     setCurrentTemplateId(null);
+ 416 |     setCurrentShortCode(null);
+ 417 |     setCurrentResultId(null);
+ 418 |     
+ 419 |     alert('Pronto! O WOD foi desvinculado. Faça suas alterações e clique em "Salvar WOD".');
+ 420 |   };
+ 421 | 
+ 422 |   const addMovimento = (baseId: string | null = null) => {
+ 423 |     const newId = crypto.randomUUID();
+ 424 |     let newItem: ItemLousa = { originalId: newId, movId: 'air_squat', phase: 'round', reps: 10, carga: 0, tecnica: 'tng', extraVal: '', extraVal2: '' };
+ 425 |     if (baseId) {
+ 426 |       const idx = lousa.findIndex(m => m.originalId === baseId);
+ 427 |       if (idx !== -1) {
+ 428 |         newItem = { ...lousa[idx], originalId: newId };
+ 429 |         const updated = [...lousa];
+ 430 |         updated.splice(idx + 1, 0, newItem);
+ 431 |         setLousa(updated);
+ 432 |         return;
+ 433 |       }
+ 434 |     }
+ 435 |     setLousa([...lousa, newItem]);
+ 436 |   };
+ 437 |   const removeMovimento = (id: string) => setLousa(lousa.filter(m => m.originalId !== id));
+ 438 |   const updateMovimento = (id: string, field: keyof ItemLousa, val: any) => setLousa(lousa.map(item => item.originalId === id ? { ...item, [field]: val } : item));
+ 439 |   const handleTimelineChange = (rowId: string, field: keyof TimelineStateItem, val: any) => 
+ 440 |     setTimelineState(prev => ({ ...prev, [rowId]: { ...(prev[rowId] || {}), [field]: val } }));
+ 441 |   const carregarDoSupabase = (rec: any) => {
+ 442 |     setTipoTreino(rec.tipo_treino); 
+ 443 |     setTempoAlvo(rec.tempo_alvo); 
+ 444 |     setRoundsPrescritos(rec.rounds_prescritos);
+ 445 |     
+ 446 |     if (rec.rounds_real !== undefined) setRoundsReal(rec.rounds_real);
+ 447 |     if (rec.tempo_real) setTempoReal(rec.tempo_real);
+ 448 |     if (rec.atleta) setAtleta(rec.atleta);
+ 449 |     if (rec.movimentos) setLousa(rec.movimentos);
+ 450 |     if (rec.timeline) setTimelineState(rec.timeline);
+ 451 |     
+ 452 |     setCurrentTemplateId(rec.id);
+ 453 |     setCurrentShortCode(rec.short_code);
+ 454 |     
+ 455 |     setActiveTab('prescricao');
+ 456 | 
+ 457 |     if (rec.title && !rec.title.startsWith('Treino')) setNomeTreino(rec.title);
+ 458 |     else setNomeTreino('');
+ 459 |   };
+ 460 | 
+ 461 |   const processarWOD = () => {
+ 462 |     const rawTempoAlvo = parseClockTime(tempoAlvo);
+ 463 |     const tAlvoSec = rawTempoAlvo > 0 ? rawTempoAlvo : 0;
+ 464 |     const rawTempoReal = parseClockTime(tempoReal);
+ 465 |     const tRealSec = rawTempoReal > 0 ? rawTempoReal : 0;
+ 466 | 
+ 467 |     const ffm = (atleta?.peso || 80) * (1.0 - ((atleta?.bf || 15) / 100.0));
+ 468 |     const bmrDia = 370.0 + (21.6 * ffm);
+ 469 |     const bmrSec = bmrDia / 86400.0;
+ 470 | 
+ 471 |     let trabalhoMechTotalEsp = 0;
+ 472 |     lousa.forEach(m => {
+ 473 |       const cfg = movimentosDB[m.movId];
+ 474 |       if (!cfg) return;
+ 475 |       const mult = (m.phase === 'round') ? (roundsPrescritos || 1) : 1;
+ 476 |       const calc = calcularFisica(m.movId, cfg, m.reps, m.carga, m.extraVal, m.extraVal2 || '', atleta, m.tecnica, 0);
+ 477 |       const trab = calc?.trabMech || 0;
+ 478 |       trabalhoMechTotalEsp += trab * mult;
+ 479 |     });
+ 480 | 
+ 481 |     let roundsTimeline = (tipoTreino === 'FOR_TIME') ? (roundsPrescritos || 1) : Math.ceil(roundsReal || 1);
+ 482 |     if (roundsTimeline < 1) roundsTimeline = 1;
+ 483 | 
+ 484 |     const flatItems: any[] = [];
+ 485 |     lousa.filter(m => m.phase === 'buyin').forEach(m => flatItems.push({ rowId: `${m.originalId}-R0`, movId: m.movId, reps: m.reps, carga: m.carga, extraVal: m.extraVal, extraVal2: m.extraVal2, phase: 'buyin', tecnica: m.tecnica, badgeText: 'Buy-in', badgeClass: 'badge-buyin' }));
+ 486 |     for (let r = 1; r <= roundsTimeline; r++) lousa.filter(m => m.phase === 'round').forEach(m => flatItems.push({ rowId: `${m.originalId}-R${r}`, movId: m.movId, reps: m.reps, carga: m.carga, extraVal: m.extraVal, extraVal2: m.extraVal2, phase: 'round', tecnica: m.tecnica, badgeText: `R ${r}`, badgeClass: '' }));
+ 487 |     lousa.filter(m => m.phase === 'cashout').forEach(m => flatItems.push({ rowId: `${m.originalId}-R99`, movId: m.movId, reps: m.reps, carga: m.carga, extraVal: m.extraVal, extraVal2: m.extraVal2, phase: 'cashout', tecnica: m.tecnica, badgeText: 'Cash-out', badgeClass: 'badge-cashout' }));
+ 488 | 
+ 489 |     let somaTempoDeterminadoGlobal = 0, totalTransicaoGlobal = 0, trabalhoMechTotalReal = 0, gastoMetabolicoLiquidoTotal = 0, metabolicoRestanteGlobal = 0, lastEndSec = -1;
+ 490 |     let tempoDecorridoEstimado = 0; // Acumulador da linha do tempo para degradação celular
+ 491 |     
+ 492 |     const itemsProcessados: any[] = [];
+ 493 | 
+ 494 |     flatItems.forEach(row => {
+ 495 |       const config = movimentosDB[row.movId] || movimentosDB['air_squat']; 
+ 496 |       const state = timelineState[row.rowId] || { reps: row.reps, start: '', end: '' };
+ 497 |       const repsEffective = state.reps !== undefined ? Number(state.reps) : (row.reps || 0);
+ 498 |       
+ 499 |       const cargaEffective = state.carga !== undefined ? Number(state.carga) : (row.carga || 0);
+ 500 | 
+ 501 |       const startSec = parseClockTime(state.start);
+ 502 |       const endSec = parseClockTime(state.end);
+ 503 |       const tempoDefinitivoTemp = (startSec >= 0 && endSec > startSec) ? (endSec - startSec) : 0;
+ 504 |       
+ 505 |       // Injeção da variável latente de falha no motor biomecânico
+ 506 |       const calc = calcularFisica(row.movId, config, repsEffective, cargaEffective, row.extraVal, row.extraVal2, atleta, row.tecnica, tempoDefinitivoTemp, tempoDecorridoEstimado) || {};
+ 507 | 
+ 508 |       const trabMetabolicoWork = calc.trabMetabolicoWork || 0;
+ 509 |       const trabMetabolicoConcIsom = calc.trabMetabolicoConcIsom || 0;
+ 510 |       const trabMech = calc.trabMech || 0;
+ 511 | 
+ 512 |       let transicaoEspecifica = 0;
+ 513 |       if (tempoDefinitivoTemp > 0) {
+ 514 |         if (lastEndSec >= 0 && startSec >= lastEndSec) { transicaoEspecifica = startSec - lastEndSec; totalTransicaoGlobal += transicaoEspecifica; }
+ 515 |         lastEndSec = endSec; somaTempoDeterminadoGlobal += tempoDefinitivoTemp; gastoMetabolicoLiquidoTotal += trabMetabolicoWork;
+ 516 |       } else { 
+ 517 |         lastEndSec = -1; metabolicoRestanteGlobal += trabMetabolicoConcIsom; 
+ 518 |       }
+ 519 |       
+ 520 |       // Atualização do eixo temporal: Incrementa a carga de estresse (3s por repetição como heurística base caso deltaT seja omisso)
+ 521 |       const tempoDesgasteIteracao = tempoDefinitivoTemp > 0 ? tempoDefinitivoTemp : (repsEffective * 3.0);
+ 522 |       tempoDecorridoEstimado += (tempoDesgasteIteracao + transicaoEspecifica);
+ 523 | 
+ 524 |       trabalhoMechTotalReal += trabMech;
+ 525 |       itemsProcessados.push({ 
+ 526 |         ...calc, 
+ 527 |         nome: config.nome || row.movId, 
+ 528 |         reps: repsEffective, 
+ 529 |         labelRounds: row.badgeText, 
+ 530 |         tempoDefinitivo: tempoDefinitivoTemp, 
+ 531 |         transicaoEspecifica: tempoDefinitivoTemp > 0 && startSec >= lastEndSec ? startSec - lastEndSec : 0, 
+ 532 |         phase: row.phase 
+ 533 |       });
+ 534 |     });
+ 535 | 
+ 536 |     const tempoTotalReferencia = (tipoTreino === 'FOR_TIME' && tRealSec > 0) ? tRealSec : tAlvoSec;
+ 537 |     const tempoDisponivel = Math.max(0, tempoTotalReferencia - somaTempoDeterminadoGlobal - totalTransicaoGlobal);
+ 538 |     
+ 539 |     // Refatoração 4: Fator EPOC Sigmoidal baseado na fadiga termodinâmica extrema
+ 540 |     const refTempoEstimado = tempoTotalReferencia > 0 ? tempoTotalReferencia : tAlvoSec;
+ 541 |     const tempoLiquidoEstimado = Math.max(1, refTempoEstimado - totalTransicaoGlobal);
+ 542 |     const potRealEstimada = tempoLiquidoEstimado > 0 ? (trabalhoMechTotalReal / tempoLiquidoEstimado) : 0;
+ 543 |     const limiarPotencia = potRealEstimada / (atleta?.peso || 80);
+ 544 |     
+ 545 |     // Função sigmoide: Teto dinâmico máximo de 40% (1.40) com inflexão aos 3.5 W/kg
+ 546 |     const fatorEPOC = 1.0 + (0.40 / (1.0 + Math.exp(-1.5 * (limiarPotencia - 3.5))));
+ 547 | 
+ 548 |     let logDetalhes = "", lastPhase: string | null = null;
+ 549 |     let tempoTotalExecucaoEfetiva = 0;
  550 | 
- 551 |     let logDetalhes = "", lastPhase: string | null = null;
- 552 |     let tempoTotalExecucaoEfetiva = 0;
- 553 | 
- 554 |     itemsProcessados.forEach(item => {
- 555 |       if (item.phase !== lastPhase) {
- 556 |         if (item.phase === 'buyin') logDetalhes += `<div style="margin-top:15px; padding:5px 10px; background:#2a2a2a; border-left:3px solid #f39c12;"><strong>▶ BUY-IN</strong></div>`;
- 557 |         else if (item.phase === 'round') logDetalhes += `<div style="margin-top:15px; padding:5px 10px; background:#2a2a2a; border-left:3px solid var(--accent);"><strong>🔄 WOD PRINCIPAL</strong></div>`;
- 558 |         else if (item.phase === 'cashout') logDetalhes += `<div style="margin-top:15px; padding:5px 10px; background:#2a2a2a; border-left:3px solid #2196f3;"><strong>⏹ CASH-OUT</strong></div>`;
- 559 |         lastPhase = item.phase;
- 560 |       }
+ 551 |     itemsProcessados.forEach(item => {
+ 552 |       if (item.phase !== lastPhase) {
+ 553 |         if (item.phase === 'buyin') logDetalhes += `<div style="margin-top:15px; padding:5px 10px; background:#2a2a2a; border-left:3px solid #f39c12;"><strong>▶ BUY-IN</strong></div>`;
+ 554 |         else if (item.phase === 'round') logDetalhes += `<div style="margin-top:15px; padding:5px 10px; background:#2a2a2a; border-left:3px solid var(--accent);"><strong>🔄 WOD PRINCIPAL</strong></div>`;
+ 555 |         else if (item.phase === 'cashout') logDetalhes += `<div style="margin-top:15px; padding:5px 10px; background:#2a2a2a; border-left:3px solid #2196f3;"><strong>⏹ CASH-OUT</strong></div>`;
+ 556 |         lastPhase = item.phase;
+ 557 |       }
+ 558 |       
+ 559 |       let tempoParaPotencia = item.tempoDefinitivo || 0; 
+ 560 |       const transEsp = item.transicaoEspecifica || 0;
  561 |       
- 562 |       let tempoParaPotencia = item.tempoDefinitivo || 0; 
- 563 |       const transEsp = item.transicaoEspecifica || 0;
- 564 |       
- 565 |       if (transEsp > 0) logDetalhes += `<span class="color-transition">&nbsp;&nbsp;↳ 🚶 Transição: ${transEsp.toFixed(0)}s</span><br/>`;
- 566 |       
- 567 |       const trabMetConcIsom = item.trabMetabolicoConcIsom || 0;
- 568 |       const trabMetWork = item.trabMetabolicoWork || 0;
- 569 |       const ergTime = item.ergTime || 0;
- 570 |       
- 571 |       if (tempoParaPotencia === 0) {
- 572 |         if (metabolicoRestanteGlobal > 0 && tempoDisponivel > 0) {
- 573 |           tempoParaPotencia = (trabMetConcIsom / metabolicoRestanteGlobal) * tempoDisponivel; 
- 574 |         } else if (item.isErgo) {
- 575 |           tempoParaPotencia = ergTime;
- 576 |         }
- 577 |         gastoMetabolicoLiquidoTotal += trabMetWork;
- 578 |       }
- 579 |       tempoTotalExecucaoEfetiva += tempoParaPotencia;
- 580 | 
- 581 |       const gastoBasalLinha = item.isCalorieErgo ? 0 : (bmrSec * tempoParaPotencia);
- 582 |       const totalKcalLinha = (trabMetWork * fatorEPOC) + gastoBasalLinha;
- 583 |       
- 584 |       let strPot = "", strTmp = "";
- 585 |       const trabMechLinha = item.trabMech || 0;
- 586 |       const extraLog = item.infoExtraLog || '';
- 587 | 
- 588 |       if (tempoParaPotencia > 0) {
- 589 |         strTmp = ` | 🕒 ${tempoParaPotencia.toFixed(0)}s`; 
- 590 |         strPot = ` | <strong class="color-time">⚡ ${(trabMechLinha / tempoParaPotencia).toFixed(1)} W</strong>`;
- 591 |       }
- 592 |       
- 593 |       logDetalhes += `• [${item.labelRounds}] ${item.reps}x ${item.nome}${extraLog}: <strong class="color-mech">${trabMechLinha.toFixed(0)} J</strong> | <strong class="color-metabolic">${totalKcalLinha.toFixed(1)} kCal</strong>${strTmp}${strPot}<br/>`;
- 594 |     });
- 595 | 
- 596 |     const tempoLiquidoEsp = tAlvoSec - desc - totalTransicaoGlobal;
- 597 |     const potEsp = tempoLiquidoEsp > 0 ? (trabalhoMechTotalEsp / tempoLiquidoEsp) : 0;
- 598 |     
- 599 |     const refTempo = tempoTotalReferencia > 0 ? tempoTotalReferencia : tempoTotalExecucaoEfetiva;
- 600 |     const tempoLiquidoReal = refTempo - desc - totalTransicaoGlobal;
- 601 |     const potReal = tempoLiquidoReal > 0 ? (trabalhoMechTotalReal / tempoLiquidoReal) : 0;
- 602 |     
- 603 |     const tempoTotalSessao = tempoTotalReferencia > 0 ? tempoTotalReferencia : (tempoTotalExecucaoEfetiva + totalTransicaoGlobal + desc);
- 604 |     const gastoBasalSessao = bmrSec * tempoTotalSessao;
- 605 |     const gastoMetabolicoFinal = (gastoMetabolicoLiquidoTotal * fatorEPOC) + gastoBasalSessao;
- 606 | 
- 607 |     setResultado({ 
- 608 |       trabalhoReal: trabalhoMechTotalReal || 0, 
- 609 |       gastoMetabolico: gastoMetabolicoFinal || 0, 
- 610 |       potenciaEsp: potEsp || 0, 
- 611 |       potenciaReal: potReal || 0, 
- 612 |       logDetalhesHTML: logDetalhes 
- 613 |     });
- 614 |   };
- 615 | 
- 616 |   if (loadingAuth) return <div style={{textAlign: 'center', marginTop: '50px'}}>Iniciando...</div>;
- 617 | 
- 618 |   if (!session) {
- 619 |     return (
- 620 |       <div className="container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '80vh' }}>
- 621 |         <div className="panel" style={{ textAlign: 'center', maxWidth: '400px', width: '100%', padding: '40px 20px' }}>
- 622 |           <h1 style={{ border: 'none', marginBottom: '10px' }}>
- 623 |             <img 
- 624 |             src="/dynawod-texto.png"
- 625 |             alt="DynaWOD Tipografia" 
- 626 |             style={{ height: '48px', objectFit: 'contain' }}
- 627 |             />
- 628 |           </h1>
- 629 |           <p style={{ color: '#aaa', marginBottom: '30px' }}>Seu motor biomecânico. Calcule potência e gasto metabólico real.</p>
- 630 |           <button onClick={signInWithGoogle} style={{ backgroundColor: '#fff', color: '#333', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', fontSize: '1rem', padding: '10px', width: '100%', borderRadius: '5px', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>
- 631 |             <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/><path fill="none" d="M1 1h22v22H1z"/></svg>
- 632 |             Entrar com Conta Google
- 633 |           </button>
- 634 |         </div>
- 635 |       </div>
- 636 |     );
- 637 |   }
- 638 | 
- 639 |   if (isNewUser) {
- 640 |     return (
- 641 |       <div className="container" style={{ maxWidth: '600px' }}>
- 642 |         <div className="panel">
- 643 |           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
- 644 |             <h2 style={{ margin: 0 }}>Bem-vindo ao DynaWOD!</h2>
- 645 |             <button onClick={signOut} style={{ display: 'flex', alignItems: 'center', gap: '8px', width: 'auto', backgroundColor: '#333', padding: '5px 10px', fontSize: '0.85rem' }}>Sair</button>
- 646 |           </div>
- 647 |           <p style={{ color: '#aaa' }}>Complete seu perfil biomecânico para calibrarmos o motor para o seu corpo.</p>
- 648 |           
- 649 |           <div className="form-group" style={{ marginTop: '20px' }}>
- 650 |             <label>Seu Nome Completo</label>
- 651 |             <input type="text" value={onboardForm.full_name} onChange={e => setOnboardForm({...onboardForm, full_name: e.target.value})} />
- 652 |           </div>
- 653 |           <div className="form-group">
- 654 |             <label>Como quer ser chamado?</label>
- 655 |             <input type="text" value={onboardForm.apelido} onChange={e => setOnboardForm({...onboardForm, apelido: e.target.value})} placeholder="Ex: Gui" />
- 656 |           </div>
- 657 | 
- 658 |           <div style={{ background: '#222', padding: '15px', borderRadius: '8px', margin: '20px 0' }}>
- 659 |             <label style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.1rem', cursor: 'pointer' }}>
- 660 |               <input type="checkbox" checked={onboardForm.is_coach} onChange={e => setOnboardForm({...onboardForm, is_coach: e.target.checked})} style={{ width: '20px', height: '20px' }} />
- 661 |               <strong>Eu sou um Coach</strong> (Quero prescrever para alunos)
- 662 |             </label>
- 663 |           </div>
- 664 | 
- 665 |           <p style={{ color: '#ff9800', fontSize: '0.85rem', marginBottom: '15px', backgroundColor: '#332b00', padding: '10px', borderRadius: '4px', borderLeft: '3px solid #ff9800' }}>
- 666 |             ⚠️ <strong>Atenção:</strong> Preencha as medidas de comprimento em <strong>metros</strong> (use ponto). Ex: <strong>1.75</strong>, e não 175.
- 667 |           </p>
- 668 | 
- 669 |           <div className="grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
- 670 |             <div className="form-group"><label>Estatura (m)</label><input type="number" step="0.01" placeholder="Ex: 1.75" value={onboardForm.estatura || ''} onChange={e => setOnboardForm({...onboardForm, estatura: e.target.value as unknown as number})} /></div>
- 671 |             <div className="form-group"><label>Peso (kg)</label><input type="number" step="0.1" placeholder="Ex: 80.5" value={onboardForm.peso || ''} onChange={e => setOnboardForm({...onboardForm, peso: e.target.value as unknown as number})} /></div>
- 672 |             <div className="form-group"><label>Sexo Biológico</label><select value={onboardForm.sexo} onChange={e => setOnboardForm({...onboardForm, sexo: e.target.value as 'M'|'F'})}><option value="M">Masculino</option><option value="F">Feminino</option></select></div>
- 673 |             <div className="form-group"><label>Nível</label><select value={onboardForm.nivel_tecnico} onChange={e => setOnboardForm({...onboardForm, nivel_tecnico: e.target.value})}><option value="iniciante">Iniciante</option><option value="intermediario">Intermediário</option><option value="avancado">Avançado</option></select></div>
- 674 |             <div className="form-group"><label>Envergadura (m)</label><input type="number" step="0.01" placeholder="Ex: 1.75" value={onboardForm.envergadura || ''} onChange={e => setOnboardForm({...onboardForm, envergadura: e.target.value as unknown as number})} /></div>
- 675 |             <div className="form-group"><label>Alt. Perna (m)</label><input type="number" step="0.01" placeholder="Ex: 0.85" value={onboardForm.perna || ''} onChange={e => setOnboardForm({...onboardForm, perna: e.target.value as unknown as number})} /></div>
- 676 |             <div className="form-group"><label>% BF</label><input type="number" placeholder="Ex: 15" value={onboardForm.bf || ''} onChange={e => setOnboardForm({...onboardForm, bf: e.target.value as unknown as number})} /></div>
- 677 |           </div>
- 678 | 
- 679 |           <button onClick={saveOnboardingProfile} style={{ marginTop: '20px', width: '100%', fontSize: '1.2rem', padding: '15px' }}>Salvar Perfil e Entrar</button>
- 680 |         </div>
- 681 |       </div>
- 682 |     );
- 683 |   }
- 684 | 
- 685 |   return (
- 686 |     <div className="container" style={{ padding: 0, maxWidth: '1200px', margin: '0 auto' }}> 
- 687 |       
- 688 |       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 24px', backgroundColor: 'var(--bg-dark, #0a0a0a)', borderBottom: '1px solid var(--line-silver, #26272b)', marginBottom: '24px' }}>
- 689 |         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
- 690 |           <img src="/favicon.png" alt="Símbolo DynaWOD" style={{ height: '40px', objectFit: 'contain' }} />
- 691 |           <img src="/dynawod-texto.png" alt="DynaWOD Tipografia" style={{ height: '28px', objectFit: 'contain' }} />
- 692 |         </div>
- 693 | 
- 694 |         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
- 695 |           <div style={{ fontSize: '14px', color: 'var(--text-muted, #8a8d94)', fontWeight: 600 }}>
- 696 |             Olá, <span style={{ color: '#fff' }}>{userProfile?.is_coach ? <Trophy size={"1.2em"} color="var(--dyna-red)" /> : <Dumbbell size={"1.2em"} color="var(--line-silver)" />} {userProfile?.apelido || userProfile?.full_name}</span>
- 697 |           </div>
- 698 |           {userProfile?.is_coach && (
- 699 |             <select value={selectedAthleteId} onChange={e => handleAthleteChange(e.target.value)} style={{ background: 'var(--bg-card, #181a1e)', border: '1px solid var(--line-silver, #26272b)', color: '#fff', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer' }}>
- 700 |               <option value="me">Meu Desempenho</option>
- 701 |               <optgroup label="Meus Alunos">{myAthletes.map(a => <option key={a.id} value={a.id}>{a.full_name}</option>)}</optgroup>
- 702 |             </select>
- 703 |           )}
- 704 |           <button onClick={signOut} style={{ width: 'auto', backgroundColor: 'var(--dyna-burgundy, #7A0F1B)', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer', fontWeight: 'bold' }}><LogOut size={"1.2em"} /> Sair</button>
- 705 |         </div>
- 706 |       </header>
- 707 | 
- 708 |       <div style={{ padding: '0 24px' }}>
- 709 |         
- 710 |         <div className="tabs">
- 711 |           <button className={`tab-btn ${activeTab === 'prescricao' ? 'active' : ''}`} onClick={() => setActiveTab('prescricao')}>1. Lousa</button>
- 712 |           <button className={`tab-btn ${activeTab === 'analise' ? 'active' : ''}`} onClick={() => setActiveTab('analise')}>2. Análise</button>
- 713 |           <button className={`tab-btn ${activeTab === 'atleta' ? 'active' : ''}`} onClick={() => setActiveTab('atleta')}>3. Atleta</button>
- 714 |           <button className={`tab-btn ${activeTab === 'historico' ? 'active' : ''}`} onClick={() => setActiveTab('historico')}>4. Histórico</button>
- 715 |         </div>
- 716 | 
- 717 |         {activeTab === 'prescricao' && (
- 718 |           <div className="panel">
- 719 |             <h2>Estrutura do Treino</h2>
- 720 |             <div className="grid" style={{ gridTemplateColumns: '1fr 1fr 1fr', marginBottom: '10px', gap: '15px' }}>
- 721 |               <div className="form-group" style={{ marginBottom: '15px' }}>
- 722 |                 <label>Nome do Treino (Opcional)</label>
- 723 |                 <input type="text" value={nomeTreino} onChange={e => setNomeTreino(e.target.value)} placeholder="Ex: Murph, Fran, Open 24.1..." />
- 724 |               </div>
- 725 |               <div className="form-group" style={{ marginBottom: 0 }}>
- 726 |                 <label>Modalidade</label>
- 727 |                 <select value={tipoTreino} onChange={e => setTipoTreino(e.target.value as Modalidade)}>
- 728 |                   <option value="FOR_TIME">For Time</option>
- 729 |                   <option value="AMRAP">AMRAP</option>
- 730 |                   <option value="EMOM">EMOM</option>
- 731 |                 </select>
- 732 |               </div>
- 733 |               <div className="form-group" style={{ marginBottom: 0 }}>
- 734 |                 <label>{tipoTreino === 'FOR_TIME' ? 'Time Cap (mm:ss)' : 'Tempo Total'}</label>
- 735 |                 <input type="text" value={tempoAlvo} onChange={e => setTempoAlvo(e.target.value)} placeholder="Ex: 10:00" />
- 736 |               </div>
- 737 |               <div className="form-group" style={{ marginBottom: 0 }}>
- 738 |                 <label>Rounds Prescritos</label>
- 739 |                 <input type="number" value={roundsPrescritos} onChange={e => setRoundsPrescritos(Number(e.target.value))} />
- 740 |               </div>
- 741 |             </div>
- 742 | 
- 743 |             <hr style={{ borderColor: 'var(--line-silver, #26272b)', margin: '25px 0' }} />
- 744 | 
- 745 |             <h2>Quadro de Movimentos</h2>
- 746 |             <button className="btn-add" onClick={() => addMovimento()} style={{ backgroundColor: 'transparent', color: 'var(--dyna-red, #FF2B3D)', border: '1px dashed var(--dyna-red, #FF2B3D)', padding: '10px 15px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', width: '100%', marginBottom: '15px' }}>+ Adicionar Exercício</button>
- 747 |             
- 748 |             <div className="wod-list">
- 749 |               {lousa.map((item, index) => {
- 750 |                 const cfg = movimentosDB[item.movId] || movimentosDB['pushup'];
- 751 |                 return (
- 752 |                   <div 
- 753 |                     key={item.originalId} 
- 754 |                     className="wod-item"
- 755 |                     draggable
- 756 |                     onDragStart={(e) => {
- 757 |                       handleDragStart(index);
- 758 |                       e.currentTarget.style.opacity = '0.5';
- 759 |                     }}
- 760 |                     onDragEnter={() => handleDragEnter(index)}
- 761 |                     onDragEnd={handleDragEnd}
- 762 |                     onDragOver={(e) => e.preventDefault()}
- 763 |                   >
- 764 |                     {/* Pegador Lateral (Drag Handle) */}
- 765 |                     <div className="drag-handle">
- 766 |                       <svg width="10" height="20" viewBox="0 0 8 20" fill="currentColor">
- 767 |                         <circle cx="2" cy="2" r="1.5"/><circle cx="6" cy="2" r="1.5"/>
- 768 |                         <circle cx="2" cy="10" r="1.5"/><circle cx="6" cy="10" r="1.5"/>
- 769 |                         <circle cx="2" cy="18" r="1.5"/><circle cx="6" cy="18" r="1.5"/>
- 770 |                       </svg>
- 771 |                     </div>
- 772 | 
- 773 |                     <div>
- 774 |                       <label>Fase</label>
- 775 |                       <select value={item.phase} onChange={e => updateMovimento(item.originalId, 'phase', e.target.value)}>
- 776 |                         <option value="buyin">Buy-in</option>
- 777 |                         <option value="round">WOD</option>
- 778 |                         <option value="cashout">Cash-out</option>
- 779 |                       </select>
- 780 |                       <div style={{ marginTop: '5px' }}>
- 781 |                         <SearchableMovementSelect 
- 782 |                           value={item.movId} 
- 783 |                           onChange={(newId) => updateMovimento(item.originalId, 'movId', newId)} 
- 784 |                           movimentosDB={movimentosDB} 
- 785 |                         />
- 786 |                       </div>
- 787 |                     </div>
- 788 |                     
- 789 |                     <div>
- 790 |                       <label>Reps/Mts</label>
- 791 |                       <input type="number" value={item.reps} onChange={e => updateMovimento(item.originalId, 'reps', Number(e.target.value))} />
- 792 |                     </div>
- 793 |                     
- 794 |                     <div>
- 795 |                       <label>Carga/Téc.</label>
- 796 |                       <div style={{ display: 'flex', gap: '5px' }}>
- 797 |                         <input type="number" disabled={!cfg.usaCarga} value={item.carga} onChange={e => updateMovimento(item.originalId, 'carga', Number(e.target.value))} />
- 798 |                         <select value={item.tecnica} onChange={e => updateMovimento(item.originalId, 'tecnica', e.target.value)}>
- 799 |                           <option value="tng">T&G</option>
- 800 |                           <option value="drop">Drop</option>
- 801 |                         </select>
- 802 |                       </div>
- 803 |                     </div>
- 804 |                     
- 805 |                     <div>
- 806 |                       <div style={{ display: 'flex', gap: '5px' }}>
- 807 |                         <div style={{ flex: 1 }}>
- 808 |                           <label>{cfg.paramExtra ? cfg.paramExtra.label : 'Param.'}</label>
- 809 |                           <input type="text" disabled={!cfg.paramExtra} value={item.extraVal || ''} onChange={e => updateMovimento(item.originalId, 'extraVal', e.target.value)} />
- 810 |                         </div>
- 811 |                         {cfg.paramExtra2 && (
- 812 |                           <div style={{ flex: 1 }}>
- 813 |                             <label>{cfg.paramExtra2.label}</label>
- 814 |                             <select value={item.extraVal2 || cfg.paramExtra2.val} onChange={e => updateMovimento(item.originalId, 'extraVal2', e.target.value)}>
- 815 |                               {cfg.paramExtra2.options?.map(opt => (
- 816 |                                 <option key={opt.value} value={opt.value}>{opt.label}</option>
- 817 |                               ))}
- 818 |                             </select>
- 819 |                           </div>
- 820 |                         )}
- 821 |                       </div>
- 822 |                     </div>
- 823 |                     
- 824 |                     <div className="actions-col">
- 825 |                       <button className="btn-action" onClick={() => addMovimento(item.originalId)} title="Duplicar">
- 826 |                         <Copy size={"1.2em"} color="var(--line-silver)" />
- 827 |                       </button>
- 828 |                       <button className="btn-remove" onClick={() => removeMovimento(item.originalId)}><X size={"1.2em"} /></button>
- 829 |                     </div>
- 830 |                   </div>
- 831 |                 );
- 832 |               })}
- 833 |             </div>
- 834 | 
- 835 |             <hr style={{ borderColor: 'var(--line-silver, #26272b)', margin: '25px 0' }} />
- 836 |             
- 837 |             <h2>Gerenciar WOD</h2>
- 838 |             {currentShortCode && (
- 839 |               <p style={{ color: 'var(--text-muted, #8a8d94)', fontSize: '0.9rem', marginBottom: '15px' }}>
- 840 |                 Código deste treino: <strong style={{ color: '#fff', letterSpacing: '2px' }}>{currentShortCode}</strong>
- 841 |               </p>
- 842 |             )}
- 843 |             
- 844 |               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
- 845 |                 <button onClick={importarWod} style={{ flex: '1 1 140px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '1rem', backgroundColor: 'var(--bg-card, #181a1e)', color: '#fff', border: '1px solid var(--line-silver, #26272b)' }}>
- 846 |                   <Download size={22} style={{ flexShrink: 0 }} /> 
- 847 |                   <span>Importar</span>
- 848 |                 </button>
- 849 |                 <button onClick={compartilharWod} style={{ flex: '1 1 140px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '1rem', backgroundColor: 'var(--dyna-burgundy, #7A0F1B)', color: '#fff', border: 'none', fontWeight: '600' }}>
- 850 |                   <Share2 size={22} style={{ flexShrink: 0 }} /> 
- 851 |                   <span>Copiar</span>
- 852 |                 </button>
- 853 |                 {currentTemplateId && (
- 854 |                   <button onClick={clonarWod} style={{ flex: '1 1 140px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '1rem', backgroundColor: '#3b82f6', color: '#fff', border: 'none', fontWeight: 'bold' }}>
- 855 |                     <Copy size={22} style={{ flexShrink: 0 }} /> 
- 856 |                     <span>Duplicar</span>
- 857 |                   </button>
- 858 |                 )}
- 859 |                 <button onClick={() => salvarNoSupabase(false)} style={{ flex: '1 1 140px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '1rem', backgroundColor: 'var(--dyna-red, #FF2B3D)', color: '#fff', border: 'none', fontWeight: 'bold' }}>
- 860 |                   <Save size={22} style={{ flexShrink: 0 }} /> 
- 861 |                   <span>{currentTemplateId ? 'Atualizar WOD' : 'Salvar WOD'}</span>
- 862 |                 </button>
- 863 |               </div>
- 864 |           </div>
- 865 |         )}
- 866 | 
- 867 |         {activeTab === 'analise' && (
- 868 |           <div className="panel">
- 869 |             <div style={{ backgroundColor: 'var(--bg-card, #181a1e)', padding: '20px', borderRadius: '8px', borderLeft: '4px solid var(--dyna-red, #FF2B3D)', marginBottom: '25px' }}>
- 870 |               <h2 style={{ margin: '0 0 10px 0', fontSize: '1.2rem' }}>Score (Resultado Real)</h2>
- 871 |               <p style={{ margin: '0 0 15px 0', fontSize: '0.85rem', color: 'var(--text-muted, #8a8d94)' }}>Insira o resultado alcançado para calcular a potência gerada.</p>
- 872 |               <div className="form-group" style={{ marginBottom: 0 }}>
- 873 |                 <label>{tipoTreino === 'FOR_TIME' ? 'Tempo Real Efetivado (mm:ss)' : 'Rounds Reais Completados'}</label>
- 874 |                 {tipoTreino === 'FOR_TIME' ? (
- 875 |                   <input type="text" value={tempoReal} onChange={e => setTempoReal(e.target.value)} placeholder="Ex: 12:30" style={{ maxWidth: '250px', fontSize: '1.1rem' }} />
- 876 |                 ) : (
- 877 |                   <input type="number" step="0.1" value={roundsReal} onChange={e => setRoundsReal(Number(e.target.value))} style={{ maxWidth: '250px', fontSize: '1.1rem' }} />
- 878 |                 )}
- 879 |               </div>
- 880 |               <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
- 881 |                 <input 
- 882 |                   type="checkbox" 
- 883 |                   id="checkbox-scaled"
- 884 |                   checked={isScaled}
- 885 |                   onChange={(e) => setIsScaled(e.target.checked)}
- 886 |                   style={{ width: '18px', height: '18px' }}
- 887 |                 />
- 888 |                 <label htmlFor="checkbox-scaled" style={{ color: '#fff', fontSize: '14px' }}>
- 889 |                   Marcar como Scaled (Treino Adaptado)
- 890 |                 </label>
- 891 |               </div>
- 892 |             </div>
- 893 | 
- 894 |             <h2>Timeline Expandida</h2>
- 895 |             <div className="wod-list">
- 896 |               {(() => {
- 897 |                 let rTimeline = (tipoTreino === 'FOR_TIME') ? roundsPrescritos : Math.ceil(roundsReal);
- 898 |                 if (rTimeline < 1) rTimeline = 1;
- 899 |                 const rows: any[] = [];
- 900 |                 const renderRow = (m: ItemLousa, badgeClass: string, badgeText: string, rIdx: number) => {
- 901 |                   const rowId = `${m.originalId}-R${rIdx}`;
- 902 |                   const cfg = movimentosDB[m.movId];
- 903 |                   const st = timelineState[rowId] || { reps: m.reps, start: '', end: '' };
- 904 |                   
- 905 |                   rows.push(
- 906 |                     <div key={rowId} className="wod-item-analise">
- 907 |                       <div className={`badge-round ${badgeClass}`}>{badgeText}</div>
- 908 |                       <div>
- 909 |                         <div style={{ fontWeight: 'bold' }}>{cfg ? cfg.nome : m.movId}</div>
- 910 |                         <div style={{ fontSize: '0.75rem', color: '#aaa' }}>
- 911 |                           RX: {m.carga > 0 ? `${m.carga}kg` : '--'} {m.extraVal ? `| ${m.extraVal}` : ''}
- 912 |                         </div>
- 913 |                       </div>
- 914 |                       <div><label>Reps</label><input type="number" value={st.reps !== undefined ? st.reps : m.reps} onChange={e => handleTimelineChange(rowId, 'reps', e.target.value === '' ? '' : Number(e.target.value))} /></div>
- 915 |                       
- 916 |                       <div>
- 917 |                         <label>Carga Real</label>
- 918 |                         <input 
- 919 |                           type="number" 
- 920 |                           value={st.carga !== undefined ? st.carga : m.carga} 
- 921 |                           onChange={e => handleTimelineChange(rowId, 'carga', e.target.value === '' ? '' : Number(e.target.value))}
- 922 |                           disabled={!(cfg?.usaCarga)}
- 923 |                           style={{ border: isScaled && (st.carga !== undefined ? st.carga : m.carga) < m.carga ? '1px solid var(--dyna-red, #FF2B3D)' : '' }}
- 924 |                         />
- 925 |                       </div>
- 926 | 
- 927 |                       <div><label>Início</label><input type="text" placeholder="mm:ss" value={st.start || ''} onChange={e => handleTimelineChange(rowId, 'start', e.target.value)} /></div>
- 928 |                       <div><label>Fim</label><input type="text" placeholder="mm:ss" value={st.end || ''} onChange={e => handleTimelineChange(rowId, 'end', e.target.value)} /></div>
- 929 |                     </div>
- 930 |                   );
- 931 |                 };
- 932 |                 lousa.filter(m => m.phase === 'buyin').forEach(m => renderRow(m, 'badge-buyin', 'Buy-in', 0));
- 933 |                 for (let r = 1; r <= rTimeline; r++) lousa.filter(m => m.phase === 'round').forEach(m => renderRow(m, '', `R ${r}`, r));
- 934 |                 lousa.filter(m => m.phase === 'cashout').forEach(m => renderRow(m, 'badge-cashout', 'Cash-out', 99));
- 935 |                 return rows;
- 936 |               })()}
- 937 |             </div>
- 938 | 
- 939 |             <button onClick={processarWOD} style={{ fontSize: '1.1rem', padding: '15px', backgroundColor: 'var(--dyna-red, #FF2B3D)', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', width: '100%', cursor: 'pointer', marginBottom: '20px', marginTop: '10px' }}>
- 940 |               ⚡ Processar Dinâmica e Termodinâmica
- 941 |             </button>
- 942 | 
- 943 |             {resultado && (
- 944 |               <div className="results">
- 945 |                 <h2>Painel de Resultado Biomecânico</h2>
- 946 |                 <div className="grid" style={{ marginBottom: 0 }}>
- 947 |                   <div style={{ margin: '15px 0' }}><div className="result-value color-mech">{resultado.trabalhoReal.toFixed(0)} J</div><div>Trabalho Mecânico</div></div>
- 948 |                   <div style={{ margin: '15px 0' }}><div className="result-value color-metabolic">{resultado.gastoMetabolico.toFixed(0)} kCal</div><div>Gasto Termodinâmico (+ EPOC)</div></div>
- 949 |                   <div style={{ margin: '15px 0' }}><div className="result-value" style={{ color: '#aaa' }}>{resultado.potenciaEsp > 0 ? resultado.potenciaEsp.toFixed(1) + ' W' : '-- W'}</div><div>Potência Esperada</div></div>
- 950 |                   <div style={{ margin: '15px 0' }}><div className="result-value" style={{ color: '#4caf50' }}>{resultado.potenciaReal > 0 ? resultado.potenciaReal.toFixed(1) + ' W' : '-- W'}</div><div>Potência Real Executada</div></div>
- 951 |                 </div>
- 952 |                 <div className="result-detail" dangerouslySetInnerHTML={{ __html: resultado.logDetalhesHTML }} />
- 953 |               </div>
- 954 |             )}
- 955 |             <button 
- 956 |               onClick={gerarCardInstagram} 
- 957 |               style={{ 
- 958 |                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', 
- 959 |                 fontSize: '1rem', backgroundColor: '#8a33e2',
- 960 |                 color: '#fff', border: 'none', fontWeight: 'bold', 
- 961 |                 padding: '12px 20px', borderRadius: '8px', width: '100%', marginTop: '20px'
- 962 |               }}
- 963 |             >
- 964 |               📸 Compartilhar no Instagram
- 965 |             </button>
- 966 |           </div>
- 967 |         )}
- 968 | 
- 969 |         {activeTab === 'atleta' && (
- 970 |           <div className="panel">
- 971 |             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
- 972 |               <h2 style={{ margin: 0 }}>Perfil do Atleta</h2>
- 973 |               {selectedAthleteId !== 'me' && <span style={{ background: '#ff9800', color: '#000', padding: '2px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold' }}>Visualizando Aluno</span>}
- 974 |             </div>
- 975 |             <p style={{ fontSize: '0.85rem', color: 'var(--text-muted, #8a8d94)', marginBottom: '10px' }}>
- 976 |               Os dados base são carregados do perfil selecionado. Você pode ajustá-los apenas para simular um cálculo pontual, ou clicar no botão no final da página para salvar as alterações definitivamente no banco de dados.
- 977 |             </p>
- 978 | 
- 979 |             <p style={{ color: '#ff9800', fontSize: '0.85rem', marginBottom: '20px', backgroundColor: '#332b00', padding: '10px', borderRadius: '4px', borderLeft: '3px solid #ff9800' }}>
- 980 |               ⚠️ <strong>Medidas em METROS:</strong> Certifique-se de usar notação decimal para comprimentos (Ex: <strong>1.75</strong>, <strong>0.85</strong>).
- 981 |             </p>
- 982 |             
- 983 |             <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', marginBottom: '15px' }}>
- 984 |               <div className="form-group"><label>Estatura (m)</label><input type="number" step="0.01" placeholder="Ex: 1.75" value={atleta.estatura || ''} onChange={e => setAtleta({ ...atleta, estatura: e.target.value as unknown as number })} /></div>
- 985 |               <div className="form-group"><label>Massa (kg)</label><input type="number" step="0.1" placeholder="Ex: 80.5" value={atleta.peso || ''} onChange={e => setAtleta({ ...atleta, peso: e.target.value as unknown as number })} /></div>
- 986 |             </div>
- 987 |             <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', marginBottom: '15px' }}>
- 988 |               <div className="form-group"><label>Sexo Biológico</label><select value={atleta.sexo} onChange={e => setAtleta({ ...atleta, sexo: e.target.value as 'M' | 'F' })}><option value="M">Masculino</option><option value="F">Feminino</option></select></div>
- 989 |               <div className="form-group"><label>Nível Técnico</label><select value={atleta.nivelTecnico} onChange={e => setAtleta({ ...atleta, nivelTecnico: e.target.value as any })}><option value="iniciante">Iniciante</option><option value="intermediario">Intermediário</option><option value="avancado">Avançado</option></select></div>
- 990 |             </div>
- 991 |             <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', marginBottom: '15px' }}>
- 992 |               <div className="form-group"><label>Envergadura (m)</label><input type="number" step="0.01" placeholder="Ex: 1.75" value={atleta.envergadura || ''} onChange={e => setAtleta({ ...atleta, envergadura: e.target.value as unknown as number })} /></div>
- 993 |               <div className="form-group"><label>Alt. Perna (m)</label><input type="number" step="0.01" placeholder="Ex: 0.85" value={atleta.perna || ''} onChange={e => setAtleta({ ...atleta, perna: e.target.value as unknown as number })} /></div>
+ 562 |       if (transEsp > 0) logDetalhes += `<span class="color-transition">&nbsp;&nbsp;↳ 🚶 Transição: ${transEsp.toFixed(0)}s</span><br/>`;
+ 563 |       
+ 564 |       const trabMetConcIsom = item.trabMetabolicoConcIsom || 0;
+ 565 |       const trabMetWork = item.trabMetabolicoWork || 0;
+ 566 |       const ergTime = item.ergTime || 0;
+ 567 |       
+ 568 |       if (tempoParaPotencia === 0) {
+ 569 |         if (metabolicoRestanteGlobal > 0 && tempoDisponivel > 0) {
+ 570 |           tempoParaPotencia = (trabMetConcIsom / metabolicoRestanteGlobal) * tempoDisponivel; 
+ 571 |         } else if (item.isErgo) {
+ 572 |           tempoParaPotencia = ergTime;
+ 573 |         }
+ 574 |         gastoMetabolicoLiquidoTotal += trabMetWork;
+ 575 |       }
+ 576 |       tempoTotalExecucaoEfetiva += tempoParaPotencia;
+ 577 | 
+ 578 |       const gastoBasalLinha = item.isCalorieErgo ? 0 : (bmrSec * tempoParaPotencia);
+ 579 |       const totalKcalLinha = (trabMetWork * fatorEPOC) + gastoBasalLinha;
+ 580 |       
+ 581 |       let strPot = "", strTmp = "";
+ 582 |       const trabMechLinha = item.trabMech || 0;
+ 583 |       const extraLog = item.infoExtraLog || '';
+ 584 | 
+ 585 |       if (tempoParaPotencia > 0) {
+ 586 |         strTmp = ` | 🕒 ${tempoParaPotencia.toFixed(0)}s`; 
+ 587 |         strPot = ` | <strong class="color-time">⚡ ${(trabMechLinha / tempoParaPotencia).toFixed(1)} W</strong>`;
+ 588 |       }
+ 589 |       
+ 590 |       logDetalhes += `• [${item.labelRounds}] ${item.reps}x ${item.nome}${extraLog}: <strong class="color-mech">${trabMechLinha.toFixed(0)} J</strong> | <strong class="color-metabolic">${totalKcalLinha.toFixed(1)} kCal</strong>${strTmp}${strPot}<br/>`;
+ 591 |     });
+ 592 | 
+ 593 |     const tempoLiquidoEsp = tAlvoSec - totalTransicaoGlobal;
+ 594 |     const potEsp = tempoLiquidoEsp > 0 ? (trabalhoMechTotalEsp / tempoLiquidoEsp) : 0;
+ 595 |     
+ 596 |     const refTempo = tempoTotalReferencia > 0 ? tempoTotalReferencia : tempoTotalExecucaoEfetiva;
+ 597 |     const tempoLiquidoReal = refTempo - totalTransicaoGlobal;
+ 598 |     const potReal = tempoLiquidoReal > 0 ? (trabalhoMechTotalReal / tempoLiquidoReal) : 0;
+ 599 |     
+ 600 |     const tempoTotalSessao = tempoTotalReferencia > 0 ? tempoTotalReferencia : (tempoTotalExecucaoEfetiva + totalTransicaoGlobal);
+ 601 |     const gastoBasalSessao = bmrSec * tempoTotalSessao;
+ 602 |     const gastoMetabolicoFinal = (gastoMetabolicoLiquidoTotal * fatorEPOC) + gastoBasalSessao;
+ 603 | 
+ 604 |     setResultado({ 
+ 605 |       trabalhoReal: trabalhoMechTotalReal || 0, 
+ 606 |       gastoMetabolico: gastoMetabolicoFinal || 0, 
+ 607 |       potenciaEsp: potEsp || 0, 
+ 608 |       potenciaReal: potReal || 0, 
+ 609 |       logDetalhesHTML: logDetalhes 
+ 610 |     });
+ 611 |   };
+ 612 | 
+ 613 |   if (loadingAuth) return <div style={{textAlign: 'center', marginTop: '50px'}}>Iniciando...</div>;
+ 614 | 
+ 615 |   if (!session) {
+ 616 |     return (
+ 617 |       <div className="container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '80vh' }}>
+ 618 |         <div className="panel" style={{ textAlign: 'center', maxWidth: '400px', width: '100%', padding: '40px 20px' }}>
+ 619 |           <h1 style={{ border: 'none', marginBottom: '10px' }}>
+ 620 |             <img 
+ 621 |             src="/dynawod-texto.png"
+ 622 |             alt="DynaWOD Tipografia" 
+ 623 |             style={{ height: '48px', objectFit: 'contain' }}
+ 624 |             />
+ 625 |           </h1>
+ 626 |           <p style={{ color: '#aaa', marginBottom: '30px' }}>Seu motor biomecânico. Calcule potência e gasto metabólico real.</p>
+ 627 |           <button onClick={signInWithGoogle} style={{ backgroundColor: '#fff', color: '#333', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', fontSize: '1rem', padding: '10px', width: '100%', borderRadius: '5px', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>
+ 628 |             <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/><path fill="none" d="M1 1h22v22H1z"/></svg>
+ 629 |             Entrar com Conta Google
+ 630 |           </button>
+ 631 |         </div>
+ 632 |       </div>
+ 633 |     );
+ 634 |   }
+ 635 | 
+ 636 |   if (isNewUser) {
+ 637 |     return (
+ 638 |       <div className="container" style={{ maxWidth: '600px' }}>
+ 639 |         <div className="panel">
+ 640 |           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+ 641 |             <h2 style={{ margin: 0 }}>Bem-vindo ao DynaWOD!</h2>
+ 642 |             <button onClick={signOut} style={{ display: 'flex', alignItems: 'center', gap: '8px', width: 'auto', backgroundColor: '#333', padding: '5px 10px', fontSize: '0.85rem' }}>Sair</button>
+ 643 |           </div>
+ 644 |           <p style={{ color: '#aaa' }}>Complete seu perfil biomecânico para calibrarmos o motor para o seu corpo.</p>
+ 645 |           
+ 646 |           <div className="form-group" style={{ marginTop: '20px' }}>
+ 647 |             <label>Seu Nome Completo</label>
+ 648 |             <input type="text" value={onboardForm.full_name} onChange={e => setOnboardForm({...onboardForm, full_name: e.target.value})} />
+ 649 |           </div>
+ 650 |           <div className="form-group">
+ 651 |             <label>Como quer ser chamado?</label>
+ 652 |             <input type="text" value={onboardForm.apelido} onChange={e => setOnboardForm({...onboardForm, apelido: e.target.value})} placeholder="Ex: Gui" />
+ 653 |           </div>
+ 654 | 
+ 655 |           <div style={{ background: '#222', padding: '15px', borderRadius: '8px', margin: '20px 0' }}>
+ 656 |             <label style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.1rem', cursor: 'pointer' }}>
+ 657 |               <input type="checkbox" checked={onboardForm.is_coach} onChange={e => setOnboardForm({...onboardForm, is_coach: e.target.checked})} style={{ width: '20px', height: '20px' }} />
+ 658 |               <strong>Eu sou um Coach</strong> (Quero prescrever para alunos)
+ 659 |             </label>
+ 660 |           </div>
+ 661 | 
+ 662 |           <p style={{ color: '#ff9800', fontSize: '0.85rem', marginBottom: '15px', backgroundColor: '#332b00', padding: '10px', borderRadius: '4px', borderLeft: '3px solid #ff9800' }}>
+ 663 |             ⚠️ <strong>Atenção:</strong> Preencha as medidas de comprimento em <strong>metros</strong> (use ponto). Ex: <strong>1.75</strong>, e não 175.
+ 664 |           </p>
+ 665 | 
+ 666 |           <div className="grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
+ 667 |             <div className="form-group"><label>Estatura (m)</label><input type="number" step="0.01" placeholder="Ex: 1.75" value={onboardForm.estatura || ''} onChange={e => setOnboardForm({...onboardForm, estatura: e.target.value as unknown as number})} /></div>
+ 668 |             <div className="form-group"><label>Peso (kg)</label><input type="number" step="0.1" placeholder="Ex: 80.5" value={onboardForm.peso || ''} onChange={e => setOnboardForm({...onboardForm, peso: e.target.value as unknown as number})} /></div>
+ 669 |             <div className="form-group"><label>Sexo Biológico</label><select value={onboardForm.sexo} onChange={e => setOnboardForm({...onboardForm, sexo: e.target.value as 'M'|'F'})}><option value="M">Masculino</option><option value="F">Feminino</option></select></div>
+ 670 |             <div className="form-group"><label>Nível</label><select value={onboardForm.nivel_tecnico} onChange={e => setOnboardForm({...onboardForm, nivel_tecnico: e.target.value})}><option value="iniciante">Iniciante</option><option value="intermediario">Intermediário</option><option value="avancado">Avançado</option></select></div>
+ 671 |             <div className="form-group"><label>Envergadura (m)</label><input type="number" step="0.01" placeholder="Ex: 1.75" value={onboardForm.envergadura || ''} onChange={e => setOnboardForm({...onboardForm, envergadura: e.target.value as unknown as number})} /></div>
+ 672 |             <div className="form-group"><label>Alt. Perna (m)</label><input type="number" step="0.01" placeholder="Ex: 0.85" value={onboardForm.perna || ''} onChange={e => setOnboardForm({...onboardForm, perna: e.target.value as unknown as number})} /></div>
+ 673 |             <div className="form-group"><label>% BF</label><input type="number" placeholder="Ex: 15" value={onboardForm.bf || ''} onChange={e => setOnboardForm({...onboardForm, bf: e.target.value as unknown as number})} /></div>
+ 674 |           </div>
+ 675 | 
+ 676 |           <button onClick={saveOnboardingProfile} style={{ marginTop: '20px', width: '100%', fontSize: '1.2rem', padding: '15px' }}>Salvar Perfil e Entrar</button>
+ 677 |         </div>
+ 678 |       </div>
+ 679 |     );
+ 680 |   }
+ 681 | 
+ 682 |   return (
+ 683 |     <div className="container" style={{ padding: 0, maxWidth: '1200px', margin: '0 auto' }}> 
+ 684 |       
+ 685 |       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 24px', backgroundColor: 'var(--bg-dark, #0a0a0a)', borderBottom: '1px solid var(--line-silver, #26272b)', marginBottom: '24px' }}>
+ 686 |         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+ 687 |           <img src="/favicon.png" alt="Símbolo DynaWOD" style={{ height: '40px', objectFit: 'contain' }} />
+ 688 |           <img src="/dynawod-texto.png" alt="DynaWOD Tipografia" style={{ height: '28px', objectFit: 'contain' }} />
+ 689 |         </div>
+ 690 | 
+ 691 |         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+ 692 |           <div style={{ fontSize: '14px', color: 'var(--text-muted, #8a8d94)', fontWeight: 600 }}>
+ 693 |             Olá, <span style={{ color: '#fff' }}>{userProfile?.is_coach ? <Trophy size={"1.2em"} color="var(--dyna-red)" /> : <Dumbbell size={"1.2em"} color="var(--line-silver)" />} {userProfile?.apelido || userProfile?.full_name}</span>
+ 694 |           </div>
+ 695 |           {userProfile?.is_coach && (
+ 696 |             <select value={selectedAthleteId} onChange={e => handleAthleteChange(e.target.value)} style={{ background: 'var(--bg-card, #181a1e)', border: '1px solid var(--line-silver, #26272b)', color: '#fff', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer' }}>
+ 697 |               <option value="me">Meu Desempenho</option>
+ 698 |               <optgroup label="Meus Alunos">{myAthletes.map(a => <option key={a.id} value={a.id}>{a.full_name}</option>)}</optgroup>
+ 699 |             </select>
+ 700 |           )}
+ 701 |           <button onClick={signOut} style={{ width: 'auto', backgroundColor: 'var(--dyna-burgundy, #7A0F1B)', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer', fontWeight: 'bold' }}><LogOut size={"1.2em"} /> Sair</button>
+ 702 |         </div>
+ 703 |       </header>
+ 704 | 
+ 705 |       <div style={{ padding: '0 24px' }}>
+ 706 |         
+ 707 |         <div className="tabs">
+ 708 |           <button className={`tab-btn ${activeTab === 'prescricao' ? 'active' : ''}`} onClick={() => setActiveTab('prescricao')}>1. Lousa</button>
+ 709 |           <button className={`tab-btn ${activeTab === 'analise' ? 'active' : ''}`} onClick={() => setActiveTab('analise')}>2. Análise</button>
+ 710 |           <button className={`tab-btn ${activeTab === 'atleta' ? 'active' : ''}`} onClick={() => setActiveTab('atleta')}>3. Atleta</button>
+ 711 |           <button className={`tab-btn ${activeTab === 'historico' ? 'active' : ''}`} onClick={() => setActiveTab('historico')}>4. Histórico</button>
+ 712 |         </div>
+ 713 | 
+ 714 |         {activeTab === 'prescricao' && (
+ 715 |           <div className="panel">
+ 716 |             <h2>Estrutura do Treino</h2>
+ 717 |             <div className="grid" style={{ gridTemplateColumns: '1fr 1fr 1fr', marginBottom: '10px', gap: '15px' }}>
+ 718 |               <div className="form-group" style={{ marginBottom: '15px' }}>
+ 719 |                 <label>Nome do Treino (Opcional)</label>
+ 720 |                 <input type="text" value={nomeTreino} onChange={e => setNomeTreino(e.target.value)} placeholder="Ex: Murph, Fran, Open 24.1..." />
+ 721 |               </div>
+ 722 |               <div className="form-group" style={{ marginBottom: 0 }}>
+ 723 |                 <label>Modalidade</label>
+ 724 |                 <select value={tipoTreino} onChange={e => setTipoTreino(e.target.value as Modalidade)}>
+ 725 |                   <option value="FOR_TIME">For Time</option>
+ 726 |                   <option value="AMRAP">AMRAP</option>
+ 727 |                   <option value="EMOM">EMOM</option>
+ 728 |                 </select>
+ 729 |               </div>
+ 730 |               <div className="form-group" style={{ marginBottom: 0 }}>
+ 731 |                 <label>{tipoTreino === 'FOR_TIME' ? 'Time Cap (mm:ss)' : 'Tempo Total'}</label>
+ 732 |                 <input type="text" value={tempoAlvo} onChange={e => setTempoAlvo(e.target.value)} placeholder="Ex: 10:00" />
+ 733 |               </div>
+ 734 |               <div className="form-group" style={{ marginBottom: 0 }}>
+ 735 |                 <label>Rounds Prescritos</label>
+ 736 |                 <input type="number" value={roundsPrescritos} onChange={e => setRoundsPrescritos(Number(e.target.value))} />
+ 737 |               </div>
+ 738 |             </div>
+ 739 | 
+ 740 |             <hr style={{ borderColor: 'var(--line-silver, #26272b)', margin: '25px 0' }} />
+ 741 | 
+ 742 |             <h2>Quadro de Movimentos</h2>
+ 743 |             <button className="btn-add" onClick={() => addMovimento()} style={{ backgroundColor: 'transparent', color: 'var(--dyna-red, #FF2B3D)', border: '1px dashed var(--dyna-red, #FF2B3D)', padding: '10px 15px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', width: '100%', marginBottom: '15px' }}>+ Adicionar Exercício</button>
+ 744 |             
+ 745 |             <div className="wod-list">
+ 746 |               {lousa.map((item, index) => {
+ 747 |                 const cfg = movimentosDB[item.movId] || movimentosDB['pushup'];
+ 748 |                 return (
+ 749 |                   <div 
+ 750 |                     key={item.originalId} 
+ 751 |                     className="wod-item"
+ 752 |                     draggable
+ 753 |                     onDragStart={(e) => {
+ 754 |                       handleDragStart(index);
+ 755 |                       e.currentTarget.style.opacity = '0.5';
+ 756 |                     }}
+ 757 |                     onDragEnter={() => handleDragEnter(index)}
+ 758 |                     onDragEnd={handleDragEnd}
+ 759 |                     onDragOver={(e) => e.preventDefault()}
+ 760 |                   >
+ 761 |                     {/* Pegador Lateral (Drag Handle) */}
+ 762 |                     <div className="drag-handle">
+ 763 |                       <svg width="10" height="20" viewBox="0 0 8 20" fill="currentColor">
+ 764 |                         <circle cx="2" cy="2" r="1.5"/><circle cx="6" cy="2" r="1.5"/>
+ 765 |                         <circle cx="2" cy="10" r="1.5"/><circle cx="6" cy="10" r="1.5"/>
+ 766 |                         <circle cx="2" cy="18" r="1.5"/><circle cx="6" cy="18" r="1.5"/>
+ 767 |                       </svg>
+ 768 |                     </div>
+ 769 | 
+ 770 |                     <div>
+ 771 |                       <label>Fase</label>
+ 772 |                       <select value={item.phase} onChange={e => updateMovimento(item.originalId, 'phase', e.target.value)}>
+ 773 |                         <option value="buyin">Buy-in</option>
+ 774 |                         <option value="round">WOD</option>
+ 775 |                         <option value="cashout">Cash-out</option>
+ 776 |                       </select>
+ 777 |                       <div style={{ marginTop: '5px' }}>
+ 778 |                         <SearchableMovementSelect 
+ 779 |                           value={item.movId} 
+ 780 |                           onChange={(newId) => updateMovimento(item.originalId, 'movId', newId)} 
+ 781 |                           movimentosDB={movimentosDB} 
+ 782 |                         />
+ 783 |                       </div>
+ 784 |                     </div>
+ 785 |                     
+ 786 |                     <div>
+ 787 |                       <label>Reps/Mts</label>
+ 788 |                       <input type="number" value={item.reps} onChange={e => updateMovimento(item.originalId, 'reps', Number(e.target.value))} />
+ 789 |                     </div>
+ 790 |                     
+ 791 |                     <div>
+ 792 |                       <label>Carga/Téc.</label>
+ 793 |                       <div style={{ display: 'flex', gap: '5px' }}>
+ 794 |                         <input type="number" disabled={!cfg.usaCarga} value={item.carga} onChange={e => updateMovimento(item.originalId, 'carga', Number(e.target.value))} />
+ 795 |                         <select value={item.tecnica} onChange={e => updateMovimento(item.originalId, 'tecnica', e.target.value)}>
+ 796 |                           <option value="tng">T&G</option>
+ 797 |                           <option value="drop">Drop</option>
+ 798 |                         </select>
+ 799 |                       </div>
+ 800 |                     </div>
+ 801 |                     
+ 802 |                     <div>
+ 803 |                       <div style={{ display: 'flex', gap: '5px' }}>
+ 804 |                         <div style={{ flex: 1 }}>
+ 805 |                           <label>{cfg.paramExtra ? cfg.paramExtra.label : 'Param.'}</label>
+ 806 |                           <input type="text" disabled={!cfg.paramExtra} value={item.extraVal || ''} onChange={e => updateMovimento(item.originalId, 'extraVal', e.target.value)} />
+ 807 |                         </div>
+ 808 |                         {cfg.paramExtra2 && (
+ 809 |                           <div style={{ flex: 1 }}>
+ 810 |                             <label>{cfg.paramExtra2.label}</label>
+ 811 |                             <select value={item.extraVal2 || cfg.paramExtra2.val} onChange={e => updateMovimento(item.originalId, 'extraVal2', e.target.value)}>
+ 812 |                               {cfg.paramExtra2.options?.map(opt => (
+ 813 |                                 <option key={opt.value} value={opt.value}>{opt.label}</option>
+ 814 |                               ))}
+ 815 |                             </select>
+ 816 |                           </div>
+ 817 |                         )}
+ 818 |                       </div>
+ 819 |                     </div>
+ 820 |                     
+ 821 |                     <div className="actions-col">
+ 822 |                       <button className="btn-action" onClick={() => addMovimento(item.originalId)} title="Duplicar">
+ 823 |                         <Copy size={"1.2em"} color="var(--line-silver)" />
+ 824 |                       </button>
+ 825 |                       <button className="btn-remove" onClick={() => removeMovimento(item.originalId)}><X size={"1.2em"} /></button>
+ 826 |                     </div>
+ 827 |                   </div>
+ 828 |                 );
+ 829 |               })}
+ 830 |             </div>
+ 831 | 
+ 832 |             <hr style={{ borderColor: 'var(--line-silver, #26272b)', margin: '25px 0' }} />
+ 833 |             
+ 834 |             <h2>Gerenciar WOD</h2>
+ 835 |             {currentShortCode && (
+ 836 |               <p style={{ color: 'var(--text-muted, #8a8d94)', fontSize: '0.9rem', marginBottom: '15px' }}>
+ 837 |                 Código deste treino: <strong style={{ color: '#fff', letterSpacing: '2px' }}>{currentShortCode}</strong>
+ 838 |               </p>
+ 839 |             )}
+ 840 |             
+ 841 |               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+ 842 |                 <button onClick={importarWod} style={{ flex: '1 1 140px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '1rem', backgroundColor: 'var(--bg-card, #181a1e)', color: '#fff', border: '1px solid var(--line-silver, #26272b)' }}>
+ 843 |                   <Download size={22} style={{ flexShrink: 0 }} /> 
+ 844 |                   <span>Importar</span>
+ 845 |                 </button>
+ 846 |                 <button onClick={compartilharWod} style={{ flex: '1 1 140px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '1rem', backgroundColor: 'var(--dyna-burgundy, #7A0F1B)', color: '#fff', border: 'none', fontWeight: '600' }}>
+ 847 |                   <Share2 size={22} style={{ flexShrink: 0 }} /> 
+ 848 |                   <span>Copiar</span>
+ 849 |                 </button>
+ 850 |                 {currentTemplateId && (
+ 851 |                   <button onClick={clonarWod} style={{ flex: '1 1 140px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '1rem', backgroundColor: '#3b82f6', color: '#fff', border: 'none', fontWeight: 'bold' }}>
+ 852 |                     <Copy size={22} style={{ flexShrink: 0 }} /> 
+ 853 |                     <span>Duplicar</span>
+ 854 |                   </button>
+ 855 |                 )}
+ 856 |                 <button onClick={() => salvarNoSupabase(false)} style={{ flex: '1 1 140px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '1rem', backgroundColor: 'var(--dyna-red, #FF2B3D)', color: '#fff', border: 'none', fontWeight: 'bold' }}>
+ 857 |                   <Save size={22} style={{ flexShrink: 0 }} /> 
+ 858 |                   <span>{currentTemplateId ? 'Atualizar WOD' : 'Salvar WOD'}</span>
+ 859 |                 </button>
+ 860 |               </div>
+ 861 |           </div>
+ 862 |         )}
+ 863 | 
+ 864 |         {activeTab === 'analise' && (
+ 865 |           <div className="panel">
+ 866 |             <div style={{ backgroundColor: 'var(--bg-card, #181a1e)', padding: '20px', borderRadius: '8px', borderLeft: '4px solid var(--dyna-red, #FF2B3D)', marginBottom: '25px' }}>
+ 867 |               <h2 style={{ margin: '0 0 10px 0', fontSize: '1.2rem' }}>Score (Resultado Real)</h2>
+ 868 |               <p style={{ margin: '0 0 15px 0', fontSize: '0.85rem', color: 'var(--text-muted, #8a8d94)' }}>Insira o resultado alcançado para calcular a potência gerada.</p>
+ 869 |               <div className="form-group" style={{ marginBottom: 0 }}>
+ 870 |                 <label>{tipoTreino === 'FOR_TIME' ? 'Tempo Real Efetivado (mm:ss)' : 'Rounds Reais Completados'}</label>
+ 871 |                 {tipoTreino === 'FOR_TIME' ? (
+ 872 |                   <input type="text" value={tempoReal} onChange={e => setTempoReal(e.target.value)} placeholder="Ex: 12:30" style={{ maxWidth: '250px', fontSize: '1.1rem' }} />
+ 873 |                 ) : (
+ 874 |                   <input type="number" step="0.1" value={roundsReal} onChange={e => setRoundsReal(Number(e.target.value))} style={{ maxWidth: '250px', fontSize: '1.1rem' }} />
+ 875 |                 )}
+ 876 |               </div>
+ 877 |               <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+ 878 |                 <input 
+ 879 |                   type="checkbox" 
+ 880 |                   id="checkbox-scaled"
+ 881 |                   checked={isScaled}
+ 882 |                   onChange={(e) => setIsScaled(e.target.checked)}
+ 883 |                   style={{ width: '18px', height: '18px' }}
+ 884 |                 />
+ 885 |                 <label htmlFor="checkbox-scaled" style={{ color: '#fff', fontSize: '14px' }}>
+ 886 |                   Marcar como Scaled (Treino Adaptado)
+ 887 |                 </label>
+ 888 |               </div>
+ 889 |             </div>
+ 890 | 
+ 891 |             <h2>Timeline Expandida</h2>
+ 892 |             <div className="wod-list">
+ 893 |               {(() => {
+ 894 |                 let rTimeline = (tipoTreino === 'FOR_TIME') ? roundsPrescritos : Math.ceil(roundsReal);
+ 895 |                 if (rTimeline < 1) rTimeline = 1;
+ 896 |                 const rows: any[] = [];
+ 897 |                 const renderRow = (m: ItemLousa, badgeClass: string, badgeText: string, rIdx: number) => {
+ 898 |                   const rowId = `${m.originalId}-R${rIdx}`;
+ 899 |                   const cfg = movimentosDB[m.movId];
+ 900 |                   const st = timelineState[rowId] || { reps: m.reps, start: '', end: '' };
+ 901 |                   
+ 902 |                   rows.push(
+ 903 |                     <div key={rowId} className="wod-item-analise">
+ 904 |                       <div className={`badge-round ${badgeClass}`}>{badgeText}</div>
+ 905 |                       <div>
+ 906 |                         <div style={{ fontWeight: 'bold' }}>{cfg ? cfg.nome : m.movId}</div>
+ 907 |                         <div style={{ fontSize: '0.75rem', color: '#aaa' }}>
+ 908 |                           RX: {m.carga > 0 ? `${m.carga}kg` : '--'} {m.extraVal ? `| ${m.extraVal}` : ''}
+ 909 |                         </div>
+ 910 |                       </div>
+ 911 |                       <div><label>Reps</label><input type="number" value={st.reps !== undefined ? st.reps : m.reps} onChange={e => handleTimelineChange(rowId, 'reps', e.target.value === '' ? '' : Number(e.target.value))} /></div>
+ 912 |                       
+ 913 |                       <div>
+ 914 |                         <label>Carga Real</label>
+ 915 |                         <input 
+ 916 |                           type="number" 
+ 917 |                           value={st.carga !== undefined ? st.carga : m.carga} 
+ 918 |                           onChange={e => handleTimelineChange(rowId, 'carga', e.target.value === '' ? '' : Number(e.target.value))}
+ 919 |                           disabled={!(cfg?.usaCarga)}
+ 920 |                           style={{ border: isScaled && (st.carga !== undefined ? st.carga : m.carga) < m.carga ? '1px solid var(--dyna-red, #FF2B3D)' : '' }}
+ 921 |                         />
+ 922 |                       </div>
+ 923 | 
+ 924 |                       <div><label>Início</label><input type="text" placeholder="mm:ss" value={st.start || ''} onChange={e => handleTimelineChange(rowId, 'start', e.target.value)} /></div>
+ 925 |                       <div><label>Fim</label><input type="text" placeholder="mm:ss" value={st.end || ''} onChange={e => handleTimelineChange(rowId, 'end', e.target.value)} /></div>
+ 926 |                     </div>
+ 927 |                   );
+ 928 |                 };
+ 929 |                 lousa.filter(m => m.phase === 'buyin').forEach(m => renderRow(m, 'badge-buyin', 'Buy-in', 0));
+ 930 |                 for (let r = 1; r <= rTimeline; r++) lousa.filter(m => m.phase === 'round').forEach(m => renderRow(m, '', `R ${r}`, r));
+ 931 |                 lousa.filter(m => m.phase === 'cashout').forEach(m => renderRow(m, 'badge-cashout', 'Cash-out', 99));
+ 932 |                 return rows;
+ 933 |               })()}
+ 934 |             </div>
+ 935 | 
+ 936 |             <button onClick={processarWOD} style={{ fontSize: '1.1rem', padding: '15px', backgroundColor: 'var(--dyna-red, #FF2B3D)', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', width: '100%', cursor: 'pointer', marginBottom: '20px', marginTop: '10px' }}>
+ 937 |               ⚡ Processar Dinâmica e Termodinâmica
+ 938 |             </button>
+ 939 | 
+ 940 |             {resultado && (
+ 941 |               <div className="results">
+ 942 |                 <h2>Painel de Resultado Biomecânico</h2>
+ 943 |                 <div className="grid" style={{ marginBottom: 0 }}>
+ 944 |                   <div style={{ margin: '15px 0' }}><div className="result-value color-mech">{resultado.trabalhoReal.toFixed(0)} J</div><div>Trabalho Mecânico</div></div>
+ 945 |                   <div style={{ margin: '15px 0' }}><div className="result-value color-metabolic">{resultado.gastoMetabolico.toFixed(0)} kCal</div><div>Gasto Termodinâmico (+ EPOC)</div></div>
+ 946 |                   <div style={{ margin: '15px 0' }}><div className="result-value" style={{ color: '#aaa' }}>{resultado.potenciaEsp > 0 ? resultado.potenciaEsp.toFixed(1) + ' W' : '-- W'}</div><div>Potência Esperada</div></div>
+ 947 |                   <div style={{ margin: '15px 0' }}><div className="result-value" style={{ color: '#4caf50' }}>{resultado.potenciaReal > 0 ? resultado.potenciaReal.toFixed(1) + ' W' : '-- W'}</div><div>Potência Real Executada</div></div>
+ 948 |                 </div>
+ 949 |                 <div className="result-detail" dangerouslySetInnerHTML={{ __html: resultado.logDetalhesHTML }} />
+ 950 |               </div>
+ 951 |             )}
+ 952 |             <button 
+ 953 |               onClick={gerarCardInstagram} 
+ 954 |               style={{ 
+ 955 |                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', 
+ 956 |                 fontSize: '1rem', backgroundColor: '#8a33e2',
+ 957 |                 color: '#fff', border: 'none', fontWeight: 'bold', 
+ 958 |                 padding: '12px 20px', borderRadius: '8px', width: '100%', marginTop: '20px'
+ 959 |               }}
+ 960 |             >
+ 961 |               📸 Compartilhar no Instagram
+ 962 |             </button>
+ 963 |           </div>
+ 964 |         )}
+ 965 | 
+ 966 |         {activeTab === 'atleta' && (
+ 967 |           <div className="panel">
+ 968 |             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+ 969 |               <h2 style={{ margin: 0 }}>Perfil do Atleta</h2>
+ 970 |               {selectedAthleteId !== 'me' && <span style={{ background: '#ff9800', color: '#000', padding: '2px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold' }}>Visualizando Aluno</span>}
+ 971 |             </div>
+ 972 |             <p style={{ fontSize: '0.85rem', color: 'var(--text-muted, #8a8d94)', marginBottom: '10px' }}>
+ 973 |               Os dados base são carregados do perfil selecionado. Você pode ajustá-los apenas para simular um cálculo pontual, ou clicar no botão no final da página para salvar as alterações definitivamente no banco de dados.
+ 974 |             </p>
+ 975 | 
+ 976 |             <p style={{ color: '#ff9800', fontSize: '0.85rem', marginBottom: '20px', backgroundColor: '#332b00', padding: '10px', borderRadius: '4px', borderLeft: '3px solid #ff9800' }}>
+ 977 |               ⚠️ <strong>Medidas em METROS:</strong> Certifique-se de usar notação decimal para comprimentos (Ex: <strong>1.75</strong>, <strong>0.85</strong>).
+ 978 |             </p>
+ 979 |             
+ 980 |             <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', marginBottom: '15px' }}>
+ 981 |               <div className="form-group"><label>Estatura (m)</label><input type="number" step="0.01" placeholder="Ex: 1.75" value={atleta.estatura || ''} onChange={e => setAtleta({ ...atleta, estatura: e.target.value as unknown as number })} /></div>
+ 982 |               <div className="form-group"><label>Massa (kg)</label><input type="number" step="0.1" placeholder="Ex: 80.5" value={atleta.peso || ''} onChange={e => setAtleta({ ...atleta, peso: e.target.value as unknown as number })} /></div>
+ 983 |             </div>
+ 984 |             <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', marginBottom: '15px' }}>
+ 985 |               <div className="form-group"><label>Sexo Biológico</label><select value={atleta.sexo} onChange={e => setAtleta({ ...atleta, sexo: e.target.value as 'M' | 'F' })}><option value="M">Masculino</option><option value="F">Feminino</option></select></div>
+ 986 |               <div className="form-group"><label>Nível Técnico</label><select value={atleta.nivelTecnico} onChange={e => setAtleta({ ...atleta, nivelTecnico: e.target.value as any })}><option value="iniciante">Iniciante</option><option value="intermediario">Intermediário</option><option value="avancado">Avançado</option></select></div>
+ 987 |             </div>
+ 988 |             <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', marginBottom: '15px' }}>
+ 989 |               <div className="form-group"><label>Envergadura (m)</label><input type="number" step="0.01" placeholder="Ex: 1.75" value={atleta.envergadura || ''} onChange={e => setAtleta({ ...atleta, envergadura: e.target.value as unknown as number })} /></div>
+ 990 |               <div className="form-group"><label>Alt. Perna (m)</label><input type="number" step="0.01" placeholder="Ex: 0.85" value={atleta.perna || ''} onChange={e => setAtleta({ ...atleta, perna: e.target.value as unknown as number })} /></div>
+ 991 |             </div>
+ 992 |             <div className="grid" style={{ gridTemplateColumns: '1fr', marginBottom: '20px' }}>
+ 993 |               <div className="form-group"><label>% Gordura Corporal (BF)</label><input type="number" step="0.1" placeholder="Ex: 15" value={atleta.bf || ''} onChange={e => setAtleta({ ...atleta, bf: e.target.value as unknown as number })} /></div>
  994 |             </div>
- 995 |             <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', marginBottom: '20px' }}>
- 996 |               <div className="form-group"><label>% Gordura Corporal (BF)</label><input type="number" step="0.1" placeholder="Ex: 15" value={atleta.bf || ''} onChange={e => setAtleta({ ...atleta, bf: e.target.value as unknown as number })} /></div>
- 997 |               <div className="form-group"><label>Transição Global Estimada (seg)</label><input type="number" placeholder="Ex: 30" value={tempoDescanso || ''} onChange={e => setTempoDescanso(e.target.value as unknown as number)} /></div>
- 998 |             </div>
- 999 | 
-1000 |             {/* --- INÍCIO DA SEÇÃO DE ANTROPOMETRIA AVANÇADA --- */}
-1001 |             <div style={{ backgroundColor: '#111', padding: '15px', borderRadius: '8px', border: '1px solid var(--line-silver, #26272b)' }}>
-1002 |               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: atleta.usaAntropometriaAvancada ? '15px' : '0' }}>
-1003 |                 <input 
-1004 |                   type="checkbox" 
-1005 |                   id="check-avancada"
-1006 |                   checked={atleta.usaAntropometriaAvancada || false}
-1007 |                   onChange={(e) => setAtleta({ ...atleta, usaAntropometriaAvancada: e.target.checked })}
-1008 |                   style={{ width: '20px', height: '20px', cursor: 'pointer' }}
-1009 |                 />
-1010 |                 <label htmlFor="check-avancada" style={{ margin: 0, fontSize: '1rem', color: '#fff', cursor: 'pointer' }}>
-1011 |                   Habilitar Antropometria Avançada (Laboratorial)
-1012 |                 </label>
-1013 |               </div>
-1014 | 
-1015 |               {atleta.usaAntropometriaAvancada && (
-1016 |                 <>
-1017 |                   <p style={{ fontSize: '0.85rem', color: '#ff9800', marginBottom: '15px' }}>
-1018 |                     <strong>Atenção:</strong> Ao preencher estes dados, o motor ignorará a alometria padrão de De Leva e recalculará o seu centro de gravidade e massas segmentares de forma dinâmica.
-1019 |                   </p>
-1020 |                   <div className="grid" style={{ gridTemplateColumns: '1fr 1fr 1fr', marginBottom: 0 }}>
+ 995 | 
+ 996 |             {/* --- INÍCIO DA SEÇÃO DE ANTROPOMETRIA AVANÇADA --- */}
+ 997 |             <div style={{ backgroundColor: '#111', padding: '15px', borderRadius: '8px', border: '1px solid var(--line-silver, #26272b)' }}>
+ 998 |               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: atleta.usaAntropometriaAvancada ? '15px' : '0' }}>
+ 999 |                 <input 
+1000 |                   type="checkbox" 
+1001 |                   id="check-avancada"
+1002 |                   checked={atleta.usaAntropometriaAvancada || false}
+1003 |                   onChange={(e) => setAtleta({ ...atleta, usaAntropometriaAvancada: e.target.checked })}
+1004 |                   style={{ width: '20px', height: '20px', cursor: 'pointer' }}
+1005 |                 />
+1006 |                 <label htmlFor="check-avancada" style={{ margin: 0, fontSize: '1rem', color: '#fff', cursor: 'pointer' }}>
+1007 |                   Habilitar Antropometria Avançada (Laboratorial)
+1008 |                 </label>
+1009 |               </div>
+1010 | 
+1011 |               {atleta.usaAntropometriaAvancada && (
+1012 |                 <>
+1013 |                   <p style={{ fontSize: '0.85rem', color: '#ff9800', marginBottom: '15px' }}>
+1014 |                     <strong>Atenção:</strong> Ao preencher estes dados, o motor ignorará a alometria padrão de De Leva e recalculará o seu centro de gravidade e massas segmentares de forma dinâmica.
+1015 |                   </p>
+1016 |                   <div className="grid" style={{ gridTemplateColumns: '1fr 1fr 1fr', marginBottom: 0 }}>
+1017 |                     <div className="form-group" style={{ marginBottom: 0 }}>
+1018 |                       <label>Idade (anos)</label>
+1019 |                       <input type="number" value={atleta.idade || ''} onChange={e => setAtleta({ ...atleta, idade: e.target.value as unknown as number })} />
+1020 |                     </div>
 1021 |                     <div className="form-group" style={{ marginBottom: 0 }}>
-1022 |                       <label>Idade (anos)</label>
-1023 |                       <input type="number" value={atleta.idade || ''} onChange={e => setAtleta({ ...atleta, idade: e.target.value as unknown as number })} />
+1022 |                       <label>Circ. Tórax (m)</label>
+1023 |                       <input type="number" step="0.01" placeholder="Ex: 1.10" value={atleta.circTorax || ''} onChange={e => setAtleta({ ...atleta, circTorax: e.target.value as unknown as number })} />
 1024 |                     </div>
 1025 |                     <div className="form-group" style={{ marginBottom: 0 }}>
-1026 |                       <label>Circ. Tórax (m)</label>
-1027 |                       <input type="number" step="0.01" placeholder="Ex: 1.10" value={atleta.circTorax || ''} onChange={e => setAtleta({ ...atleta, circTorax: e.target.value as unknown as number })} />
+1026 |                       <label>Circ. Coxa (m)</label>
+1027 |                       <input type="number" step="0.01" placeholder="Ex: 0.65" value={atleta.circCoxa || ''} onChange={e => setAtleta({ ...atleta, circCoxa: e.target.value as unknown as number })} />
 1028 |                     </div>
-1029 |                     <div className="form-group" style={{ marginBottom: 0 }}>
-1030 |                       <label>Circ. Coxa (m)</label>
-1031 |                       <input type="number" step="0.01" placeholder="Ex: 0.65" value={atleta.circCoxa || ''} onChange={e => setAtleta({ ...atleta, circCoxa: e.target.value as unknown as number })} />
-1032 |                     </div>
-1033 |                     <div className="form-group" style={{ marginTop: '15px', marginBottom: 0 }}>
-1034 |                       <label>Mobilidade Funcional (ROM) - {atleta.mobilidade || 100}%</label>
-1035 |                       <input 
-1036 |                         type="range" 
-1037 |                         min="50" max="100" 
-1038 |                         value={atleta.mobilidade || 100} 
-1039 |                         onChange={e => setAtleta({ ...atleta, mobilidade: Number(e.target.value) })} 
-1040 |                         style={{ width: '100%' }}
-1041 |                       />
-1042 |                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#8a8d94' }}>
-1043 |                         <span>Encurtado (50%)</span>
-1044 |                         <span>Flexibilidade Perfeita (100%)</span>
-1045 |                       </div>
-1046 |                     </div>
-1047 |                   </div>
-1048 |                 </>
-1049 |               )}
-1050 |             </div>
-1051 |             {/* --- FIM DA SEÇÃO DE ANTROPOMETRIA AVANÇADA --- */}
-1052 |             
-1053 |             <hr style={{ borderColor: 'var(--line-silver, #26272b)', margin: '25px 0' }} />
-1054 |             
-1055 |             <button 
-1056 |               onClick={salvarPerfilAtleta} 
-1057 |               style={{ 
-1058 |                 fontSize: '1.1rem', 
-1059 |                 padding: '15px', 
-1060 |                 backgroundColor: '#388e3c', 
-1061 |                 color: '#fff', 
-1062 |                 border: 'none', 
-1063 |                 borderRadius: '8px', 
-1064 |                 fontWeight: 'bold', 
-1065 |                 width: '100%', 
-1066 |                 cursor: 'pointer',
-1067 |                 display: 'flex',
-1068 |                 alignItems: 'center',
-1069 |                 justifyContent: 'center',
-1070 |                 gap: '10px'
-1071 |               }}
-1072 |             >
-1073 |               <Save size={22} />
-1074 |               Atualizar Perfil Oficial no Banco de Dados
-1075 |             </button>
-1076 |           </div>
-1077 |         )}
-1078 | 
-1079 |         {activeTab === 'historico' && (
-1080 |           <div className="panel">
-1081 |             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-1082 |               <h2>Histórico de Desempenho {selectedAthleteId !== 'me' ? '(Aluno)' : ''}</h2>
-1083 |               {selectedAthleteId === 'me' && !userProfile?.is_coach && (
-1084 |                 <div style={{ display: 'flex', gap: '5px' }}>
-1085 |                   <input type="text" placeholder="ID do seu Coach..." value={coachIdInput} onChange={e => setCoachIdInput(e.target.value)} style={{ padding: '8px' }} />
-1086 |                   <button onClick={linkToCoach} style={{ width: 'auto', padding: '8px 15px', backgroundColor: '#388e3c' }}>Vincular</button>
-1087 |                 </div>
-1088 |               )}
-1089 |             </div>
-1090 | 
-1091 |             {selectedAthleteId === 'me' && (
-1092 |               <div style={{ marginBottom: '20px', padding: '10px', background: 'var(--bg-card, #181a1e)', border: '1px dashed var(--line-silver, #26272b)', borderRadius: '4px', fontSize: '0.9rem' }}>
-1093 |                 <strong>Seu ID de Atleta (Passe para o seu Coach):</strong> <span style={{ color: '#4caf50', userSelect: 'all' }}>{session.user.id}</span>
-1094 |               </div>
-1095 |             )}
-1096 |             
-1097 |             {savedWods.length > 0 ? (
-1098 |               <>
-1099 |                 <div style={{ width: '100%', height: 300, marginBottom: '40px', backgroundColor: 'var(--bg-card, #181a1e)', padding: '20px', borderRadius: '8px' }}>
-1100 |                   <ResponsiveContainer>
-1101 |                     <LineChart data={[...savedWods].reverse()} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-1102 |                       <CartesianGrid strokeDasharray="3 3" stroke="#444" />
-1103 |                       <XAxis dataKey="created_at" tickFormatter={(tick) => new Date(tick as string).toLocaleDateString('pt-BR')} stroke="#aaa" />
-1104 |                       <YAxis yAxisId="left" stroke="#4caf50" />
-1105 |                       <YAxis yAxisId="right" orientation="right" stroke="#ff9800" />
-1106 |                       <Tooltip labelFormatter={(label) => new Date(label as string).toLocaleDateString('pt-BR')} contentStyle={{ backgroundColor: '#1e1e1e', border: 'none' }} />
-1107 |                       <Legend />
-1108 |                       <Line yAxisId="left" type="monotone" dataKey="score_watts" name="Potência (Watts)" stroke="#4caf50" strokeWidth={3} activeDot={{ r: 8 }} />
-1109 |                       <Line yAxisId="right" type="monotone" dataKey="score_kcal" name="Gasto (kCal)" stroke="#ff9800" strokeWidth={3} />
-1110 |                     </LineChart>
-1111 |                   </ResponsiveContainer>
-1112 |                 </div>
-1113 | 
-1114 |                 <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '15px' }}>
-1115 |                   {savedWods.map(w => (
-1116 |                     <div key={w.id} style={{ background: 'var(--bg-card, #181a1e)', padding: '20px', borderRadius: '8px', borderLeft: '4px solid var(--dyna-burgundy, #7A0F1B)' }}>
-1117 |                       <h3 style={{ margin: '0 0 10px 0', fontSize: '1.2rem' }}>{w.title}</h3>
-1118 |                       <div style={{ fontSize: '0.9rem', color: 'var(--text-muted, #8a8d94)', marginBottom: '15px' }}>
-1119 |                         <strong>Data:</strong> {new Date(w.created_at || '').toLocaleDateString('pt-BR')}<br />
-1120 |                         <strong>Resultado:</strong> {(w as any).score_watts?.toFixed(1) || '--'} W | {(w as any).score_kcal?.toFixed(0) || '--'} kCal
-1121 |                       </div>
-1122 |                       <button onClick={() => carregarDoSupabase(w)} style={{ width: '100%', padding: '10px', backgroundColor: 'var(--line-silver, #26272b)', color: '#fff', border: '1px solid #444', borderRadius: '4px', cursor: 'pointer' }}>Carregar Treino</button>
-1123 |                     </div>
-1124 |                   ))}
-1125 |                 </div>
-1126 |               </>
-1127 |             ) : (
-1128 |               <p style={{ color: 'var(--text-muted, #8a8d94)', textAlign: 'center', padding: '20px' }}>Nenhum treino salvo para este atleta.</p>
-1129 |             )}
-1130 |           </div>
-1131 |         )}
-1132 |       
-1133 |       </div> 
-1134 | 
-1135 |       <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
-1136 |         <div 
-1137 |           id="instagram-card-export" 
-1138 |           style={{
-1139 |             width: '420px', 
-1140 |             backgroundColor: '#111315',
-1141 |             color: '#fff',
-1142 |             fontFamily: 'sans-serif',
-1143 |             padding: '40px 20px',
-1144 |             boxSizing: 'border-box',
-1145 |             display: 'flex',
-1146 |             flexDirection: 'column',
-1147 |             gap: '20px',
-1148 |             backgroundImage: 'linear-gradient(to bottom, #111315, #1a1a1a)'
-1149 |           }}
-1150 |         >
-1151 |           <div style={{ textAlign: 'center' }}>
-1152 |             <h1 style={{ margin: 0, fontSize: '32px', fontStyle: 'italic', fontWeight: '900', letterSpacing: '1px' }}>DynaWOD</h1>
-1153 |             <p style={{ margin: '5px 0 0 0', color: '#8a8d94', fontSize: '13px', fontWeight: 'bold' }}>V2 - RESUMO DE TREINO</p>
-1154 |             <p style={{ margin: '2px 0 0 0', color: '#8a8d94', fontSize: '12px' }}>Data: {new Date().toLocaleDateString('pt-BR')}</p>
-1155 |           </div>
-1156 | 
-1157 |           <div style={{ border: '2px solid #26272b', borderRadius: '12px', padding: '20px', backgroundColor: '#181a1e' }}>
-1158 |             <h2 style={{ margin: '0 0 12px 0', fontSize: '20px', display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-1159 |               Prescription <span style={{ fontSize: '11px', color: '#8a8d94', fontWeight: 'normal' }}>(PLANTA BAIXA DO WOD)</span>
-1160 |             </h2>
-1161 |             <div style={{ color: '#d1d5db', fontSize: '16px', lineHeight: '1.6' }}>
-1162 |               
-1163 |               <strong style={{ color: '#fff', fontSize: '18px' }}>TREINO {tipoTreino.replace('_', ' ')}</strong><br />
-1164 |               
-1165 |               TIME CAP: <span style={{ color: '#fff' }}>{tempoAlvo || 'N/A'}</span> • RNDS: <span style={{ color: '#fff' }}>{roundsPrescritos || 'N/A'}</span><br />
-1166 |               <span style={{ color: '#8a8d94', fontSize: '14px' }}>Movimentos Cadastrados: {lousa.length}</span>
-1167 |             </div>
-1168 |           </div>
-1169 | 
-1170 |           <div style={{ border: '2px solid var(--dyna-red, #FF2B3D)', borderRadius: '12px', padding: '25px 15px', backgroundColor: '#181a1e', boxShadow: '0 0 25px rgba(255, 43, 61, 0.15)', position: 'relative', marginTop: '10px' }}>
+1029 |                     <div className="form-group" style={{ marginTop: '15px', marginBottom: 0 }}>
+1030 |                       <label>Mobilidade Funcional (ROM) - {atleta.mobilidade || 100}%</label>
+1031 |                       <input 
+1032 |                         type="range" 
+1033 |                         min="50" max="100" 
+1034 |                         value={atleta.mobilidade || 100} 
+1035 |                         onChange={e => setAtleta({ ...atleta, mobilidade: Number(e.target.value) })} 
+1036 |                         style={{ width: '100%' }}
+1037 |                       />
+1038 |                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#8a8d94' }}>
+1039 |                         <span>Encurtado (50%)</span>
+1040 |                         <span>Flexibilidade Perfeita (100%)</span>
+1041 |                       </div>
+1042 |                     </div>
+1043 |                   </div>
+1044 |                 </>
+1045 |               )}
+1046 |             </div>
+1047 |             {/* --- FIM DA SEÇÃO DE ANTROPOMETRIA AVANÇADA --- */}
+1048 |             
+1049 |             <hr style={{ borderColor: 'var(--line-silver, #26272b)', margin: '25px 0' }} />
+1050 |             
+1051 |             <button 
+1052 |               onClick={salvarPerfilAtleta} 
+1053 |               style={{ 
+1054 |                 fontSize: '1.1rem', 
+1055 |                 padding: '15px', 
+1056 |                 backgroundColor: '#388e3c', 
+1057 |                 color: '#fff', 
+1058 |                 border: 'none', 
+1059 |                 borderRadius: '8px', 
+1060 |                 fontWeight: 'bold', 
+1061 |                 width: '100%', 
+1062 |                 cursor: 'pointer',
+1063 |                 display: 'flex',
+1064 |                 alignItems: 'center',
+1065 |                 justifyContent: 'center',
+1066 |                 gap: '10px'
+1067 |               }}
+1068 |             >
+1069 |               <Save size={22} />
+1070 |               Atualizar Perfil Oficial no Banco de Dados
+1071 |             </button>
+1072 |           </div>
+1073 |         )}
+1074 | 
+1075 |         {activeTab === 'historico' && (
+1076 |           <div className="panel">
+1077 |             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+1078 |               <h2>Histórico de Desempenho {selectedAthleteId !== 'me' ? '(Aluno)' : ''}</h2>
+1079 |               {selectedAthleteId === 'me' && !userProfile?.is_coach && (
+1080 |                 <div style={{ display: 'flex', gap: '5px' }}>
+1081 |                   <input type="text" placeholder="ID do seu Coach..." value={coachIdInput} onChange={e => setCoachIdInput(e.target.value)} style={{ padding: '8px' }} />
+1082 |                   <button onClick={linkToCoach} style={{ width: 'auto', padding: '8px 15px', backgroundColor: '#388e3c' }}>Vincular</button>
+1083 |                 </div>
+1084 |               )}
+1085 |             </div>
+1086 | 
+1087 |             {selectedAthleteId === 'me' && (
+1088 |               <div style={{ marginBottom: '20px', padding: '10px', background: 'var(--bg-card, #181a1e)', border: '1px dashed var(--line-silver, #26272b)', borderRadius: '4px', fontSize: '0.9rem' }}>
+1089 |                 <strong>Seu ID de Atleta (Passe para o seu Coach):</strong> <span style={{ color: '#4caf50', userSelect: 'all' }}>{session.user.id}</span>
+1090 |               </div>
+1091 |             )}
+1092 |             
+1093 |             {savedWods.length > 0 ? (
+1094 |               <>
+1095 |                 <div style={{ width: '100%', height: 300, marginBottom: '40px', backgroundColor: 'var(--bg-card, #181a1e)', padding: '20px', borderRadius: '8px' }}>
+1096 |                   <ResponsiveContainer>
+1097 |                     <LineChart data={[...savedWods].reverse()} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+1098 |                       <CartesianGrid strokeDasharray="3 3" stroke="#444" />
+1099 |                       <XAxis dataKey="created_at" tickFormatter={(tick) => new Date(tick as string).toLocaleDateString('pt-BR')} stroke="#aaa" />
+1100 |                       <YAxis yAxisId="left" stroke="#4caf50" />
+1101 |                       <YAxis yAxisId="right" orientation="right" stroke="#ff9800" />
+1102 |                       <Tooltip labelFormatter={(label) => new Date(label as string).toLocaleDateString('pt-BR')} contentStyle={{ backgroundColor: '#1e1e1e', border: 'none' }} />
+1103 |                       <Legend />
+1104 |                       <Line yAxisId="left" type="monotone" dataKey="score_watts" name="Potência (Watts)" stroke="#4caf50" strokeWidth={3} activeDot={{ r: 8 }} />
+1105 |                       <Line yAxisId="right" type="monotone" dataKey="score_kcal" name="Gasto (kCal)" stroke="#ff9800" strokeWidth={3} />
+1106 |                     </LineChart>
+1107 |                   </ResponsiveContainer>
+1108 |                 </div>
+1109 | 
+1110 |                 <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '15px' }}>
+1111 |                   {savedWods.map(w => (
+1112 |                     <div key={w.id} style={{ background: 'var(--bg-card, #181a1e)', padding: '20px', borderRadius: '8px', borderLeft: '4px solid var(--dyna-burgundy, #7A0F1B)' }}>
+1113 |                       <h3 style={{ margin: '0 0 10px 0', fontSize: '1.2rem' }}>{w.title}</h3>
+1114 |                       <div style={{ fontSize: '0.9rem', color: 'var(--text-muted, #8a8d94)', marginBottom: '15px' }}>
+1115 |                         <strong>Data:</strong> {new Date(w.created_at || '').toLocaleDateString('pt-BR')}<br />
+1116 |                         <strong>Resultado:</strong> {(w as any).score_watts?.toFixed(1) || '--'} W | {(w as any).score_kcal?.toFixed(0) || '--'} kCal
+1117 |                       </div>
+1118 |                       <button onClick={() => carregarDoSupabase(w)} style={{ width: '100%', padding: '10px', backgroundColor: 'var(--line-silver, #26272b)', color: '#fff', border: '1px solid #444', borderRadius: '4px', cursor: 'pointer' }}>Carregar Treino</button>
+1119 |                     </div>
+1120 |                   ))}
+1121 |                 </div>
+1122 |               </>
+1123 |             ) : (
+1124 |               <p style={{ color: 'var(--text-muted, #8a8d94)', textAlign: 'center', padding: '20px' }}>Nenhum treino salvo para este atleta.</p>
+1125 |             )}
+1126 |           </div>
+1127 |         )}
+1128 |       
+1129 |       </div> 
+1130 | 
+1131 |       <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
+1132 |         <div 
+1133 |           id="instagram-card-export" 
+1134 |           style={{
+1135 |             width: '420px', 
+1136 |             backgroundColor: '#111315',
+1137 |             color: '#fff',
+1138 |             fontFamily: 'sans-serif',
+1139 |             padding: '40px 20px',
+1140 |             boxSizing: 'border-box',
+1141 |             display: 'flex',
+1142 |             flexDirection: 'column',
+1143 |             gap: '20px',
+1144 |             backgroundImage: 'linear-gradient(to bottom, #111315, #1a1a1a)'
+1145 |           }}
+1146 |         >
+1147 |           <div style={{ textAlign: 'center' }}>
+1148 |             <h1 style={{ margin: 0, fontSize: '32px', fontStyle: 'italic', fontWeight: '900', letterSpacing: '1px' }}>DynaWOD</h1>
+1149 |             <p style={{ margin: '5px 0 0 0', color: '#8a8d94', fontSize: '13px', fontWeight: 'bold' }}>V2 - RESUMO DE TREINO</p>
+1150 |             <p style={{ margin: '2px 0 0 0', color: '#8a8d94', fontSize: '12px' }}>Data: {new Date().toLocaleDateString('pt-BR')}</p>
+1151 |           </div>
+1152 | 
+1153 |           <div style={{ border: '2px solid #26272b', borderRadius: '12px', padding: '20px', backgroundColor: '#181a1e' }}>
+1154 |             <h2 style={{ margin: '0 0 12px 0', fontSize: '20px', display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+1155 |               Prescription <span style={{ fontSize: '11px', color: '#8a8d94', fontWeight: 'normal' }}>(PLANTA BAIXA DO WOD)</span>
+1156 |             </h2>
+1157 |             <div style={{ color: '#d1d5db', fontSize: '16px', lineHeight: '1.6' }}>
+1158 |               
+1159 |               <strong style={{ color: '#fff', fontSize: '18px' }}>TREINO {tipoTreino.replace('_', ' ')}</strong><br />
+1160 |               
+1161 |               TIME CAP: <span style={{ color: '#fff' }}>{tempoAlvo || 'N/A'}</span> • RNDS: <span style={{ color: '#fff' }}>{roundsPrescritos || 'N/A'}</span><br />
+1162 |               <span style={{ color: '#8a8d94', fontSize: '14px' }}>Movimentos Cadastrados: {lousa.length}</span>
+1163 |             </div>
+1164 |           </div>
+1165 | 
+1166 |           <div style={{ border: '2px solid var(--dyna-red, #FF2B3D)', borderRadius: '12px', padding: '25px 15px', backgroundColor: '#181a1e', boxShadow: '0 0 25px rgba(255, 43, 61, 0.15)', position: 'relative', marginTop: '10px' }}>
+1167 |             
+1168 |             <h2 style={{ margin: 0, fontSize: '24px', position: 'absolute', top: '-15px', backgroundColor: '#181a1e', padding: '0 10px', color: 'var(--dyna-red, #FF2B3D)' }}>
+1169 |               Resultado
+1170 |             </h2>
 1171 |             
-1172 |             <h2 style={{ margin: 0, fontSize: '24px', position: 'absolute', top: '-15px', backgroundColor: '#181a1e', padding: '0 10px', color: 'var(--dyna-red, #FF2B3D)' }}>
-1173 |               Resultado
-1174 |             </h2>
-1175 |             
-1176 |             <div style={{ textAlign: 'center', marginBottom: '25px', marginTop: '15px' }}>
-1177 |               <span style={{ fontSize: '16px', color: '#8a8d94', fontWeight: 'bold' }}>TEMPO TOTAL:</span>
-1178 |               <div style={{ fontSize: '54px', fontWeight: '900', margin: '5px 0', textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>
-1179 |                 {tempoReal || '00:00'}
-1180 |               </div>
-1181 |               
-1182 |               {isScaled ? (
-1183 |                 <span style={{ backgroundColor: '#FF2B3D', color: '#fff', padding: '6px 16px', borderRadius: '20px', fontSize: '16px', fontWeight: '900', letterSpacing: '1px' }}>STATUS: SCALED</span>
-1184 |               ) : (
-1185 |                 <span style={{ backgroundColor: '#22c55e', color: '#fff', padding: '6px 16px', borderRadius: '20px', fontSize: '16px', fontWeight: '900', letterSpacing: '1px' }}>STATUS: RX</span>
-1186 |               )}
-1187 |             </div>
-1188 | 
-1189 |             <div style={{ display: 'flex', gap: '10px', justifyContent: 'space-between' }}>
-1190 |               
-1191 |               <div style={{ flex: 1, backgroundColor: '#111315', padding: '15px 5px', borderRadius: '10px', textAlign: 'center', border: '1px solid #26272b' }}>
-1192 |                 <div style={{ fontSize: '11px', color: '#8a8d94', marginBottom: '10px', fontWeight: 'bold' }}>POTÊNCIA MÉDIA</div>
-1193 |                 
-1194 |                 <svg width="70" height="35" viewBox="0 0 100 50" style={{ marginBottom: '8px' }}>
-1195 |                   <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="#26272b" strokeWidth="10" />
-1196 |                   <path d="M 10 50 A 40 40 0 0 1 70 20" fill="none" stroke="#FF2B3D" strokeWidth="10" strokeLinecap="round" />
-1197 |                   <line x1="50" y1="50" x2="65" y2="25" stroke="#fff" strokeWidth="3" strokeLinecap="round" />
-1198 |                   <circle cx="50" cy="50" r="4" fill="#fff" />
-1199 |                 </svg>
-1200 | 
-1201 |                 <div style={{ fontSize: '22px', fontWeight: '900' }}>
-1202 |                   {resultado ? resultado.potenciaReal.toFixed(0) : 0} <span style={{ fontSize: '12px', fontWeight: 'normal', color: '#8a8d94' }}>W</span>
-1203 |                 </div>
-1204 |               </div>
-1205 |               
-1206 |               <div style={{ flex: 1, backgroundColor: '#111315', padding: '15px 5px', borderRadius: '10px', textAlign: 'center', border: '1px solid #26272b' }}>
-1207 |                 <div style={{ fontSize: '11px', color: '#8a8d94', marginBottom: '10px', fontWeight: 'bold' }}>GASTO ENERGÉTICO</div>
-1208 |                 
-1209 |                 <svg width="70" height="35" viewBox="0 0 100 50" style={{ marginBottom: '8px' }}>
-1210 |                   <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="#26272b" strokeWidth="10" />
-1211 |                   <path d="M 10 50 A 40 40 0 0 1 85 30" fill="none" stroke="#ff9800" strokeWidth="10" strokeLinecap="round" />
-1212 |                   <path d="M 50 45 Q 40 45 45 30 Q 50 20 50 15 Q 50 25 55 30 Q 60 45 50 45" fill="#ff9800" />
-1213 |                 </svg>
-1214 | 
-1215 |                 <div style={{ fontSize: '22px', fontWeight: '900' }}>
-1216 |                   {resultado ? resultado.gastoMetabolico.toFixed(0) : 0} <span style={{ fontSize: '12px', fontWeight: 'normal', color: '#8a8d94' }}>kcal</span>
-1217 |                 </div>
-1218 |               </div>
-1219 | 
-1220 |             </div>
+1172 |             <div style={{ textAlign: 'center', marginBottom: '25px', marginTop: '15px' }}>
+1173 |               <span style={{ fontSize: '16px', color: '#8a8d94', fontWeight: 'bold' }}>TEMPO TOTAL:</span>
+1174 |               <div style={{ fontSize: '54px', fontWeight: '900', margin: '5px 0', textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>
+1175 |                 {tempoReal || '00:00'}
+1176 |               </div>
+1177 |               
+1178 |               {isScaled ? (
+1179 |                 <span style={{ backgroundColor: '#FF2B3D', color: '#fff', padding: '6px 16px', borderRadius: '20px', fontSize: '16px', fontWeight: '900', letterSpacing: '1px' }}>STATUS: SCALED</span>
+1180 |               ) : (
+1181 |                 <span style={{ backgroundColor: '#22c55e', color: '#fff', padding: '6px 16px', borderRadius: '20px', fontSize: '16px', fontWeight: '900', letterSpacing: '1px' }}>STATUS: RX</span>
+1182 |               )}
+1183 |             </div>
+1184 | 
+1185 |             <div style={{ display: 'flex', gap: '10px', justifyContent: 'space-between' }}>
+1186 |               
+1187 |               <div style={{ flex: 1, backgroundColor: '#111315', padding: '15px 5px', borderRadius: '10px', textAlign: 'center', border: '1px solid #26272b' }}>
+1188 |                 <div style={{ fontSize: '11px', color: '#8a8d94', marginBottom: '10px', fontWeight: 'bold' }}>POTÊNCIA MÉDIA</div>
+1189 |                 
+1190 |                 <svg width="70" height="35" viewBox="0 0 100 50" style={{ marginBottom: '8px' }}>
+1191 |                   <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="#26272b" strokeWidth="10" />
+1192 |                   <path d="M 10 50 A 40 40 0 0 1 70 20" fill="none" stroke="#FF2B3D" strokeWidth="10" strokeLinecap="round" />
+1193 |                   <line x1="50" y1="50" x2="65" y2="25" stroke="#fff" strokeWidth="3" strokeLinecap="round" />
+1194 |                   <circle cx="50" cy="50" r="4" fill="#fff" />
+1195 |                 </svg>
+1196 | 
+1197 |                 <div style={{ fontSize: '22px', fontWeight: '900' }}>
+1198 |                   {resultado ? resultado.potenciaReal.toFixed(0) : 0} <span style={{ fontSize: '12px', fontWeight: 'normal', color: '#8a8d94' }}>W</span>
+1199 |                 </div>
+1200 |               </div>
+1201 |               
+1202 |               <div style={{ flex: 1, backgroundColor: '#111315', padding: '15px 5px', borderRadius: '10px', textAlign: 'center', border: '1px solid #26272b' }}>
+1203 |                 <div style={{ fontSize: '11px', color: '#8a8d94', marginBottom: '10px', fontWeight: 'bold' }}>GASTO ENERGÉTICO</div>
+1204 |                 
+1205 |                 <svg width="70" height="35" viewBox="0 0 100 50" style={{ marginBottom: '8px' }}>
+1206 |                   <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="#26272b" strokeWidth="10" />
+1207 |                   <path d="M 10 50 A 40 40 0 0 1 85 30" fill="none" stroke="#ff9800" strokeWidth="10" strokeLinecap="round" />
+1208 |                   <path d="M 50 45 Q 40 45 45 30 Q 50 20 50 15 Q 50 25 55 30 Q 60 45 50 45" fill="#ff9800" />
+1209 |                 </svg>
+1210 | 
+1211 |                 <div style={{ fontSize: '22px', fontWeight: '900' }}>
+1212 |                   {resultado ? resultado.gastoMetabolico.toFixed(0) : 0} <span style={{ fontSize: '12px', fontWeight: 'normal', color: '#8a8d94' }}>kcal</span>
+1213 |                 </div>
+1214 |               </div>
+1215 | 
+1216 |             </div>
+1217 |           </div>
+1218 |           
+1219 |           <div style={{ textAlign: 'center', color: '#52525b', fontSize: '12px', marginTop: '10px' }}>
+1220 |             Gerado pelo aplicativo DynaWOD - dynawod.com
 1221 |           </div>
-1222 |           
-1223 |           <div style={{ textAlign: 'center', color: '#52525b', fontSize: '12px', marginTop: '10px' }}>
-1224 |             Gerado pelo aplicativo DynaWOD - dynawod.com
-1225 |           </div>
-1226 |         </div>
-1227 |       </div>
-1228 |       
-1229 |     </div>
-1230 |   );
-1231 | }
+1222 |         </div>
+1223 |       </div>
+1224 |       
+1225 |     </div>
+1226 |   );
+1227 | }
 
 --- FIM DO ARQUIVO: src\App.tsx ---
 

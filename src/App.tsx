@@ -108,7 +108,6 @@ export default function App() {
   const [roundsPrescritos, setRoundsPrescritos] = useState(3);
   const [roundsReal, setRoundsReal] = useState(0);
   const [tempoReal, setTempoReal] = useState('');
-  const [tempoDescanso, setTempoDescanso] = useState(0);
   const [nomeTreino, setNomeTreino] = useState('');
 
   // === RASTREAMENTO DO WOD ATUAL ===
@@ -446,7 +445,6 @@ export default function App() {
     
     if (rec.rounds_real !== undefined) setRoundsReal(rec.rounds_real);
     if (rec.tempo_real) setTempoReal(rec.tempo_real);
-    if (rec.tempo_descanso) setTempoDescanso(rec.tempo_descanso);
     if (rec.atleta) setAtleta(rec.atleta);
     if (rec.movimentos) setLousa(rec.movimentos);
     if (rec.timeline) setTimelineState(rec.timeline);
@@ -536,12 +534,11 @@ export default function App() {
     });
 
     const tempoTotalReferencia = (tipoTreino === 'FOR_TIME' && tRealSec > 0) ? tRealSec : tAlvoSec;
-    const desc = tempoDescanso || 0;
-    const tempoDisponivel = Math.max(0, tempoTotalReferencia - somaTempoDeterminadoGlobal - totalTransicaoGlobal - desc);
+    const tempoDisponivel = Math.max(0, tempoTotalReferencia - somaTempoDeterminadoGlobal - totalTransicaoGlobal);
     
     // Refatoração 4: Fator EPOC Sigmoidal baseado na fadiga termodinâmica extrema
     const refTempoEstimado = tempoTotalReferencia > 0 ? tempoTotalReferencia : tAlvoSec;
-    const tempoLiquidoEstimado = Math.max(1, refTempoEstimado - desc - totalTransicaoGlobal);
+    const tempoLiquidoEstimado = Math.max(1, refTempoEstimado - totalTransicaoGlobal);
     const potRealEstimada = tempoLiquidoEstimado > 0 ? (trabalhoMechTotalReal / tempoLiquidoEstimado) : 0;
     const limiarPotencia = potRealEstimada / (atleta?.peso || 80);
     
@@ -593,14 +590,14 @@ export default function App() {
       logDetalhes += `• [${item.labelRounds}] ${item.reps}x ${item.nome}${extraLog}: <strong class="color-mech">${trabMechLinha.toFixed(0)} J</strong> | <strong class="color-metabolic">${totalKcalLinha.toFixed(1)} kCal</strong>${strTmp}${strPot}<br/>`;
     });
 
-    const tempoLiquidoEsp = tAlvoSec - desc - totalTransicaoGlobal;
+    const tempoLiquidoEsp = tAlvoSec - totalTransicaoGlobal;
     const potEsp = tempoLiquidoEsp > 0 ? (trabalhoMechTotalEsp / tempoLiquidoEsp) : 0;
     
     const refTempo = tempoTotalReferencia > 0 ? tempoTotalReferencia : tempoTotalExecucaoEfetiva;
-    const tempoLiquidoReal = refTempo - desc - totalTransicaoGlobal;
+    const tempoLiquidoReal = refTempo - totalTransicaoGlobal;
     const potReal = tempoLiquidoReal > 0 ? (trabalhoMechTotalReal / tempoLiquidoReal) : 0;
     
-    const tempoTotalSessao = tempoTotalReferencia > 0 ? tempoTotalReferencia : (tempoTotalExecucaoEfetiva + totalTransicaoGlobal + desc);
+    const tempoTotalSessao = tempoTotalReferencia > 0 ? tempoTotalReferencia : (tempoTotalExecucaoEfetiva + totalTransicaoGlobal);
     const gastoBasalSessao = bmrSec * tempoTotalSessao;
     const gastoMetabolicoFinal = (gastoMetabolicoLiquidoTotal * fatorEPOC) + gastoBasalSessao;
 
@@ -992,9 +989,8 @@ export default function App() {
               <div className="form-group"><label>Envergadura (m)</label><input type="number" step="0.01" placeholder="Ex: 1.75" value={atleta.envergadura || ''} onChange={e => setAtleta({ ...atleta, envergadura: e.target.value as unknown as number })} /></div>
               <div className="form-group"><label>Alt. Perna (m)</label><input type="number" step="0.01" placeholder="Ex: 0.85" value={atleta.perna || ''} onChange={e => setAtleta({ ...atleta, perna: e.target.value as unknown as number })} /></div>
             </div>
-            <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', marginBottom: '20px' }}>
+            <div className="grid" style={{ gridTemplateColumns: '1fr', marginBottom: '20px' }}>
               <div className="form-group"><label>% Gordura Corporal (BF)</label><input type="number" step="0.1" placeholder="Ex: 15" value={atleta.bf || ''} onChange={e => setAtleta({ ...atleta, bf: e.target.value as unknown as number })} /></div>
-              <div className="form-group"><label>Transição Global Estimada (seg)</label><input type="number" placeholder="Ex: 30" value={tempoDescanso || ''} onChange={e => setTempoDescanso(e.target.value as unknown as number)} /></div>
             </div>
 
             {/* --- INÍCIO DA SEÇÃO DE ANTROPOMETRIA AVANÇADA --- */}
