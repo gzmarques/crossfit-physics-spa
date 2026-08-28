@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { movimentosDB } from './data/movements';
 import { supabase } from './lib/supabase';
@@ -11,6 +11,83 @@ import type {
 import { calcularFisica, parseClockTime } from './utils/physicsEngine';
 import { Trophy, Dumbbell, Copy, Download, Share2, Save, LogOut, X } from 'lucide-react';
 import html2canvas from 'html2canvas';
+
+function SearchableMovementSelect({ value, onChange, movimentosDB }: { value: string, onChange: (val: string) => void, movimentosDB: any }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  // Fecha o dropdown se clicar fora dele
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Agrupa os movimentos usando a configuração original
+  const groups: Record<string, any[]> = {};
+  Object.entries(movimentosDB).forEach(([key, config]: [string, any]) => {
+    if (!groups[config.grupo]) groups[config.grupo] = [];
+    groups[config.grupo].push({ key, nome: config.nome });
+  });
+
+  // Filtra movimentos e oculta grupos sem resultados
+  const filteredGroups: Record<string, any[]> = {};
+  Object.entries(groups).forEach(([groupName, items]) => {
+    const filteredItems = items.filter(item => 
+      item.nome.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    if (filteredItems.length > 0) {
+      filteredGroups[groupName] = filteredItems;
+    }
+  });
+
+  const selectedName = movimentosDB[value]?.nome || "Selecione...";
+
+  return (
+    <div className="searchable-select" ref={wrapperRef}>
+      <input
+        type="text"
+        className="search-input"
+        placeholder="Buscar exercício..."
+        value={isOpen ? searchTerm : selectedName}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        onClick={() => { setIsOpen(true); setSearchTerm(""); }}
+      />
+      {isOpen && (
+        <div className="dropdown-list">
+          {Object.entries(filteredGroups).map(([groupName, items]) => (
+            <div key={groupName}>
+              <div className="dropdown-group">{groupName}</div>
+              {items.map(item => (
+                <div
+                  key={item.key}
+                  className="dropdown-item"
+                  onClick={() => {
+                    onChange(item.key);
+                    setIsOpen(false);
+                    setSearchTerm("");
+                  }}
+                >
+                  {item.nome}
+                </div>
+              ))}
+            </div>
+          ))}
+          {Object.keys(filteredGroups).length === 0 && (
+            <div style={{ padding: '10px', color: '#888', fontSize: '0.9rem', textAlign: 'center' }}>
+              Nenhum movimento encontrado.
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function App() {
   // === AUTENTICAÇÃO E PERFIL ===
@@ -613,9 +690,11 @@ export default function App() {
                         <option value="cashout">Cash-out</option>
                       </select>
                       <div style={{ marginTop: '5px' }}>
-                        <select value={item.movId} onChange={e => updateMovimento(item.originalId, 'movId', e.target.value)}>
-                          {Object.entries(movimentosDB).map(([k, v]) => (<option key={k} value={k}>{v.nome}</option>))}
-                        </select>
+                        <SearchableMovementSelect 
+                          value={item.movId} 
+                          onChange={(newId) => updateMovimento(item.originalId, 'movId', newId)} 
+                          movimentosDB={movimentosDB} 
+                        />
                       </div>
                     </div>
                     <div><label>Reps/Mts</label><input type="number" value={item.reps} onChange={e => updateMovimento(item.originalId, 'reps', Number(e.target.value))} /></div>

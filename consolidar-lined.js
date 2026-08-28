@@ -71,7 +71,18 @@ function consolidarCodigo() {
       try {
         const conteudo = fs.readFileSync(arquivo, 'utf8');
         fluxoSaida.write(`--- INÍCIO DO ARQUIVO: ${caminhoRelativo} ---\n`);
-        fluxoSaida.write(conteudo);
+        
+        // Separa o conteúdo original em um array de linhas
+        const linhas = conteudo.split(/\r?\n/);
+        
+        // Define um tamanho fixo baseado na quantidade de linhas para alinhar os números à direita
+        const padding = Math.max(3, String(linhas.length).length);
+        
+        linhas.forEach((linha, index) => {
+          const numeroLinha = String(index + 1).padStart(padding, ' ');
+          fluxoSaida.write(`${numeroLinha} | ${linha}\n`);
+        });
+
         fluxoSaida.write(`\n--- FIM DO ARQUIVO: ${caminhoRelativo} ---\n\n`);
         fluxoSaida.write("=".repeat(40) + "\n\n");
         

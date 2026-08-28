@@ -254,3 +254,45 @@ button:hover {
     grid-column: span 2;
   }
 }
+
+  /* --- COMPONENTE DE BUSCA DE MOVIMENTOS --- */
+  .searchable-select {
+    position: relative;
+    width: 100%;
+  }
+  .search-input {
+    cursor: text;
+    width: 100%;
+  }
+  .dropdown-list {
+    position: absolute;
+    z-index: 100;
+    width: 100%;
+    max-height: 250px;
+    overflow-y: auto;
+    background: #2c2c2c;
+    border: 1px solid var(--dyna-red);
+    border-top: none;
+    border-radius: 0 0 4px 4px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+  }
+  .dropdown-item {
+    padding: 10px;
+    cursor: pointer;
+    border-bottom: 1px solid #333;
+    font-size: 0.9rem;
+    color: #fff;
+  }
+  .dropdown-item:hover {
+    background: var(--dyna-red);
+    color: white;
+  }
+  .dropdown-group {
+    padding: 5px 10px;
+    background: #1a1a1a;
+    color: var(--dyna-red);
+    font-weight: bold;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    border-bottom: 1px solid #333;
+  }
