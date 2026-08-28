@@ -557,7 +557,17 @@ export default function App() {
     });
   };
 
-  if (loadingAuth) return <div style={{textAlign: 'center', marginTop: '50px'}}>Iniciando...</div>;
+  if (loadingAuth) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', backgroundColor: 'var(--bg-dark)' }}>
+        <img 
+          src="/loading.gif" 
+          alt="Esquentando o motor biomecânico..." 
+          style={{ width: '100%', maxWidth: '160px', height: 'auto', objectFit: 'contain' }} 
+        />
+      </div>
+    );
+  }
 
   if (!session) {
     return <LoginScreen onSignIn={signInWithGoogle} />;

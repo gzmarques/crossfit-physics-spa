@@ -888,120 +888,130 @@ CONTEÚDO DOS ARQUIVOS
 557 |     });
 558 |   };
 559 | 
-560 |   if (loadingAuth) return <div style={{textAlign: 'center', marginTop: '50px'}}>Iniciando...</div>;
-561 | 
-562 |   if (!session) {
-563 |     return <LoginScreen onSignIn={signInWithGoogle} />;
-564 |   }
-565 | 
-566 |   if (isNewUser) {
-567 |     return (
-568 |       <OnboardingScreen 
-569 |         form={onboardForm} 
-570 |         setForm={setOnboardForm} 
-571 |         onSave={saveOnboardingProfile} 
-572 |         onSignOut={signOut} 
-573 |       />
-574 |     );
-575 |   }
-576 | 
-577 |   return (
-578 |     <div className="container" style={{ padding: 0, maxWidth: '1200px', margin: '0 auto' }}> 
-579 |       
-580 |       <Header 
-581 |         userProfile={userProfile}
-582 |         selectedAthleteId={selectedAthleteId}
-583 |         myAthletes={myAthletes}
-584 |         onAthleteChange={handleAthleteChange}
-585 |         onSignOut={signOut}
-586 |       />
-587 | 
-588 |       <div style={{ padding: '0 24px' }}>
-589 |         
-590 |         <Tabs activeTab={activeTab} setActiveTab={setActiveTab} />
-591 | 
-592 |         {activeTab === 'prescricao' && (
-593 |           <PrescricaoTab 
-594 |             nomeTreino={nomeTreino}
-595 |             setNomeTreino={setNomeTreino}
-596 |             tipoTreino={tipoTreino}
-597 |             setTipoTreino={setTipoTreino}
-598 |             tempoAlvo={tempoAlvo}
-599 |             setTempoAlvo={setTempoAlvo}
-600 |             roundsPrescritos={roundsPrescritos}
-601 |             setRoundsPrescritos={setRoundsPrescritos}
-602 |             lousa={lousa}
-603 |             addMovimento={addMovimento}
-604 |             removeMovimento={removeMovimento}
-605 |             updateMovimento={updateMovimento}
-606 |             handleDragStart={handleDragStart}
-607 |             handleDragEnter={handleDragEnter}
-608 |             handleDragEnd={handleDragEnd}
-609 |             currentShortCode={currentShortCode}
-610 |             currentTemplateId={currentTemplateId}
-611 |             importarWod={importarWod}
-612 |             compartilharWod={compartilharWod}
-613 |             clonarWod={clonarWod}
-614 |             salvarNoSupabase={salvarNoSupabase}
-615 |           />
-616 |         )}
-617 | 
-618 |         {activeTab === 'analise' && (
-619 |           <AnaliseTab
-620 |             tipoTreino={tipoTreino}
-621 |             tempoReal={tempoReal}
-622 |             setTempoReal={setTempoReal}
-623 |             roundsReal={roundsReal}
-624 |             setRoundsReal={setRoundsReal}
-625 |             isScaled={isScaled}
-626 |             setIsScaled={setIsScaled}
-627 |             lousa={lousa}
-628 |             timelineState={timelineState}
-629 |             handleTimelineChange={handleTimelineChange}
-630 |             processarWOD={processarWOD}
-631 |             resultado={resultado}
-632 |             gerarCardInstagram={gerarCardInstagram}
-633 |             roundsPrescritos={roundsPrescritos}
-634 |           />
-635 |         )}
-636 | 
-637 |         {activeTab === 'atleta' && (
-638 |           <AtletaTab
-639 |             selectedAthleteId={selectedAthleteId}
-640 |             atleta={atleta}
-641 |             setAtleta={setAtleta}
-642 |             salvarPerfilAtleta={salvarPerfilAtleta}
-643 |           />
-644 |         )}
-645 | 
-646 |         {activeTab === 'historico' && (
-647 |           <HistoricoTab
-648 |             selectedAthleteId={selectedAthleteId}
-649 |             userProfile={userProfile}
-650 |             sessionId={session?.user?.id}
-651 |             coachIdInput={coachIdInput}
-652 |             setCoachIdInput={setCoachIdInput}
-653 |             linkToCoach={linkToCoach}
-654 |             savedWods={savedWods}
-655 |             carregarDoSupabase={carregarDoSupabase}
-656 |           />
-657 |         )}
-658 |       
-659 |       </div> 
-660 | 
-661 |       <InstagramCard 
-662 |         tipoTreino={tipoTreino}
-663 |         tempoAlvo={tempoAlvo}
-664 |         roundsPrescritos={roundsPrescritos}
-665 |         lousaCount={lousa.length}
-666 |         tempoReal={tempoReal}
-667 |         isScaled={isScaled}
-668 |         resultado={resultado}
-669 |       />
-670 |       
-671 |     </div>
-672 |   );
-673 | }
+560 |   if (loadingAuth) {
+561 |     return (
+562 |       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', backgroundColor: 'var(--bg-dark)' }}>
+563 |         <img 
+564 |           src="/loading.gif" 
+565 |           alt="Esquentando o motor biomecânico..." 
+566 |           style={{ width: '100%', maxWidth: '160px', height: 'auto', objectFit: 'contain' }} 
+567 |         />
+568 |       </div>
+569 |     );
+570 |   }
+571 | 
+572 |   if (!session) {
+573 |     return <LoginScreen onSignIn={signInWithGoogle} />;
+574 |   }
+575 | 
+576 |   if (isNewUser) {
+577 |     return (
+578 |       <OnboardingScreen 
+579 |         form={onboardForm} 
+580 |         setForm={setOnboardForm} 
+581 |         onSave={saveOnboardingProfile} 
+582 |         onSignOut={signOut} 
+583 |       />
+584 |     );
+585 |   }
+586 | 
+587 |   return (
+588 |     <div className="container" style={{ padding: 0, maxWidth: '1200px', margin: '0 auto' }}> 
+589 |       
+590 |       <Header 
+591 |         userProfile={userProfile}
+592 |         selectedAthleteId={selectedAthleteId}
+593 |         myAthletes={myAthletes}
+594 |         onAthleteChange={handleAthleteChange}
+595 |         onSignOut={signOut}
+596 |       />
+597 | 
+598 |       <div style={{ padding: '0 24px' }}>
+599 |         
+600 |         <Tabs activeTab={activeTab} setActiveTab={setActiveTab} />
+601 | 
+602 |         {activeTab === 'prescricao' && (
+603 |           <PrescricaoTab 
+604 |             nomeTreino={nomeTreino}
+605 |             setNomeTreino={setNomeTreino}
+606 |             tipoTreino={tipoTreino}
+607 |             setTipoTreino={setTipoTreino}
+608 |             tempoAlvo={tempoAlvo}
+609 |             setTempoAlvo={setTempoAlvo}
+610 |             roundsPrescritos={roundsPrescritos}
+611 |             setRoundsPrescritos={setRoundsPrescritos}
+612 |             lousa={lousa}
+613 |             addMovimento={addMovimento}
+614 |             removeMovimento={removeMovimento}
+615 |             updateMovimento={updateMovimento}
+616 |             handleDragStart={handleDragStart}
+617 |             handleDragEnter={handleDragEnter}
+618 |             handleDragEnd={handleDragEnd}
+619 |             currentShortCode={currentShortCode}
+620 |             currentTemplateId={currentTemplateId}
+621 |             importarWod={importarWod}
+622 |             compartilharWod={compartilharWod}
+623 |             clonarWod={clonarWod}
+624 |             salvarNoSupabase={salvarNoSupabase}
+625 |           />
+626 |         )}
+627 | 
+628 |         {activeTab === 'analise' && (
+629 |           <AnaliseTab
+630 |             tipoTreino={tipoTreino}
+631 |             tempoReal={tempoReal}
+632 |             setTempoReal={setTempoReal}
+633 |             roundsReal={roundsReal}
+634 |             setRoundsReal={setRoundsReal}
+635 |             isScaled={isScaled}
+636 |             setIsScaled={setIsScaled}
+637 |             lousa={lousa}
+638 |             timelineState={timelineState}
+639 |             handleTimelineChange={handleTimelineChange}
+640 |             processarWOD={processarWOD}
+641 |             resultado={resultado}
+642 |             gerarCardInstagram={gerarCardInstagram}
+643 |             roundsPrescritos={roundsPrescritos}
+644 |           />
+645 |         )}
+646 | 
+647 |         {activeTab === 'atleta' && (
+648 |           <AtletaTab
+649 |             selectedAthleteId={selectedAthleteId}
+650 |             atleta={atleta}
+651 |             setAtleta={setAtleta}
+652 |             salvarPerfilAtleta={salvarPerfilAtleta}
+653 |           />
+654 |         )}
+655 | 
+656 |         {activeTab === 'historico' && (
+657 |           <HistoricoTab
+658 |             selectedAthleteId={selectedAthleteId}
+659 |             userProfile={userProfile}
+660 |             sessionId={session?.user?.id}
+661 |             coachIdInput={coachIdInput}
+662 |             setCoachIdInput={setCoachIdInput}
+663 |             linkToCoach={linkToCoach}
+664 |             savedWods={savedWods}
+665 |             carregarDoSupabase={carregarDoSupabase}
+666 |           />
+667 |         )}
+668 |       
+669 |       </div> 
+670 | 
+671 |       <InstagramCard 
+672 |         tipoTreino={tipoTreino}
+673 |         tempoAlvo={tempoAlvo}
+674 |         roundsPrescritos={roundsPrescritos}
+675 |         lousaCount={lousa.length}
+676 |         tempoReal={tempoReal}
+677 |         isScaled={isScaled}
+678 |         resultado={resultado}
+679 |       />
+680 |       
+681 |     </div>
+682 |   );
+683 | }
 
 --- FIM DO ARQUIVO: src\App.tsx ---
 
