@@ -663,14 +663,14 @@ export default function App() {
             ⚠️ <strong>Atenção:</strong> Preencha as medidas de comprimento em <strong>metros</strong> (use ponto). Ex: <strong>1.75</strong>, e não 175.
           </p>
 
-          <div className="grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
-            <div className="form-group"><label>Estatura (m)</label><input type="number" step="0.01" placeholder="Ex: 1.75" value={onboardForm.estatura || ''} onChange={e => setOnboardForm({...onboardForm, estatura: e.target.value as unknown as number})} /></div>
-            <div className="form-group"><label>Peso (kg)</label><input type="number" step="0.1" placeholder="Ex: 80.5" value={onboardForm.peso || ''} onChange={e => setOnboardForm({...onboardForm, peso: e.target.value as unknown as number})} /></div>
-            <div className="form-group"><label>Sexo Biológico</label><select value={onboardForm.sexo} onChange={e => setOnboardForm({...onboardForm, sexo: e.target.value as 'M'|'F'})}><option value="M">Masculino</option><option value="F">Feminino</option></select></div>
-            <div className="form-group"><label>Nível</label><select value={onboardForm.nivel_tecnico} onChange={e => setOnboardForm({...onboardForm, nivel_tecnico: e.target.value})}><option value="iniciante">Iniciante</option><option value="intermediario">Intermediário</option><option value="avancado">Avançado</option></select></div>
-            <div className="form-group"><label>Envergadura (m)</label><input type="number" step="0.01" placeholder="Ex: 1.75" value={onboardForm.envergadura || ''} onChange={e => setOnboardForm({...onboardForm, envergadura: e.target.value as unknown as number})} /></div>
-            <div className="form-group"><label>Alt. Perna (m)</label><input type="number" step="0.01" placeholder="Ex: 0.85" value={onboardForm.perna || ''} onChange={e => setOnboardForm({...onboardForm, perna: e.target.value as unknown as number})} /></div>
-            <div className="form-group"><label>% BF</label><input type="number" placeholder="Ex: 15" value={onboardForm.bf || ''} onChange={e => setOnboardForm({...onboardForm, bf: e.target.value as unknown as number})} /></div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '15px' }}>
+            <div className="form-group" style={{ marginBottom: 0 }}><label>Estatura (m)</label><input type="number" step="0.01" placeholder="Ex: 1.75" value={onboardForm.estatura || ''} onChange={e => setOnboardForm({...onboardForm, estatura: e.target.value as unknown as number})} /></div>
+            <div className="form-group" style={{ marginBottom: 0 }}><label>Peso (kg)</label><input type="number" step="0.1" placeholder="Ex: 80.5" value={onboardForm.peso || ''} onChange={e => setOnboardForm({...onboardForm, peso: e.target.value as unknown as number})} /></div>
+            <div className="form-group" style={{ marginBottom: 0 }}><label>Sexo Biológico</label><select value={onboardForm.sexo} onChange={e => setOnboardForm({...onboardForm, sexo: e.target.value as 'M'|'F'})}><option value="M">Masculino</option><option value="F">Feminino</option></select></div>
+            <div className="form-group" style={{ marginBottom: 0 }}><label>Nível</label><select value={onboardForm.nivel_tecnico} onChange={e => setOnboardForm({...onboardForm, nivel_tecnico: e.target.value})}><option value="iniciante">Iniciante</option><option value="intermediario">Intermediário</option><option value="avancado">Avançado</option></select></div>
+            <div className="form-group" style={{ marginBottom: 0 }}><label>Envergadura (m)</label><input type="number" step="0.01" placeholder="Ex: 1.75" value={onboardForm.envergadura || ''} onChange={e => setOnboardForm({...onboardForm, envergadura: e.target.value as unknown as number})} /></div>
+            <div className="form-group" style={{ marginBottom: 0 }}><label>Alt. Perna (m)</label><input type="number" step="0.01" placeholder="Ex: 0.85" value={onboardForm.perna || ''} onChange={e => setOnboardForm({...onboardForm, perna: e.target.value as unknown as number})} /></div>
+            <div className="form-group" style={{ marginBottom: 0 }}><label>% BF</label><input type="number" placeholder="Ex: 15" value={onboardForm.bf || ''} onChange={e => setOnboardForm({...onboardForm, bf: e.target.value as unknown as number})} /></div>
           </div>
 
           <button onClick={saveOnboardingProfile} style={{ marginTop: '20px', width: '100%', fontSize: '1.2rem', padding: '15px' }}>Salvar Perfil e Entrar</button>
@@ -714,8 +714,8 @@ export default function App() {
         {activeTab === 'prescricao' && (
           <div className="panel">
             <h2>Estrutura do Treino</h2>
-            <div className="grid" style={{ gridTemplateColumns: '1fr 1fr 1fr', marginBottom: '10px', gap: '15px' }}>
-              <div className="form-group" style={{ marginBottom: '15px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', marginBottom: '15px' }}>
+              <div className="form-group" style={{ marginBottom: 0 }}>
                 <label>Nome do Treino (Opcional)</label>
                 <input type="text" value={nomeTreino} onChange={e => setNomeTreino(e.target.value)} placeholder="Ex: Murph, Fran, Open 24.1..." />
               </div>
@@ -1007,7 +1007,7 @@ export default function App() {
                   <p style={{ fontSize: '0.85rem', color: '#ff9800', marginBottom: '15px' }}>
                     <strong>Atenção:</strong> Ao preencher estes dados, o motor ignorará a alometria padrão de De Leva e recalculará o seu centro de gravidade e massas segmentares de forma dinâmica.
                   </p>
-                  <div className="grid" style={{ gridTemplateColumns: '1fr 1fr 1fr', marginBottom: 0 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', alignItems: 'end' }}>
                     <div className="form-group" style={{ marginBottom: 0 }}>
                       <label>Idade (anos)</label>
                       <input type="number" value={atleta.idade || ''} onChange={e => setAtleta({ ...atleta, idade: e.target.value as unknown as number })} />
@@ -1020,8 +1020,8 @@ export default function App() {
                       <label>Circ. Coxa (m)</label>
                       <input type="number" step="0.01" placeholder="Ex: 0.65" value={atleta.circCoxa || ''} onChange={e => setAtleta({ ...atleta, circCoxa: e.target.value as unknown as number })} />
                     </div>
-                    <div className="form-group" style={{ marginTop: '15px', marginBottom: 0 }}>
-                      <label>Mobilidade Funcional (ROM) - {atleta.mobilidade || 100}%</label>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label>Mobilidade (ROM) - {atleta.mobilidade || 100}%</label>
                       <input 
                         type="range" 
                         min="50" max="100" 
@@ -1029,9 +1029,9 @@ export default function App() {
                         onChange={e => setAtleta({ ...atleta, mobilidade: Number(e.target.value) })} 
                         style={{ width: '100%' }}
                       />
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#8a8d94' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#8a8d94', marginTop: '5px' }}>
                         <span>Encurtado (50%)</span>
-                        <span>Flexibilidade Perfeita (100%)</span>
+                        <span>Perfeita (100%)</span>
                       </div>
                     </div>
                   </div>

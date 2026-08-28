@@ -984,14 +984,14 @@ CONTEÚDO DOS ARQUIVOS
  663 |             ⚠️ <strong>Atenção:</strong> Preencha as medidas de comprimento em <strong>metros</strong> (use ponto). Ex: <strong>1.75</strong>, e não 175.
  664 |           </p>
  665 | 
- 666 |           <div className="grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
- 667 |             <div className="form-group"><label>Estatura (m)</label><input type="number" step="0.01" placeholder="Ex: 1.75" value={onboardForm.estatura || ''} onChange={e => setOnboardForm({...onboardForm, estatura: e.target.value as unknown as number})} /></div>
- 668 |             <div className="form-group"><label>Peso (kg)</label><input type="number" step="0.1" placeholder="Ex: 80.5" value={onboardForm.peso || ''} onChange={e => setOnboardForm({...onboardForm, peso: e.target.value as unknown as number})} /></div>
- 669 |             <div className="form-group"><label>Sexo Biológico</label><select value={onboardForm.sexo} onChange={e => setOnboardForm({...onboardForm, sexo: e.target.value as 'M'|'F'})}><option value="M">Masculino</option><option value="F">Feminino</option></select></div>
- 670 |             <div className="form-group"><label>Nível</label><select value={onboardForm.nivel_tecnico} onChange={e => setOnboardForm({...onboardForm, nivel_tecnico: e.target.value})}><option value="iniciante">Iniciante</option><option value="intermediario">Intermediário</option><option value="avancado">Avançado</option></select></div>
- 671 |             <div className="form-group"><label>Envergadura (m)</label><input type="number" step="0.01" placeholder="Ex: 1.75" value={onboardForm.envergadura || ''} onChange={e => setOnboardForm({...onboardForm, envergadura: e.target.value as unknown as number})} /></div>
- 672 |             <div className="form-group"><label>Alt. Perna (m)</label><input type="number" step="0.01" placeholder="Ex: 0.85" value={onboardForm.perna || ''} onChange={e => setOnboardForm({...onboardForm, perna: e.target.value as unknown as number})} /></div>
- 673 |             <div className="form-group"><label>% BF</label><input type="number" placeholder="Ex: 15" value={onboardForm.bf || ''} onChange={e => setOnboardForm({...onboardForm, bf: e.target.value as unknown as number})} /></div>
+ 666 |           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '15px' }}>
+ 667 |             <div className="form-group" style={{ marginBottom: 0 }}><label>Estatura (m)</label><input type="number" step="0.01" placeholder="Ex: 1.75" value={onboardForm.estatura || ''} onChange={e => setOnboardForm({...onboardForm, estatura: e.target.value as unknown as number})} /></div>
+ 668 |             <div className="form-group" style={{ marginBottom: 0 }}><label>Peso (kg)</label><input type="number" step="0.1" placeholder="Ex: 80.5" value={onboardForm.peso || ''} onChange={e => setOnboardForm({...onboardForm, peso: e.target.value as unknown as number})} /></div>
+ 669 |             <div className="form-group" style={{ marginBottom: 0 }}><label>Sexo Biológico</label><select value={onboardForm.sexo} onChange={e => setOnboardForm({...onboardForm, sexo: e.target.value as 'M'|'F'})}><option value="M">Masculino</option><option value="F">Feminino</option></select></div>
+ 670 |             <div className="form-group" style={{ marginBottom: 0 }}><label>Nível</label><select value={onboardForm.nivel_tecnico} onChange={e => setOnboardForm({...onboardForm, nivel_tecnico: e.target.value})}><option value="iniciante">Iniciante</option><option value="intermediario">Intermediário</option><option value="avancado">Avançado</option></select></div>
+ 671 |             <div className="form-group" style={{ marginBottom: 0 }}><label>Envergadura (m)</label><input type="number" step="0.01" placeholder="Ex: 1.75" value={onboardForm.envergadura || ''} onChange={e => setOnboardForm({...onboardForm, envergadura: e.target.value as unknown as number})} /></div>
+ 672 |             <div className="form-group" style={{ marginBottom: 0 }}><label>Alt. Perna (m)</label><input type="number" step="0.01" placeholder="Ex: 0.85" value={onboardForm.perna || ''} onChange={e => setOnboardForm({...onboardForm, perna: e.target.value as unknown as number})} /></div>
+ 673 |             <div className="form-group" style={{ marginBottom: 0 }}><label>% BF</label><input type="number" placeholder="Ex: 15" value={onboardForm.bf || ''} onChange={e => setOnboardForm({...onboardForm, bf: e.target.value as unknown as number})} /></div>
  674 |           </div>
  675 | 
  676 |           <button onClick={saveOnboardingProfile} style={{ marginTop: '20px', width: '100%', fontSize: '1.2rem', padding: '15px' }}>Salvar Perfil e Entrar</button>
@@ -1035,8 +1035,8 @@ CONTEÚDO DOS ARQUIVOS
  714 |         {activeTab === 'prescricao' && (
  715 |           <div className="panel">
  716 |             <h2>Estrutura do Treino</h2>
- 717 |             <div className="grid" style={{ gridTemplateColumns: '1fr 1fr 1fr', marginBottom: '10px', gap: '15px' }}>
- 718 |               <div className="form-group" style={{ marginBottom: '15px' }}>
+ 717 |             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', marginBottom: '15px' }}>
+ 718 |               <div className="form-group" style={{ marginBottom: 0 }}>
  719 |                 <label>Nome do Treino (Opcional)</label>
  720 |                 <input type="text" value={nomeTreino} onChange={e => setNomeTreino(e.target.value)} placeholder="Ex: Murph, Fran, Open 24.1..." />
  721 |               </div>
@@ -1328,7 +1328,7 @@ CONTEÚDO DOS ARQUIVOS
 1007 |                   <p style={{ fontSize: '0.85rem', color: '#ff9800', marginBottom: '15px' }}>
 1008 |                     <strong>Atenção:</strong> Ao preencher estes dados, o motor ignorará a alometria padrão de De Leva e recalculará o seu centro de gravidade e massas segmentares de forma dinâmica.
 1009 |                   </p>
-1010 |                   <div className="grid" style={{ gridTemplateColumns: '1fr 1fr 1fr', marginBottom: 0 }}>
+1010 |                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', alignItems: 'end' }}>
 1011 |                     <div className="form-group" style={{ marginBottom: 0 }}>
 1012 |                       <label>Idade (anos)</label>
 1013 |                       <input type="number" value={atleta.idade || ''} onChange={e => setAtleta({ ...atleta, idade: e.target.value as unknown as number })} />
@@ -1341,8 +1341,8 @@ CONTEÚDO DOS ARQUIVOS
 1020 |                       <label>Circ. Coxa (m)</label>
 1021 |                       <input type="number" step="0.01" placeholder="Ex: 0.65" value={atleta.circCoxa || ''} onChange={e => setAtleta({ ...atleta, circCoxa: e.target.value as unknown as number })} />
 1022 |                     </div>
-1023 |                     <div className="form-group" style={{ marginTop: '15px', marginBottom: 0 }}>
-1024 |                       <label>Mobilidade Funcional (ROM) - {atleta.mobilidade || 100}%</label>
+1023 |                     <div className="form-group" style={{ marginBottom: 0 }}>
+1024 |                       <label>Mobilidade (ROM) - {atleta.mobilidade || 100}%</label>
 1025 |                       <input 
 1026 |                         type="range" 
 1027 |                         min="50" max="100" 
@@ -1350,9 +1350,9 @@ CONTEÚDO DOS ARQUIVOS
 1029 |                         onChange={e => setAtleta({ ...atleta, mobilidade: Number(e.target.value) })} 
 1030 |                         style={{ width: '100%' }}
 1031 |                       />
-1032 |                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#8a8d94' }}>
+1032 |                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#8a8d94', marginTop: '5px' }}>
 1033 |                         <span>Encurtado (50%)</span>
-1034 |                         <span>Flexibilidade Perfeita (100%)</span>
+1034 |                         <span>Perfeita (100%)</span>
 1035 |                       </div>
 1036 |                     </div>
 1037 |                   </div>
