@@ -947,541 +947,549 @@ CONTEÚDO DOS ARQUIVOS
  626 |             </label>
  627 |           </div>
  628 | 
- 629 |           <div className="grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
- 630 |             <div className="form-group"><label>Estatura (m)</label><input type="number" step="0.01" value={onboardForm.estatura} onChange={e => setOnboardForm({...onboardForm, estatura: Number(e.target.value)})} /></div>
- 631 |             <div className="form-group"><label>Peso (kg)</label><input type="number" step="0.1" value={onboardForm.peso} onChange={e => setOnboardForm({...onboardForm, peso: Number(e.target.value)})} /></div>
- 632 |             <div className="form-group"><label>Sexo Biológico</label><select value={onboardForm.sexo} onChange={e => setOnboardForm({...onboardForm, sexo: e.target.value as 'M'|'F'})}><option value="M">Masculino</option><option value="F">Feminino</option></select></div>
- 633 |             <div className="form-group"><label>Nível</label><select value={onboardForm.nivel_tecnico} onChange={e => setOnboardForm({...onboardForm, nivel_tecnico: e.target.value})}><option value="iniciante">Iniciante</option><option value="intermediario">Intermediário</option><option value="avancado">Avançado</option></select></div>
- 634 |             <div className="form-group"><label>Envergadura (m)</label><input type="number" step="0.01" value={onboardForm.envergadura} onChange={e => setOnboardForm({...onboardForm, envergadura: Number(e.target.value)})} /></div>
- 635 |             <div className="form-group"><label>Alt. Perna (m)</label><input type="number" step="0.01" value={onboardForm.perna} onChange={e => setOnboardForm({...onboardForm, perna: Number(e.target.value)})} /></div>
- 636 |             <div className="form-group"><label>% BF</label><input type="number" value={onboardForm.bf} onChange={e => setOnboardForm({...onboardForm, bf: Number(e.target.value)})} /></div>
- 637 |           </div>
- 638 | 
- 639 |           <button onClick={saveOnboardingProfile} style={{ marginTop: '20px', width: '100%', fontSize: '1.2rem', padding: '15px' }}>Salvar Perfil e Entrar</button>
- 640 |         </div>
- 641 |       </div>
- 642 |     );
- 643 |   }
- 644 | 
- 645 |   return (
- 646 |     <div className="container" style={{ padding: 0, maxWidth: '1200px', margin: '0 auto' }}> 
- 647 |       
- 648 |       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 24px', backgroundColor: 'var(--bg-dark, #0a0a0a)', borderBottom: '1px solid var(--line-silver, #26272b)', marginBottom: '24px' }}>
- 649 |         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
- 650 |           <img src="/favicon.png" alt="Símbolo DynaWOD" style={{ height: '40px', objectFit: 'contain' }} />
- 651 |           <img src="/dynawod-texto.png" alt="DynaWOD Tipografia" style={{ height: '28px', objectFit: 'contain' }} />
- 652 |         </div>
- 653 | 
- 654 |         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
- 655 |           <div style={{ fontSize: '14px', color: 'var(--text-muted, #8a8d94)', fontWeight: 600 }}>
- 656 |             Olá, <span style={{ color: '#fff' }}>{userProfile?.is_coach ? <Trophy size={"1.2em"} color="var(--dyna-red)" /> : <Dumbbell size={"1.2em"} color="var(--line-silver)" />} {userProfile?.apelido || userProfile?.full_name}</span>
- 657 |           </div>
- 658 |           {userProfile?.is_coach && (
- 659 |             <select value={selectedAthleteId} onChange={e => handleAthleteChange(e.target.value)} style={{ background: 'var(--bg-card, #181a1e)', border: '1px solid var(--line-silver, #26272b)', color: '#fff', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer' }}>
- 660 |               <option value="me">Meu Desempenho</option>
- 661 |               <optgroup label="Meus Alunos">{myAthletes.map(a => <option key={a.id} value={a.id}>{a.full_name}</option>)}</optgroup>
- 662 |             </select>
- 663 |           )}
- 664 |           <button onClick={signOut} style={{ width: 'auto', backgroundColor: 'var(--dyna-burgundy, #7A0F1B)', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer', fontWeight: 'bold' }}><LogOut size={"1.2em"} /> Sair</button>
- 665 |         </div>
- 666 |       </header>
- 667 | 
- 668 |       <div style={{ padding: '0 24px' }}>
- 669 |         
- 670 |         <div className="tabs">
- 671 |           <button className={`tab-btn ${activeTab === 'prescricao' ? 'active' : ''}`} onClick={() => setActiveTab('prescricao')}>1. Lousa</button>
- 672 |           <button className={`tab-btn ${activeTab === 'analise' ? 'active' : ''}`} onClick={() => setActiveTab('analise')}>2. Análise</button>
- 673 |           <button className={`tab-btn ${activeTab === 'atleta' ? 'active' : ''}`} onClick={() => setActiveTab('atleta')}>3. Atleta</button>
- 674 |           <button className={`tab-btn ${activeTab === 'historico' ? 'active' : ''}`} onClick={() => setActiveTab('historico')}>4. Histórico</button>
- 675 |         </div>
- 676 | 
- 677 |         {activeTab === 'prescricao' && (
- 678 |           <div className="panel">
- 679 |             <h2>Estrutura do Treino</h2>
- 680 |             <div className="grid" style={{ gridTemplateColumns: '1fr 1fr 1fr', marginBottom: '10px', gap: '15px' }}>
- 681 |               <div className="form-group" style={{ marginBottom: '15px' }}>
- 682 |                 <label>Nome do Treino (Opcional)</label>
- 683 |                 <input type="text" value={nomeTreino} onChange={e => setNomeTreino(e.target.value)} placeholder="Ex: Murph, Fran, Open 24.1..." />
- 684 |               </div>
- 685 |               <div className="form-group" style={{ marginBottom: 0 }}>
- 686 |                 <label>Modalidade</label>
- 687 |                 <select value={tipoTreino} onChange={e => setTipoTreino(e.target.value as Modalidade)}>
- 688 |                   <option value="FOR_TIME">For Time</option>
- 689 |                   <option value="AMRAP">AMRAP</option>
- 690 |                   <option value="EMOM">EMOM</option>
- 691 |                 </select>
- 692 |               </div>
- 693 |               <div className="form-group" style={{ marginBottom: 0 }}>
- 694 |                 <label>{tipoTreino === 'FOR_TIME' ? 'Time Cap (mm:ss)' : 'Tempo Total'}</label>
- 695 |                 <input type="text" value={tempoAlvo} onChange={e => setTempoAlvo(e.target.value)} placeholder="Ex: 10:00" />
+ 629 |           <p style={{ color: '#ff9800', fontSize: '0.85rem', marginBottom: '15px', backgroundColor: '#332b00', padding: '10px', borderRadius: '4px', borderLeft: '3px solid #ff9800' }}>
+ 630 |             ⚠️ <strong>Atenção:</strong> Preencha as medidas de comprimento em <strong>metros</strong> (use ponto). Ex: <strong>1.75</strong>, e não 175.
+ 631 |           </p>
+ 632 | 
+ 633 |           <div className="grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
+ 634 |             <div className="form-group"><label>Estatura (m)</label><input type="number" step="0.01" placeholder="Ex: 1.75" value={onboardForm.estatura || ''} onChange={e => setOnboardForm({...onboardForm, estatura: e.target.value as unknown as number})} /></div>
+ 635 |             <div className="form-group"><label>Peso (kg)</label><input type="number" step="0.1" placeholder="Ex: 80.5" value={onboardForm.peso || ''} onChange={e => setOnboardForm({...onboardForm, peso: e.target.value as unknown as number})} /></div>
+ 636 |             <div className="form-group"><label>Sexo Biológico</label><select value={onboardForm.sexo} onChange={e => setOnboardForm({...onboardForm, sexo: e.target.value as 'M'|'F'})}><option value="M">Masculino</option><option value="F">Feminino</option></select></div>
+ 637 |             <div className="form-group"><label>Nível</label><select value={onboardForm.nivel_tecnico} onChange={e => setOnboardForm({...onboardForm, nivel_tecnico: e.target.value})}><option value="iniciante">Iniciante</option><option value="intermediario">Intermediário</option><option value="avancado">Avançado</option></select></div>
+ 638 |             <div className="form-group"><label>Envergadura (m)</label><input type="number" step="0.01" placeholder="Ex: 1.75" value={onboardForm.envergadura || ''} onChange={e => setOnboardForm({...onboardForm, envergadura: e.target.value as unknown as number})} /></div>
+ 639 |             <div className="form-group"><label>Alt. Perna (m)</label><input type="number" step="0.01" placeholder="Ex: 0.85" value={onboardForm.perna || ''} onChange={e => setOnboardForm({...onboardForm, perna: e.target.value as unknown as number})} /></div>
+ 640 |             <div className="form-group"><label>% BF</label><input type="number" placeholder="Ex: 15" value={onboardForm.bf || ''} onChange={e => setOnboardForm({...onboardForm, bf: e.target.value as unknown as number})} /></div>
+ 641 |           </div>
+ 642 | 
+ 643 |           <button onClick={saveOnboardingProfile} style={{ marginTop: '20px', width: '100%', fontSize: '1.2rem', padding: '15px' }}>Salvar Perfil e Entrar</button>
+ 644 |         </div>
+ 645 |       </div>
+ 646 |     );
+ 647 |   }
+ 648 | 
+ 649 |   return (
+ 650 |     <div className="container" style={{ padding: 0, maxWidth: '1200px', margin: '0 auto' }}> 
+ 651 |       
+ 652 |       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 24px', backgroundColor: 'var(--bg-dark, #0a0a0a)', borderBottom: '1px solid var(--line-silver, #26272b)', marginBottom: '24px' }}>
+ 653 |         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+ 654 |           <img src="/favicon.png" alt="Símbolo DynaWOD" style={{ height: '40px', objectFit: 'contain' }} />
+ 655 |           <img src="/dynawod-texto.png" alt="DynaWOD Tipografia" style={{ height: '28px', objectFit: 'contain' }} />
+ 656 |         </div>
+ 657 | 
+ 658 |         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+ 659 |           <div style={{ fontSize: '14px', color: 'var(--text-muted, #8a8d94)', fontWeight: 600 }}>
+ 660 |             Olá, <span style={{ color: '#fff' }}>{userProfile?.is_coach ? <Trophy size={"1.2em"} color="var(--dyna-red)" /> : <Dumbbell size={"1.2em"} color="var(--line-silver)" />} {userProfile?.apelido || userProfile?.full_name}</span>
+ 661 |           </div>
+ 662 |           {userProfile?.is_coach && (
+ 663 |             <select value={selectedAthleteId} onChange={e => handleAthleteChange(e.target.value)} style={{ background: 'var(--bg-card, #181a1e)', border: '1px solid var(--line-silver, #26272b)', color: '#fff', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer' }}>
+ 664 |               <option value="me">Meu Desempenho</option>
+ 665 |               <optgroup label="Meus Alunos">{myAthletes.map(a => <option key={a.id} value={a.id}>{a.full_name}</option>)}</optgroup>
+ 666 |             </select>
+ 667 |           )}
+ 668 |           <button onClick={signOut} style={{ width: 'auto', backgroundColor: 'var(--dyna-burgundy, #7A0F1B)', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer', fontWeight: 'bold' }}><LogOut size={"1.2em"} /> Sair</button>
+ 669 |         </div>
+ 670 |       </header>
+ 671 | 
+ 672 |       <div style={{ padding: '0 24px' }}>
+ 673 |         
+ 674 |         <div className="tabs">
+ 675 |           <button className={`tab-btn ${activeTab === 'prescricao' ? 'active' : ''}`} onClick={() => setActiveTab('prescricao')}>1. Lousa</button>
+ 676 |           <button className={`tab-btn ${activeTab === 'analise' ? 'active' : ''}`} onClick={() => setActiveTab('analise')}>2. Análise</button>
+ 677 |           <button className={`tab-btn ${activeTab === 'atleta' ? 'active' : ''}`} onClick={() => setActiveTab('atleta')}>3. Atleta</button>
+ 678 |           <button className={`tab-btn ${activeTab === 'historico' ? 'active' : ''}`} onClick={() => setActiveTab('historico')}>4. Histórico</button>
+ 679 |         </div>
+ 680 | 
+ 681 |         {activeTab === 'prescricao' && (
+ 682 |           <div className="panel">
+ 683 |             <h2>Estrutura do Treino</h2>
+ 684 |             <div className="grid" style={{ gridTemplateColumns: '1fr 1fr 1fr', marginBottom: '10px', gap: '15px' }}>
+ 685 |               <div className="form-group" style={{ marginBottom: '15px' }}>
+ 686 |                 <label>Nome do Treino (Opcional)</label>
+ 687 |                 <input type="text" value={nomeTreino} onChange={e => setNomeTreino(e.target.value)} placeholder="Ex: Murph, Fran, Open 24.1..." />
+ 688 |               </div>
+ 689 |               <div className="form-group" style={{ marginBottom: 0 }}>
+ 690 |                 <label>Modalidade</label>
+ 691 |                 <select value={tipoTreino} onChange={e => setTipoTreino(e.target.value as Modalidade)}>
+ 692 |                   <option value="FOR_TIME">For Time</option>
+ 693 |                   <option value="AMRAP">AMRAP</option>
+ 694 |                   <option value="EMOM">EMOM</option>
+ 695 |                 </select>
  696 |               </div>
  697 |               <div className="form-group" style={{ marginBottom: 0 }}>
- 698 |                 <label>Rounds Prescritos</label>
- 699 |                 <input type="number" value={roundsPrescritos} onChange={e => setRoundsPrescritos(Number(e.target.value))} />
+ 698 |                 <label>{tipoTreino === 'FOR_TIME' ? 'Time Cap (mm:ss)' : 'Tempo Total'}</label>
+ 699 |                 <input type="text" value={tempoAlvo} onChange={e => setTempoAlvo(e.target.value)} placeholder="Ex: 10:00" />
  700 |               </div>
- 701 |             </div>
- 702 | 
- 703 |             <hr style={{ borderColor: 'var(--line-silver, #26272b)', margin: '25px 0' }} />
- 704 | 
- 705 |             <h2>Quadro de Movimentos</h2>
- 706 |             <button className="btn-add" onClick={() => addMovimento()} style={{ backgroundColor: 'transparent', color: 'var(--dyna-red, #FF2B3D)', border: '1px dashed var(--dyna-red, #FF2B3D)', padding: '10px 15px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', width: '100%', marginBottom: '15px' }}>+ Adicionar Exercício</button>
- 707 |             
- 708 |             <div className="wod-list">
- 709 |               {lousa.map((item, index) => {
- 710 |                 const cfg = movimentosDB[item.movId] || movimentosDB['pushup'];
- 711 |                 return (
- 712 |                   <div 
- 713 |                     key={item.originalId} 
- 714 |                     className="wod-item"
- 715 |                     draggable
- 716 |                     onDragStart={(e) => {
- 717 |                       handleDragStart(index);
- 718 |                       e.currentTarget.style.opacity = '0.5';
- 719 |                     }}
- 720 |                     onDragEnter={() => handleDragEnter(index)}
- 721 |                     onDragEnd={handleDragEnd}
- 722 |                     onDragOver={(e) => e.preventDefault()}
- 723 |                   >
- 724 |                     {/* Pegador Lateral (Drag Handle) */}
- 725 |                     <div className="drag-handle">
- 726 |                       <svg width="10" height="20" viewBox="0 0 8 20" fill="currentColor">
- 727 |                         <circle cx="2" cy="2" r="1.5"/><circle cx="6" cy="2" r="1.5"/>
- 728 |                         <circle cx="2" cy="10" r="1.5"/><circle cx="6" cy="10" r="1.5"/>
- 729 |                         <circle cx="2" cy="18" r="1.5"/><circle cx="6" cy="18" r="1.5"/>
- 730 |                       </svg>
- 731 |                     </div>
- 732 | 
- 733 |                     <div>
- 734 |                       <label>Fase</label>
- 735 |                       <select value={item.phase} onChange={e => updateMovimento(item.originalId, 'phase', e.target.value)}>
- 736 |                         <option value="buyin">Buy-in</option>
- 737 |                         <option value="round">WOD</option>
- 738 |                         <option value="cashout">Cash-out</option>
- 739 |                       </select>
- 740 |                       <div style={{ marginTop: '5px' }}>
- 741 |                         <SearchableMovementSelect 
- 742 |                           value={item.movId} 
- 743 |                           onChange={(newId) => updateMovimento(item.originalId, 'movId', newId)} 
- 744 |                           movimentosDB={movimentosDB} 
- 745 |                         />
- 746 |                       </div>
- 747 |                     </div>
- 748 |                     
- 749 |                     <div>
- 750 |                       <label>Reps/Mts</label>
- 751 |                       <input type="number" value={item.reps} onChange={e => updateMovimento(item.originalId, 'reps', Number(e.target.value))} />
- 752 |                     </div>
- 753 |                     
- 754 |                     <div>
- 755 |                       <label>Carga/Téc.</label>
- 756 |                       <div style={{ display: 'flex', gap: '5px' }}>
- 757 |                         <input type="number" disabled={!cfg.usaCarga} value={item.carga} onChange={e => updateMovimento(item.originalId, 'carga', Number(e.target.value))} />
- 758 |                         <select value={item.tecnica} onChange={e => updateMovimento(item.originalId, 'tecnica', e.target.value)}>
- 759 |                           <option value="tng">T&G</option>
- 760 |                           <option value="drop">Drop</option>
- 761 |                         </select>
- 762 |                       </div>
- 763 |                     </div>
- 764 |                     
- 765 |                     <div>
- 766 |                       <div style={{ display: 'flex', gap: '5px' }}>
- 767 |                         <div style={{ flex: 1 }}>
- 768 |                           <label>{cfg.paramExtra ? cfg.paramExtra.label : 'Param.'}</label>
- 769 |                           <input type="text" disabled={!cfg.paramExtra} value={item.extraVal || ''} onChange={e => updateMovimento(item.originalId, 'extraVal', e.target.value)} />
- 770 |                         </div>
- 771 |                         {cfg.paramExtra2 && (
- 772 |                           <div style={{ flex: 1 }}>
- 773 |                             <label>{cfg.paramExtra2.label}</label>
- 774 |                             <select value={item.extraVal2 || cfg.paramExtra2.val} onChange={e => updateMovimento(item.originalId, 'extraVal2', e.target.value)}>
- 775 |                               {cfg.paramExtra2.options?.map(opt => (
- 776 |                                 <option key={opt.value} value={opt.value}>{opt.label}</option>
- 777 |                               ))}
- 778 |                             </select>
- 779 |                           </div>
- 780 |                         )}
- 781 |                       </div>
- 782 |                     </div>
- 783 |                     
- 784 |                     <div className="actions-col">
- 785 |                       <button className="btn-action" onClick={() => addMovimento(item.originalId)} title="Duplicar">
- 786 |                         <Copy size={"1.2em"} color="var(--line-silver)" />
- 787 |                       </button>
- 788 |                       <button className="btn-remove" onClick={() => removeMovimento(item.originalId)}><X size={"1.2em"} /></button>
- 789 |                     </div>
- 790 |                   </div>
- 791 |                 );
- 792 |               })}
- 793 |             </div>
- 794 | 
- 795 |             <hr style={{ borderColor: 'var(--line-silver, #26272b)', margin: '25px 0' }} />
- 796 |             
- 797 |             <h2>Gerenciar WOD</h2>
- 798 |             {currentShortCode && (
- 799 |               <p style={{ color: 'var(--text-muted, #8a8d94)', fontSize: '0.9rem', marginBottom: '15px' }}>
- 800 |                 Código deste treino: <strong style={{ color: '#fff', letterSpacing: '2px' }}>{currentShortCode}</strong>
- 801 |               </p>
- 802 |             )}
- 803 |             
- 804 |               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
- 805 |                 <button onClick={importarWod} style={{ flex: '1 1 140px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '1rem', backgroundColor: 'var(--bg-card, #181a1e)', color: '#fff', border: '1px solid var(--line-silver, #26272b)' }}>
- 806 |                   <Download size={22} style={{ flexShrink: 0 }} /> 
- 807 |                   <span>Importar</span>
- 808 |                 </button>
- 809 |                 <button onClick={compartilharWod} style={{ flex: '1 1 140px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '1rem', backgroundColor: 'var(--dyna-burgundy, #7A0F1B)', color: '#fff', border: 'none', fontWeight: '600' }}>
- 810 |                   <Share2 size={22} style={{ flexShrink: 0 }} /> 
- 811 |                   <span>Copiar</span>
+ 701 |               <div className="form-group" style={{ marginBottom: 0 }}>
+ 702 |                 <label>Rounds Prescritos</label>
+ 703 |                 <input type="number" value={roundsPrescritos} onChange={e => setRoundsPrescritos(Number(e.target.value))} />
+ 704 |               </div>
+ 705 |             </div>
+ 706 | 
+ 707 |             <hr style={{ borderColor: 'var(--line-silver, #26272b)', margin: '25px 0' }} />
+ 708 | 
+ 709 |             <h2>Quadro de Movimentos</h2>
+ 710 |             <button className="btn-add" onClick={() => addMovimento()} style={{ backgroundColor: 'transparent', color: 'var(--dyna-red, #FF2B3D)', border: '1px dashed var(--dyna-red, #FF2B3D)', padding: '10px 15px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', width: '100%', marginBottom: '15px' }}>+ Adicionar Exercício</button>
+ 711 |             
+ 712 |             <div className="wod-list">
+ 713 |               {lousa.map((item, index) => {
+ 714 |                 const cfg = movimentosDB[item.movId] || movimentosDB['pushup'];
+ 715 |                 return (
+ 716 |                   <div 
+ 717 |                     key={item.originalId} 
+ 718 |                     className="wod-item"
+ 719 |                     draggable
+ 720 |                     onDragStart={(e) => {
+ 721 |                       handleDragStart(index);
+ 722 |                       e.currentTarget.style.opacity = '0.5';
+ 723 |                     }}
+ 724 |                     onDragEnter={() => handleDragEnter(index)}
+ 725 |                     onDragEnd={handleDragEnd}
+ 726 |                     onDragOver={(e) => e.preventDefault()}
+ 727 |                   >
+ 728 |                     {/* Pegador Lateral (Drag Handle) */}
+ 729 |                     <div className="drag-handle">
+ 730 |                       <svg width="10" height="20" viewBox="0 0 8 20" fill="currentColor">
+ 731 |                         <circle cx="2" cy="2" r="1.5"/><circle cx="6" cy="2" r="1.5"/>
+ 732 |                         <circle cx="2" cy="10" r="1.5"/><circle cx="6" cy="10" r="1.5"/>
+ 733 |                         <circle cx="2" cy="18" r="1.5"/><circle cx="6" cy="18" r="1.5"/>
+ 734 |                       </svg>
+ 735 |                     </div>
+ 736 | 
+ 737 |                     <div>
+ 738 |                       <label>Fase</label>
+ 739 |                       <select value={item.phase} onChange={e => updateMovimento(item.originalId, 'phase', e.target.value)}>
+ 740 |                         <option value="buyin">Buy-in</option>
+ 741 |                         <option value="round">WOD</option>
+ 742 |                         <option value="cashout">Cash-out</option>
+ 743 |                       </select>
+ 744 |                       <div style={{ marginTop: '5px' }}>
+ 745 |                         <SearchableMovementSelect 
+ 746 |                           value={item.movId} 
+ 747 |                           onChange={(newId) => updateMovimento(item.originalId, 'movId', newId)} 
+ 748 |                           movimentosDB={movimentosDB} 
+ 749 |                         />
+ 750 |                       </div>
+ 751 |                     </div>
+ 752 |                     
+ 753 |                     <div>
+ 754 |                       <label>Reps/Mts</label>
+ 755 |                       <input type="number" value={item.reps} onChange={e => updateMovimento(item.originalId, 'reps', Number(e.target.value))} />
+ 756 |                     </div>
+ 757 |                     
+ 758 |                     <div>
+ 759 |                       <label>Carga/Téc.</label>
+ 760 |                       <div style={{ display: 'flex', gap: '5px' }}>
+ 761 |                         <input type="number" disabled={!cfg.usaCarga} value={item.carga} onChange={e => updateMovimento(item.originalId, 'carga', Number(e.target.value))} />
+ 762 |                         <select value={item.tecnica} onChange={e => updateMovimento(item.originalId, 'tecnica', e.target.value)}>
+ 763 |                           <option value="tng">T&G</option>
+ 764 |                           <option value="drop">Drop</option>
+ 765 |                         </select>
+ 766 |                       </div>
+ 767 |                     </div>
+ 768 |                     
+ 769 |                     <div>
+ 770 |                       <div style={{ display: 'flex', gap: '5px' }}>
+ 771 |                         <div style={{ flex: 1 }}>
+ 772 |                           <label>{cfg.paramExtra ? cfg.paramExtra.label : 'Param.'}</label>
+ 773 |                           <input type="text" disabled={!cfg.paramExtra} value={item.extraVal || ''} onChange={e => updateMovimento(item.originalId, 'extraVal', e.target.value)} />
+ 774 |                         </div>
+ 775 |                         {cfg.paramExtra2 && (
+ 776 |                           <div style={{ flex: 1 }}>
+ 777 |                             <label>{cfg.paramExtra2.label}</label>
+ 778 |                             <select value={item.extraVal2 || cfg.paramExtra2.val} onChange={e => updateMovimento(item.originalId, 'extraVal2', e.target.value)}>
+ 779 |                               {cfg.paramExtra2.options?.map(opt => (
+ 780 |                                 <option key={opt.value} value={opt.value}>{opt.label}</option>
+ 781 |                               ))}
+ 782 |                             </select>
+ 783 |                           </div>
+ 784 |                         )}
+ 785 |                       </div>
+ 786 |                     </div>
+ 787 |                     
+ 788 |                     <div className="actions-col">
+ 789 |                       <button className="btn-action" onClick={() => addMovimento(item.originalId)} title="Duplicar">
+ 790 |                         <Copy size={"1.2em"} color="var(--line-silver)" />
+ 791 |                       </button>
+ 792 |                       <button className="btn-remove" onClick={() => removeMovimento(item.originalId)}><X size={"1.2em"} /></button>
+ 793 |                     </div>
+ 794 |                   </div>
+ 795 |                 );
+ 796 |               })}
+ 797 |             </div>
+ 798 | 
+ 799 |             <hr style={{ borderColor: 'var(--line-silver, #26272b)', margin: '25px 0' }} />
+ 800 |             
+ 801 |             <h2>Gerenciar WOD</h2>
+ 802 |             {currentShortCode && (
+ 803 |               <p style={{ color: 'var(--text-muted, #8a8d94)', fontSize: '0.9rem', marginBottom: '15px' }}>
+ 804 |                 Código deste treino: <strong style={{ color: '#fff', letterSpacing: '2px' }}>{currentShortCode}</strong>
+ 805 |               </p>
+ 806 |             )}
+ 807 |             
+ 808 |               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+ 809 |                 <button onClick={importarWod} style={{ flex: '1 1 140px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '1rem', backgroundColor: 'var(--bg-card, #181a1e)', color: '#fff', border: '1px solid var(--line-silver, #26272b)' }}>
+ 810 |                   <Download size={22} style={{ flexShrink: 0 }} /> 
+ 811 |                   <span>Importar</span>
  812 |                 </button>
- 813 |                 {currentTemplateId && (
- 814 |                   <button onClick={clonarWod} style={{ flex: '1 1 140px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '1rem', backgroundColor: '#3b82f6', color: '#fff', border: 'none', fontWeight: 'bold' }}>
- 815 |                     <Copy size={22} style={{ flexShrink: 0 }} /> 
- 816 |                     <span>Duplicar</span>
- 817 |                   </button>
- 818 |                 )}
- 819 |                 <button onClick={() => salvarNoSupabase(false)} style={{ flex: '1 1 140px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '1rem', backgroundColor: 'var(--dyna-red, #FF2B3D)', color: '#fff', border: 'none', fontWeight: 'bold' }}>
- 820 |                   <Save size={22} style={{ flexShrink: 0 }} /> 
- 821 |                   <span>{currentTemplateId ? 'Atualizar WOD' : 'Salvar WOD'}</span>
- 822 |                 </button>
- 823 |               </div>
- 824 |           </div>
- 825 |         )}
- 826 | 
- 827 |         {activeTab === 'analise' && (
- 828 |           <div className="panel">
- 829 |             <div style={{ backgroundColor: 'var(--bg-card, #181a1e)', padding: '20px', borderRadius: '8px', borderLeft: '4px solid var(--dyna-red, #FF2B3D)', marginBottom: '25px' }}>
- 830 |               <h2 style={{ margin: '0 0 10px 0', fontSize: '1.2rem' }}>Score (Resultado Real)</h2>
- 831 |               <p style={{ margin: '0 0 15px 0', fontSize: '0.85rem', color: 'var(--text-muted, #8a8d94)' }}>Insira o resultado alcançado para calcular a potência gerada.</p>
- 832 |               <div className="form-group" style={{ marginBottom: 0 }}>
- 833 |                 <label>{tipoTreino === 'FOR_TIME' ? 'Tempo Real Efetivado (mm:ss)' : 'Rounds Reais Completados'}</label>
- 834 |                 {tipoTreino === 'FOR_TIME' ? (
- 835 |                   <input type="text" value={tempoReal} onChange={e => setTempoReal(e.target.value)} placeholder="Ex: 12:30" style={{ maxWidth: '250px', fontSize: '1.1rem' }} />
- 836 |                 ) : (
- 837 |                   <input type="number" step="0.1" value={roundsReal} onChange={e => setRoundsReal(Number(e.target.value))} style={{ maxWidth: '250px', fontSize: '1.1rem' }} />
- 838 |                 )}
- 839 |               </div>
- 840 |               <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
- 841 |                 <input 
- 842 |                   type="checkbox" 
- 843 |                   id="checkbox-scaled"
- 844 |                   checked={isScaled}
- 845 |                   onChange={(e) => setIsScaled(e.target.checked)}
- 846 |                   style={{ width: '18px', height: '18px' }}
- 847 |                 />
- 848 |                 <label htmlFor="checkbox-scaled" style={{ color: '#fff', fontSize: '14px' }}>
- 849 |                   Marcar como Scaled (Treino Adaptado)
- 850 |                 </label>
- 851 |               </div>
- 852 |             </div>
- 853 | 
- 854 |             <h2>Timeline Expandida</h2>
- 855 |             <div className="wod-list">
- 856 |               {(() => {
- 857 |                 let rTimeline = (tipoTreino === 'FOR_TIME') ? roundsPrescritos : Math.ceil(roundsReal);
- 858 |                 if (rTimeline < 1) rTimeline = 1;
- 859 |                 const rows: any[] = [];
- 860 |                 const renderRow = (m: ItemLousa, badgeClass: string, badgeText: string, rIdx: number) => {
- 861 |                   const rowId = `${m.originalId}-R${rIdx}`;
- 862 |                   const cfg = movimentosDB[m.movId];
- 863 |                   const st = timelineState[rowId] || { reps: m.reps, start: '', end: '' };
- 864 |                   
- 865 |                   rows.push(
- 866 |                     <div key={rowId} className="wod-item-analise">
- 867 |                       <div className={`badge-round ${badgeClass}`}>{badgeText}</div>
- 868 |                       <div>
- 869 |                         <div style={{ fontWeight: 'bold' }}>{cfg ? cfg.nome : m.movId}</div>
- 870 |                         <div style={{ fontSize: '0.75rem', color: '#aaa' }}>
- 871 |                           RX: {m.carga > 0 ? `${m.carga}kg` : '--'} {m.extraVal ? `| ${m.extraVal}` : ''}
- 872 |                         </div>
- 873 |                       </div>
- 874 |                       <div><label>Reps</label><input type="number" value={st.reps !== undefined ? st.reps : m.reps} onChange={e => handleTimelineChange(rowId, 'reps', e.target.value === '' ? '' : Number(e.target.value))} /></div>
- 875 |                       
- 876 |                       <div>
- 877 |                         <label>Carga Real</label>
- 878 |                         <input 
- 879 |                           type="number" 
- 880 |                           value={st.carga !== undefined ? st.carga : m.carga} 
- 881 |                           onChange={e => handleTimelineChange(rowId, 'carga', e.target.value === '' ? '' : Number(e.target.value))}
- 882 |                           disabled={!(cfg?.usaCarga)}
- 883 |                           style={{ border: isScaled && (st.carga !== undefined ? st.carga : m.carga) < m.carga ? '1px solid var(--dyna-red, #FF2B3D)' : '' }}
- 884 |                         />
- 885 |                       </div>
- 886 | 
- 887 |                       <div><label>Início</label><input type="text" placeholder="mm:ss" value={st.start || ''} onChange={e => handleTimelineChange(rowId, 'start', e.target.value)} /></div>
- 888 |                       <div><label>Fim</label><input type="text" placeholder="mm:ss" value={st.end || ''} onChange={e => handleTimelineChange(rowId, 'end', e.target.value)} /></div>
- 889 |                     </div>
- 890 |                   );
- 891 |                 };
- 892 |                 lousa.filter(m => m.phase === 'buyin').forEach(m => renderRow(m, 'badge-buyin', 'Buy-in', 0));
- 893 |                 for (let r = 1; r <= rTimeline; r++) lousa.filter(m => m.phase === 'round').forEach(m => renderRow(m, '', `R ${r}`, r));
- 894 |                 lousa.filter(m => m.phase === 'cashout').forEach(m => renderRow(m, 'badge-cashout', 'Cash-out', 99));
- 895 |                 return rows;
- 896 |               })()}
- 897 |             </div>
- 898 | 
- 899 |             <button onClick={processarWOD} style={{ fontSize: '1.1rem', padding: '15px', backgroundColor: 'var(--dyna-red, #FF2B3D)', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', width: '100%', cursor: 'pointer', marginBottom: '20px', marginTop: '10px' }}>
- 900 |               ⚡ Processar Dinâmica e Termodinâmica
- 901 |             </button>
+ 813 |                 <button onClick={compartilharWod} style={{ flex: '1 1 140px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '1rem', backgroundColor: 'var(--dyna-burgundy, #7A0F1B)', color: '#fff', border: 'none', fontWeight: '600' }}>
+ 814 |                   <Share2 size={22} style={{ flexShrink: 0 }} /> 
+ 815 |                   <span>Copiar</span>
+ 816 |                 </button>
+ 817 |                 {currentTemplateId && (
+ 818 |                   <button onClick={clonarWod} style={{ flex: '1 1 140px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '1rem', backgroundColor: '#3b82f6', color: '#fff', border: 'none', fontWeight: 'bold' }}>
+ 819 |                     <Copy size={22} style={{ flexShrink: 0 }} /> 
+ 820 |                     <span>Duplicar</span>
+ 821 |                   </button>
+ 822 |                 )}
+ 823 |                 <button onClick={() => salvarNoSupabase(false)} style={{ flex: '1 1 140px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '1rem', backgroundColor: 'var(--dyna-red, #FF2B3D)', color: '#fff', border: 'none', fontWeight: 'bold' }}>
+ 824 |                   <Save size={22} style={{ flexShrink: 0 }} /> 
+ 825 |                   <span>{currentTemplateId ? 'Atualizar WOD' : 'Salvar WOD'}</span>
+ 826 |                 </button>
+ 827 |               </div>
+ 828 |           </div>
+ 829 |         )}
+ 830 | 
+ 831 |         {activeTab === 'analise' && (
+ 832 |           <div className="panel">
+ 833 |             <div style={{ backgroundColor: 'var(--bg-card, #181a1e)', padding: '20px', borderRadius: '8px', borderLeft: '4px solid var(--dyna-red, #FF2B3D)', marginBottom: '25px' }}>
+ 834 |               <h2 style={{ margin: '0 0 10px 0', fontSize: '1.2rem' }}>Score (Resultado Real)</h2>
+ 835 |               <p style={{ margin: '0 0 15px 0', fontSize: '0.85rem', color: 'var(--text-muted, #8a8d94)' }}>Insira o resultado alcançado para calcular a potência gerada.</p>
+ 836 |               <div className="form-group" style={{ marginBottom: 0 }}>
+ 837 |                 <label>{tipoTreino === 'FOR_TIME' ? 'Tempo Real Efetivado (mm:ss)' : 'Rounds Reais Completados'}</label>
+ 838 |                 {tipoTreino === 'FOR_TIME' ? (
+ 839 |                   <input type="text" value={tempoReal} onChange={e => setTempoReal(e.target.value)} placeholder="Ex: 12:30" style={{ maxWidth: '250px', fontSize: '1.1rem' }} />
+ 840 |                 ) : (
+ 841 |                   <input type="number" step="0.1" value={roundsReal} onChange={e => setRoundsReal(Number(e.target.value))} style={{ maxWidth: '250px', fontSize: '1.1rem' }} />
+ 842 |                 )}
+ 843 |               </div>
+ 844 |               <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+ 845 |                 <input 
+ 846 |                   type="checkbox" 
+ 847 |                   id="checkbox-scaled"
+ 848 |                   checked={isScaled}
+ 849 |                   onChange={(e) => setIsScaled(e.target.checked)}
+ 850 |                   style={{ width: '18px', height: '18px' }}
+ 851 |                 />
+ 852 |                 <label htmlFor="checkbox-scaled" style={{ color: '#fff', fontSize: '14px' }}>
+ 853 |                   Marcar como Scaled (Treino Adaptado)
+ 854 |                 </label>
+ 855 |               </div>
+ 856 |             </div>
+ 857 | 
+ 858 |             <h2>Timeline Expandida</h2>
+ 859 |             <div className="wod-list">
+ 860 |               {(() => {
+ 861 |                 let rTimeline = (tipoTreino === 'FOR_TIME') ? roundsPrescritos : Math.ceil(roundsReal);
+ 862 |                 if (rTimeline < 1) rTimeline = 1;
+ 863 |                 const rows: any[] = [];
+ 864 |                 const renderRow = (m: ItemLousa, badgeClass: string, badgeText: string, rIdx: number) => {
+ 865 |                   const rowId = `${m.originalId}-R${rIdx}`;
+ 866 |                   const cfg = movimentosDB[m.movId];
+ 867 |                   const st = timelineState[rowId] || { reps: m.reps, start: '', end: '' };
+ 868 |                   
+ 869 |                   rows.push(
+ 870 |                     <div key={rowId} className="wod-item-analise">
+ 871 |                       <div className={`badge-round ${badgeClass}`}>{badgeText}</div>
+ 872 |                       <div>
+ 873 |                         <div style={{ fontWeight: 'bold' }}>{cfg ? cfg.nome : m.movId}</div>
+ 874 |                         <div style={{ fontSize: '0.75rem', color: '#aaa' }}>
+ 875 |                           RX: {m.carga > 0 ? `${m.carga}kg` : '--'} {m.extraVal ? `| ${m.extraVal}` : ''}
+ 876 |                         </div>
+ 877 |                       </div>
+ 878 |                       <div><label>Reps</label><input type="number" value={st.reps !== undefined ? st.reps : m.reps} onChange={e => handleTimelineChange(rowId, 'reps', e.target.value === '' ? '' : Number(e.target.value))} /></div>
+ 879 |                       
+ 880 |                       <div>
+ 881 |                         <label>Carga Real</label>
+ 882 |                         <input 
+ 883 |                           type="number" 
+ 884 |                           value={st.carga !== undefined ? st.carga : m.carga} 
+ 885 |                           onChange={e => handleTimelineChange(rowId, 'carga', e.target.value === '' ? '' : Number(e.target.value))}
+ 886 |                           disabled={!(cfg?.usaCarga)}
+ 887 |                           style={{ border: isScaled && (st.carga !== undefined ? st.carga : m.carga) < m.carga ? '1px solid var(--dyna-red, #FF2B3D)' : '' }}
+ 888 |                         />
+ 889 |                       </div>
+ 890 | 
+ 891 |                       <div><label>Início</label><input type="text" placeholder="mm:ss" value={st.start || ''} onChange={e => handleTimelineChange(rowId, 'start', e.target.value)} /></div>
+ 892 |                       <div><label>Fim</label><input type="text" placeholder="mm:ss" value={st.end || ''} onChange={e => handleTimelineChange(rowId, 'end', e.target.value)} /></div>
+ 893 |                     </div>
+ 894 |                   );
+ 895 |                 };
+ 896 |                 lousa.filter(m => m.phase === 'buyin').forEach(m => renderRow(m, 'badge-buyin', 'Buy-in', 0));
+ 897 |                 for (let r = 1; r <= rTimeline; r++) lousa.filter(m => m.phase === 'round').forEach(m => renderRow(m, '', `R ${r}`, r));
+ 898 |                 lousa.filter(m => m.phase === 'cashout').forEach(m => renderRow(m, 'badge-cashout', 'Cash-out', 99));
+ 899 |                 return rows;
+ 900 |               })()}
+ 901 |             </div>
  902 | 
- 903 |             {resultado && (
- 904 |               <div className="results">
- 905 |                 <h2>Painel de Resultado Biomecânico</h2>
- 906 |                 <div className="grid" style={{ marginBottom: 0 }}>
- 907 |                   <div style={{ margin: '15px 0' }}><div className="result-value color-mech">{resultado.trabalhoReal.toFixed(0)} J</div><div>Trabalho Mecânico</div></div>
- 908 |                   <div style={{ margin: '15px 0' }}><div className="result-value color-metabolic">{resultado.gastoMetabolico.toFixed(0)} kCal</div><div>Gasto Termodinâmico (+ EPOC)</div></div>
- 909 |                   <div style={{ margin: '15px 0' }}><div className="result-value" style={{ color: '#aaa' }}>{resultado.potenciaEsp > 0 ? resultado.potenciaEsp.toFixed(1) + ' W' : '-- W'}</div><div>Potência Esperada</div></div>
- 910 |                   <div style={{ margin: '15px 0' }}><div className="result-value" style={{ color: '#4caf50' }}>{resultado.potenciaReal > 0 ? resultado.potenciaReal.toFixed(1) + ' W' : '-- W'}</div><div>Potência Real Executada</div></div>
- 911 |                 </div>
- 912 |                 <div className="result-detail" dangerouslySetInnerHTML={{ __html: resultado.logDetalhesHTML }} />
- 913 |               </div>
- 914 |             )}
- 915 |             <button 
- 916 |               onClick={gerarCardInstagram} 
- 917 |               style={{ 
- 918 |                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', 
- 919 |                 fontSize: '1rem', backgroundColor: '#8a33e2',
- 920 |                 color: '#fff', border: 'none', fontWeight: 'bold', 
- 921 |                 padding: '12px 20px', borderRadius: '8px', width: '100%', marginTop: '20px'
- 922 |               }}
- 923 |             >
- 924 |               📸 Compartilhar no Instagram
- 925 |             </button>
- 926 |           </div>
- 927 |         )}
- 928 | 
- 929 |         {activeTab === 'atleta' && (
- 930 |           <div className="panel">
- 931 |             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
- 932 |               <h2 style={{ margin: 0 }}>Perfil do Atleta</h2>
- 933 |               {selectedAthleteId !== 'me' && <span style={{ background: '#ff9800', color: '#000', padding: '2px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold' }}>Visualizando Aluno</span>}
- 934 |             </div>
- 935 |             <p style={{ fontSize: '0.85rem', color: 'var(--text-muted, #8a8d94)', marginBottom: '20px' }}>
- 936 |               Os dados base são carregados automaticamente do perfil selecionado. Você pode ajustá-los pontualmente para este cálculo sem afetar o cadastro oficial.
- 937 |             </p>
- 938 |             
- 939 |             <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', marginBottom: '15px' }}>
- 940 |               <div className="form-group"><label>Estatura (m)</label><input type="number" step="0.01" value={atleta.estatura} onChange={e => setAtleta({ ...atleta, estatura: Number(e.target.value) })} /></div>
- 941 |               <div className="form-group"><label>Massa (kg)</label><input type="number" step="0.1" value={atleta.peso} onChange={e => setAtleta({ ...atleta, peso: Number(e.target.value) })} /></div>
- 942 |             </div>
- 943 |             <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', marginBottom: '15px' }}>
- 944 |               <div className="form-group"><label>Sexo Biológico</label><select value={atleta.sexo} onChange={e => setAtleta({ ...atleta, sexo: e.target.value as 'M' | 'F' })}><option value="M">Masculino</option><option value="F">Feminino</option></select></div>
- 945 |               <div className="form-group"><label>Nível Técnico</label><select value={atleta.nivelTecnico} onChange={e => setAtleta({ ...atleta, nivelTecnico: e.target.value as any })}><option value="iniciante">Iniciante</option><option value="intermediario">Intermediário</option><option value="avancado">Avançado</option></select></div>
- 946 |             </div>
+ 903 |             <button onClick={processarWOD} style={{ fontSize: '1.1rem', padding: '15px', backgroundColor: 'var(--dyna-red, #FF2B3D)', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', width: '100%', cursor: 'pointer', marginBottom: '20px', marginTop: '10px' }}>
+ 904 |               ⚡ Processar Dinâmica e Termodinâmica
+ 905 |             </button>
+ 906 | 
+ 907 |             {resultado && (
+ 908 |               <div className="results">
+ 909 |                 <h2>Painel de Resultado Biomecânico</h2>
+ 910 |                 <div className="grid" style={{ marginBottom: 0 }}>
+ 911 |                   <div style={{ margin: '15px 0' }}><div className="result-value color-mech">{resultado.trabalhoReal.toFixed(0)} J</div><div>Trabalho Mecânico</div></div>
+ 912 |                   <div style={{ margin: '15px 0' }}><div className="result-value color-metabolic">{resultado.gastoMetabolico.toFixed(0)} kCal</div><div>Gasto Termodinâmico (+ EPOC)</div></div>
+ 913 |                   <div style={{ margin: '15px 0' }}><div className="result-value" style={{ color: '#aaa' }}>{resultado.potenciaEsp > 0 ? resultado.potenciaEsp.toFixed(1) + ' W' : '-- W'}</div><div>Potência Esperada</div></div>
+ 914 |                   <div style={{ margin: '15px 0' }}><div className="result-value" style={{ color: '#4caf50' }}>{resultado.potenciaReal > 0 ? resultado.potenciaReal.toFixed(1) + ' W' : '-- W'}</div><div>Potência Real Executada</div></div>
+ 915 |                 </div>
+ 916 |                 <div className="result-detail" dangerouslySetInnerHTML={{ __html: resultado.logDetalhesHTML }} />
+ 917 |               </div>
+ 918 |             )}
+ 919 |             <button 
+ 920 |               onClick={gerarCardInstagram} 
+ 921 |               style={{ 
+ 922 |                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', 
+ 923 |                 fontSize: '1rem', backgroundColor: '#8a33e2',
+ 924 |                 color: '#fff', border: 'none', fontWeight: 'bold', 
+ 925 |                 padding: '12px 20px', borderRadius: '8px', width: '100%', marginTop: '20px'
+ 926 |               }}
+ 927 |             >
+ 928 |               📸 Compartilhar no Instagram
+ 929 |             </button>
+ 930 |           </div>
+ 931 |         )}
+ 932 | 
+ 933 |         {activeTab === 'atleta' && (
+ 934 |           <div className="panel">
+ 935 |             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+ 936 |               <h2 style={{ margin: 0 }}>Perfil do Atleta</h2>
+ 937 |               {selectedAthleteId !== 'me' && <span style={{ background: '#ff9800', color: '#000', padding: '2px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold' }}>Visualizando Aluno</span>}
+ 938 |             </div>
+ 939 |             <p style={{ fontSize: '0.85rem', color: 'var(--text-muted, #8a8d94)', marginBottom: '20px' }}>
+ 940 |               Os dados base são carregados automaticamente do perfil selecionado. Você pode ajustá-los pontualmente para este cálculo sem afetar o cadastro oficial.
+ 941 |             </p>
+ 942 | 
+ 943 |             <p style={{ color: '#ff9800', fontSize: '0.85rem', marginBottom: '20px', backgroundColor: '#332b00', padding: '10px', borderRadius: '4px', borderLeft: '3px solid #ff9800' }}>
+ 944 |               ⚠️ <strong>Medidas em METROS:</strong> Certifique-se de usar notação decimal para comprimentos (Ex: <strong>1.75</strong>, <strong>0.85</strong>).
+ 945 |             </p>
+ 946 |             
  947 |             <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', marginBottom: '15px' }}>
- 948 |               <div className="form-group"><label>Envergadura (m)</label><input type="number" step="0.01" value={atleta.envergadura} onChange={e => setAtleta({ ...atleta, envergadura: Number(e.target.value) })} /></div>
- 949 |               <div className="form-group"><label>Alt. Perna (m)</label><input type="number" step="0.01" value={atleta.perna} onChange={e => setAtleta({ ...atleta, perna: Number(e.target.value) })} /></div>
+ 948 |               <div className="form-group"><label>Estatura (m)</label><input type="number" step="0.01" placeholder="Ex: 1.75" value={atleta.estatura || ''} onChange={e => setAtleta({ ...atleta, estatura: e.target.value as unknown as number })} /></div>
+ 949 |               <div className="form-group"><label>Massa (kg)</label><input type="number" step="0.1" placeholder="Ex: 80.5" value={atleta.peso || ''} onChange={e => setAtleta({ ...atleta, peso: e.target.value as unknown as number })} /></div>
  950 |             </div>
- 951 |             <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', marginBottom: '20px' }}>
- 952 |               <div className="form-group"><label>% Gordura Corporal (BF)</label><input type="number" step="0.1" value={atleta.bf} onChange={e => setAtleta({ ...atleta, bf: Number(e.target.value) })} /></div>
- 953 |               <div className="form-group"><label>Transição Global Estimada (seg)</label><input type="number" value={tempoDescanso} onChange={e => setTempoDescanso(Number(e.target.value))} /></div>
+ 951 |             <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', marginBottom: '15px' }}>
+ 952 |               <div className="form-group"><label>Sexo Biológico</label><select value={atleta.sexo} onChange={e => setAtleta({ ...atleta, sexo: e.target.value as 'M' | 'F' })}><option value="M">Masculino</option><option value="F">Feminino</option></select></div>
+ 953 |               <div className="form-group"><label>Nível Técnico</label><select value={atleta.nivelTecnico} onChange={e => setAtleta({ ...atleta, nivelTecnico: e.target.value as any })}><option value="iniciante">Iniciante</option><option value="intermediario">Intermediário</option><option value="avancado">Avançado</option></select></div>
  954 |             </div>
- 955 | 
- 956 |             {/* --- INÍCIO DA SEÇÃO DE ANTROPOMETRIA AVANÇADA --- */}
- 957 |             <div style={{ backgroundColor: '#111', padding: '15px', borderRadius: '8px', border: '1px solid var(--line-silver, #26272b)' }}>
- 958 |               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: atleta.usaAntropometriaAvancada ? '15px' : '0' }}>
- 959 |                 <input 
- 960 |                   type="checkbox" 
- 961 |                   id="check-avancada"
- 962 |                   checked={atleta.usaAntropometriaAvancada || false}
- 963 |                   onChange={(e) => setAtleta({ ...atleta, usaAntropometriaAvancada: e.target.checked })}
- 964 |                   style={{ width: '20px', height: '20px', cursor: 'pointer' }}
- 965 |                 />
- 966 |                 <label htmlFor="check-avancada" style={{ margin: 0, fontSize: '1rem', color: '#fff', cursor: 'pointer' }}>
- 967 |                   Habilitar Antropometria Avançada (Laboratorial)
- 968 |                 </label>
- 969 |               </div>
- 970 | 
- 971 |               {atleta.usaAntropometriaAvancada && (
- 972 |                 <>
- 973 |                   <p style={{ fontSize: '0.85rem', color: '#ff9800', marginBottom: '15px' }}>
- 974 |                     <strong>Atenção:</strong> Ao preencher estes dados, o motor ignorará a alometria padrão de De Leva e recalculará o seu centro de gravidade e massas segmentares de forma dinâmica.
- 975 |                   </p>
- 976 |                   <div className="grid" style={{ gridTemplateColumns: '1fr 1fr 1fr', marginBottom: 0 }}>
- 977 |                     <div className="form-group" style={{ marginBottom: 0 }}>
- 978 |                       <label>Idade (anos)</label>
- 979 |                       <input type="number" value={atleta.idade || ''} onChange={e => setAtleta({ ...atleta, idade: Number(e.target.value) })} />
- 980 |                     </div>
- 981 |                     <div className="form-group" style={{ marginBottom: 0 }}>
- 982 |                       <label>Circ. Tórax (m)</label>
- 983 |                       <input type="number" step="0.01" placeholder="Ex: 1.10" value={atleta.circTorax || ''} onChange={e => setAtleta({ ...atleta, circTorax: Number(e.target.value) })} />
- 984 |                     </div>
+ 955 |             <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', marginBottom: '15px' }}>
+ 956 |               <div className="form-group"><label>Envergadura (m)</label><input type="number" step="0.01" placeholder="Ex: 1.75" value={atleta.envergadura || ''} onChange={e => setAtleta({ ...atleta, envergadura: e.target.value as unknown as number })} /></div>
+ 957 |               <div className="form-group"><label>Alt. Perna (m)</label><input type="number" step="0.01" placeholder="Ex: 0.85" value={atleta.perna || ''} onChange={e => setAtleta({ ...atleta, perna: e.target.value as unknown as number })} /></div>
+ 958 |             </div>
+ 959 |             <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', marginBottom: '20px' }}>
+ 960 |               <div className="form-group"><label>% Gordura Corporal (BF)</label><input type="number" step="0.1" placeholder="Ex: 15" value={atleta.bf || ''} onChange={e => setAtleta({ ...atleta, bf: e.target.value as unknown as number })} /></div>
+ 961 |               <div className="form-group"><label>Transição Global Estimada (seg)</label><input type="number" placeholder="Ex: 30" value={tempoDescanso || ''} onChange={e => setTempoDescanso(e.target.value as unknown as number)} /></div>
+ 962 |             </div>
+ 963 | 
+ 964 |             {/* --- INÍCIO DA SEÇÃO DE ANTROPOMETRIA AVANÇADA --- */}
+ 965 |             <div style={{ backgroundColor: '#111', padding: '15px', borderRadius: '8px', border: '1px solid var(--line-silver, #26272b)' }}>
+ 966 |               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: atleta.usaAntropometriaAvancada ? '15px' : '0' }}>
+ 967 |                 <input 
+ 968 |                   type="checkbox" 
+ 969 |                   id="check-avancada"
+ 970 |                   checked={atleta.usaAntropometriaAvancada || false}
+ 971 |                   onChange={(e) => setAtleta({ ...atleta, usaAntropometriaAvancada: e.target.checked })}
+ 972 |                   style={{ width: '20px', height: '20px', cursor: 'pointer' }}
+ 973 |                 />
+ 974 |                 <label htmlFor="check-avancada" style={{ margin: 0, fontSize: '1rem', color: '#fff', cursor: 'pointer' }}>
+ 975 |                   Habilitar Antropometria Avançada (Laboratorial)
+ 976 |                 </label>
+ 977 |               </div>
+ 978 | 
+ 979 |               {atleta.usaAntropometriaAvancada && (
+ 980 |                 <>
+ 981 |                   <p style={{ fontSize: '0.85rem', color: '#ff9800', marginBottom: '15px' }}>
+ 982 |                     <strong>Atenção:</strong> Ao preencher estes dados, o motor ignorará a alometria padrão de De Leva e recalculará o seu centro de gravidade e massas segmentares de forma dinâmica.
+ 983 |                   </p>
+ 984 |                   <div className="grid" style={{ gridTemplateColumns: '1fr 1fr 1fr', marginBottom: 0 }}>
  985 |                     <div className="form-group" style={{ marginBottom: 0 }}>
- 986 |                       <label>Circ. Coxa (m)</label>
- 987 |                       <input type="number" step="0.01" placeholder="Ex: 0.65" value={atleta.circCoxa || ''} onChange={e => setAtleta({ ...atleta, circCoxa: Number(e.target.value) })} />
+ 986 |                       <label>Idade (anos)</label>
+ 987 |                       <input type="number" value={atleta.idade || ''} onChange={e => setAtleta({ ...atleta, idade: e.target.value as unknown as number })} />
  988 |                     </div>
- 989 |                     <div className="form-group" style={{ marginTop: '15px', marginBottom: 0 }}>
- 990 |                       <label>Mobilidade Funcional (ROM) - {atleta.mobilidade || 100}%</label>
- 991 |                       <input 
- 992 |                         type="range" 
- 993 |                         min="50" max="100" 
- 994 |                         value={atleta.mobilidade || 100} 
- 995 |                         onChange={e => setAtleta({ ...atleta, mobilidade: Number(e.target.value) })} 
- 996 |                         style={{ width: '100%' }}
- 997 |                       />
- 998 |                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#8a8d94' }}>
- 999 |                         <span>Encurtado (50%)</span>
-1000 |                         <span>Flexibilidade Perfeita (100%)</span>
-1001 |                       </div>
-1002 |                     </div>
-1003 |                   </div>
-1004 |                 </>
-1005 |               )}
-1006 |             </div>
-1007 |             {/* --- FIM DA SEÇÃO DE ANTROPOMETRIA AVANÇADA --- */}
-1008 |           </div>
-1009 |         )}
-1010 | 
-1011 |         {activeTab === 'historico' && (
-1012 |           <div className="panel">
-1013 |             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-1014 |               <h2>Histórico de Desempenho {selectedAthleteId !== 'me' ? '(Aluno)' : ''}</h2>
-1015 |               {selectedAthleteId === 'me' && !userProfile?.is_coach && (
-1016 |                 <div style={{ display: 'flex', gap: '5px' }}>
-1017 |                   <input type="text" placeholder="ID do seu Coach..." value={coachIdInput} onChange={e => setCoachIdInput(e.target.value)} style={{ padding: '8px' }} />
-1018 |                   <button onClick={linkToCoach} style={{ width: 'auto', padding: '8px 15px', backgroundColor: '#388e3c' }}>Vincular</button>
-1019 |                 </div>
-1020 |               )}
-1021 |             </div>
-1022 | 
-1023 |             {selectedAthleteId === 'me' && (
-1024 |               <div style={{ marginBottom: '20px', padding: '10px', background: 'var(--bg-card, #181a1e)', border: '1px dashed var(--line-silver, #26272b)', borderRadius: '4px', fontSize: '0.9rem' }}>
-1025 |                 <strong>Seu ID de Atleta (Passe para o seu Coach):</strong> <span style={{ color: '#4caf50', userSelect: 'all' }}>{session.user.id}</span>
-1026 |               </div>
-1027 |             )}
-1028 |             
-1029 |             {savedWods.length > 0 ? (
-1030 |               <>
-1031 |                 <div style={{ width: '100%', height: 300, marginBottom: '40px', backgroundColor: 'var(--bg-card, #181a1e)', padding: '20px', borderRadius: '8px' }}>
-1032 |                   <ResponsiveContainer>
-1033 |                     <LineChart data={[...savedWods].reverse()} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-1034 |                       <CartesianGrid strokeDasharray="3 3" stroke="#444" />
-1035 |                       <XAxis dataKey="created_at" tickFormatter={(tick) => new Date(tick as string).toLocaleDateString('pt-BR')} stroke="#aaa" />
-1036 |                       <YAxis yAxisId="left" stroke="#4caf50" />
-1037 |                       <YAxis yAxisId="right" orientation="right" stroke="#ff9800" />
-1038 |                       <Tooltip labelFormatter={(label) => new Date(label as string).toLocaleDateString('pt-BR')} contentStyle={{ backgroundColor: '#1e1e1e', border: 'none' }} />
-1039 |                       <Legend />
-1040 |                       <Line yAxisId="left" type="monotone" dataKey="score_watts" name="Potência (Watts)" stroke="#4caf50" strokeWidth={3} activeDot={{ r: 8 }} />
-1041 |                       <Line yAxisId="right" type="monotone" dataKey="score_kcal" name="Gasto (kCal)" stroke="#ff9800" strokeWidth={3} />
-1042 |                     </LineChart>
-1043 |                   </ResponsiveContainer>
-1044 |                 </div>
-1045 | 
-1046 |                 <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '15px' }}>
-1047 |                   {savedWods.map(w => (
-1048 |                     <div key={w.id} style={{ background: 'var(--bg-card, #181a1e)', padding: '20px', borderRadius: '8px', borderLeft: '4px solid var(--dyna-burgundy, #7A0F1B)' }}>
-1049 |                       <h3 style={{ margin: '0 0 10px 0', fontSize: '1.2rem' }}>{w.title}</h3>
-1050 |                       <div style={{ fontSize: '0.9rem', color: 'var(--text-muted, #8a8d94)', marginBottom: '15px' }}>
-1051 |                         <strong>Data:</strong> {new Date(w.created_at || '').toLocaleDateString('pt-BR')}<br />
-1052 |                         <strong>Resultado:</strong> {(w as any).score_watts?.toFixed(1) || '--'} W | {(w as any).score_kcal?.toFixed(0) || '--'} kCal
-1053 |                       </div>
-1054 |                       <button onClick={() => carregarDoSupabase(w)} style={{ width: '100%', padding: '10px', backgroundColor: 'var(--line-silver, #26272b)', color: '#fff', border: '1px solid #444', borderRadius: '4px', cursor: 'pointer' }}>Carregar Treino</button>
-1055 |                     </div>
-1056 |                   ))}
-1057 |                 </div>
-1058 |               </>
-1059 |             ) : (
-1060 |               <p style={{ color: 'var(--text-muted, #8a8d94)', textAlign: 'center', padding: '20px' }}>Nenhum treino salvo para este atleta.</p>
-1061 |             )}
-1062 |           </div>
-1063 |         )}
-1064 |       
-1065 |       </div> 
-1066 | 
-1067 |       <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
-1068 |         <div 
-1069 |           id="instagram-card-export" 
-1070 |           style={{
-1071 |             width: '420px', 
-1072 |             backgroundColor: '#111315',
-1073 |             color: '#fff',
-1074 |             fontFamily: 'sans-serif',
-1075 |             padding: '40px 20px',
-1076 |             boxSizing: 'border-box',
-1077 |             display: 'flex',
-1078 |             flexDirection: 'column',
-1079 |             gap: '20px',
-1080 |             backgroundImage: 'linear-gradient(to bottom, #111315, #1a1a1a)'
-1081 |           }}
-1082 |         >
-1083 |           <div style={{ textAlign: 'center' }}>
-1084 |             <h1 style={{ margin: 0, fontSize: '32px', fontStyle: 'italic', fontWeight: '900', letterSpacing: '1px' }}>DynaWOD</h1>
-1085 |             <p style={{ margin: '5px 0 0 0', color: '#8a8d94', fontSize: '13px', fontWeight: 'bold' }}>V2 - RESUMO DE TREINO</p>
-1086 |             <p style={{ margin: '2px 0 0 0', color: '#8a8d94', fontSize: '12px' }}>Data: {new Date().toLocaleDateString('pt-BR')}</p>
-1087 |           </div>
-1088 | 
-1089 |           <div style={{ border: '2px solid #26272b', borderRadius: '12px', padding: '20px', backgroundColor: '#181a1e' }}>
-1090 |             <h2 style={{ margin: '0 0 12px 0', fontSize: '20px', display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-1091 |               Prescription <span style={{ fontSize: '11px', color: '#8a8d94', fontWeight: 'normal' }}>(PLANTA BAIXA DO WOD)</span>
-1092 |             </h2>
-1093 |             <div style={{ color: '#d1d5db', fontSize: '16px', lineHeight: '1.6' }}>
-1094 |               
-1095 |               <strong style={{ color: '#fff', fontSize: '18px' }}>TREINO {tipoTreino.replace('_', ' ')}</strong><br />
-1096 |               
-1097 |               TIME CAP: <span style={{ color: '#fff' }}>{tempoAlvo || 'N/A'}</span> • RNDS: <span style={{ color: '#fff' }}>{roundsPrescritos || 'N/A'}</span><br />
-1098 |               <span style={{ color: '#8a8d94', fontSize: '14px' }}>Movimentos Cadastrados: {lousa.length}</span>
-1099 |             </div>
-1100 |           </div>
-1101 | 
-1102 |           <div style={{ border: '2px solid var(--dyna-red, #FF2B3D)', borderRadius: '12px', padding: '25px 15px', backgroundColor: '#181a1e', boxShadow: '0 0 25px rgba(255, 43, 61, 0.15)', position: 'relative', marginTop: '10px' }}>
-1103 |             
-1104 |             <h2 style={{ margin: 0, fontSize: '24px', position: 'absolute', top: '-15px', backgroundColor: '#181a1e', padding: '0 10px', color: 'var(--dyna-red, #FF2B3D)' }}>
-1105 |               Resultado
-1106 |             </h2>
-1107 |             
-1108 |             <div style={{ textAlign: 'center', marginBottom: '25px', marginTop: '15px' }}>
-1109 |               <span style={{ fontSize: '16px', color: '#8a8d94', fontWeight: 'bold' }}>TEMPO TOTAL:</span>
-1110 |               <div style={{ fontSize: '54px', fontWeight: '900', margin: '5px 0', textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>
-1111 |                 {tempoReal || '00:00'}
-1112 |               </div>
-1113 |               
-1114 |               {isScaled ? (
-1115 |                 <span style={{ backgroundColor: '#FF2B3D', color: '#fff', padding: '6px 16px', borderRadius: '20px', fontSize: '16px', fontWeight: '900', letterSpacing: '1px' }}>STATUS: SCALED</span>
-1116 |               ) : (
-1117 |                 <span style={{ backgroundColor: '#22c55e', color: '#fff', padding: '6px 16px', borderRadius: '20px', fontSize: '16px', fontWeight: '900', letterSpacing: '1px' }}>STATUS: RX</span>
-1118 |               )}
-1119 |             </div>
-1120 | 
-1121 |             <div style={{ display: 'flex', gap: '10px', justifyContent: 'space-between' }}>
-1122 |               
-1123 |               <div style={{ flex: 1, backgroundColor: '#111315', padding: '15px 5px', borderRadius: '10px', textAlign: 'center', border: '1px solid #26272b' }}>
-1124 |                 <div style={{ fontSize: '11px', color: '#8a8d94', marginBottom: '10px', fontWeight: 'bold' }}>POTÊNCIA MÉDIA</div>
-1125 |                 
-1126 |                 <svg width="70" height="35" viewBox="0 0 100 50" style={{ marginBottom: '8px' }}>
-1127 |                   <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="#26272b" strokeWidth="10" />
-1128 |                   <path d="M 10 50 A 40 40 0 0 1 70 20" fill="none" stroke="#FF2B3D" strokeWidth="10" strokeLinecap="round" />
-1129 |                   <line x1="50" y1="50" x2="65" y2="25" stroke="#fff" strokeWidth="3" strokeLinecap="round" />
-1130 |                   <circle cx="50" cy="50" r="4" fill="#fff" />
-1131 |                 </svg>
-1132 | 
-1133 |                 <div style={{ fontSize: '22px', fontWeight: '900' }}>
-1134 |                   {resultado ? resultado.potenciaReal.toFixed(0) : 0} <span style={{ fontSize: '12px', fontWeight: 'normal', color: '#8a8d94' }}>W</span>
-1135 |                 </div>
-1136 |               </div>
-1137 |               
-1138 |               <div style={{ flex: 1, backgroundColor: '#111315', padding: '15px 5px', borderRadius: '10px', textAlign: 'center', border: '1px solid #26272b' }}>
-1139 |                 <div style={{ fontSize: '11px', color: '#8a8d94', marginBottom: '10px', fontWeight: 'bold' }}>GASTO ENERGÉTICO</div>
-1140 |                 
-1141 |                 <svg width="70" height="35" viewBox="0 0 100 50" style={{ marginBottom: '8px' }}>
-1142 |                   <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="#26272b" strokeWidth="10" />
-1143 |                   <path d="M 10 50 A 40 40 0 0 1 85 30" fill="none" stroke="#ff9800" strokeWidth="10" strokeLinecap="round" />
-1144 |                   <path d="M 50 45 Q 40 45 45 30 Q 50 20 50 15 Q 50 25 55 30 Q 60 45 50 45" fill="#ff9800" />
-1145 |                 </svg>
-1146 | 
-1147 |                 <div style={{ fontSize: '22px', fontWeight: '900' }}>
-1148 |                   {resultado ? resultado.gastoMetabolico.toFixed(0) : 0} <span style={{ fontSize: '12px', fontWeight: 'normal', color: '#8a8d94' }}>kcal</span>
-1149 |                 </div>
-1150 |               </div>
-1151 | 
-1152 |             </div>
-1153 |           </div>
-1154 |           
-1155 |           <div style={{ textAlign: 'center', color: '#52525b', fontSize: '12px', marginTop: '10px' }}>
-1156 |             Gerado pelo aplicativo DynaWOD - dynawod.com
-1157 |           </div>
-1158 |         </div>
-1159 |       </div>
-1160 |       
-1161 |     </div>
-1162 |   );
-1163 | }
+ 989 |                     <div className="form-group" style={{ marginBottom: 0 }}>
+ 990 |                       <label>Circ. Tórax (m)</label>
+ 991 |                       <input type="number" step="0.01" placeholder="Ex: 1.10" value={atleta.circTorax || ''} onChange={e => setAtleta({ ...atleta, circTorax: e.target.value as unknown as number })} />
+ 992 |                     </div>
+ 993 |                     <div className="form-group" style={{ marginBottom: 0 }}>
+ 994 |                       <label>Circ. Coxa (m)</label>
+ 995 |                       <input type="number" step="0.01" placeholder="Ex: 0.65" value={atleta.circCoxa || ''} onChange={e => setAtleta({ ...atleta, circCoxa: e.target.value as unknown as number })} />
+ 996 |                     </div>
+ 997 |                     <div className="form-group" style={{ marginTop: '15px', marginBottom: 0 }}>
+ 998 |                       <label>Mobilidade Funcional (ROM) - {atleta.mobilidade || 100}%</label>
+ 999 |                       <input 
+1000 |                         type="range" 
+1001 |                         min="50" max="100" 
+1002 |                         value={atleta.mobilidade || 100} 
+1003 |                         onChange={e => setAtleta({ ...atleta, mobilidade: Number(e.target.value) })} 
+1004 |                         style={{ width: '100%' }}
+1005 |                       />
+1006 |                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#8a8d94' }}>
+1007 |                         <span>Encurtado (50%)</span>
+1008 |                         <span>Flexibilidade Perfeita (100%)</span>
+1009 |                       </div>
+1010 |                     </div>
+1011 |                   </div>
+1012 |                 </>
+1013 |               )}
+1014 |             </div>
+1015 |             {/* --- FIM DA SEÇÃO DE ANTROPOMETRIA AVANÇADA --- */}
+1016 |           </div>
+1017 |         )}
+1018 | 
+1019 |         {activeTab === 'historico' && (
+1020 |           <div className="panel">
+1021 |             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+1022 |               <h2>Histórico de Desempenho {selectedAthleteId !== 'me' ? '(Aluno)' : ''}</h2>
+1023 |               {selectedAthleteId === 'me' && !userProfile?.is_coach && (
+1024 |                 <div style={{ display: 'flex', gap: '5px' }}>
+1025 |                   <input type="text" placeholder="ID do seu Coach..." value={coachIdInput} onChange={e => setCoachIdInput(e.target.value)} style={{ padding: '8px' }} />
+1026 |                   <button onClick={linkToCoach} style={{ width: 'auto', padding: '8px 15px', backgroundColor: '#388e3c' }}>Vincular</button>
+1027 |                 </div>
+1028 |               )}
+1029 |             </div>
+1030 | 
+1031 |             {selectedAthleteId === 'me' && (
+1032 |               <div style={{ marginBottom: '20px', padding: '10px', background: 'var(--bg-card, #181a1e)', border: '1px dashed var(--line-silver, #26272b)', borderRadius: '4px', fontSize: '0.9rem' }}>
+1033 |                 <strong>Seu ID de Atleta (Passe para o seu Coach):</strong> <span style={{ color: '#4caf50', userSelect: 'all' }}>{session.user.id}</span>
+1034 |               </div>
+1035 |             )}
+1036 |             
+1037 |             {savedWods.length > 0 ? (
+1038 |               <>
+1039 |                 <div style={{ width: '100%', height: 300, marginBottom: '40px', backgroundColor: 'var(--bg-card, #181a1e)', padding: '20px', borderRadius: '8px' }}>
+1040 |                   <ResponsiveContainer>
+1041 |                     <LineChart data={[...savedWods].reverse()} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+1042 |                       <CartesianGrid strokeDasharray="3 3" stroke="#444" />
+1043 |                       <XAxis dataKey="created_at" tickFormatter={(tick) => new Date(tick as string).toLocaleDateString('pt-BR')} stroke="#aaa" />
+1044 |                       <YAxis yAxisId="left" stroke="#4caf50" />
+1045 |                       <YAxis yAxisId="right" orientation="right" stroke="#ff9800" />
+1046 |                       <Tooltip labelFormatter={(label) => new Date(label as string).toLocaleDateString('pt-BR')} contentStyle={{ backgroundColor: '#1e1e1e', border: 'none' }} />
+1047 |                       <Legend />
+1048 |                       <Line yAxisId="left" type="monotone" dataKey="score_watts" name="Potência (Watts)" stroke="#4caf50" strokeWidth={3} activeDot={{ r: 8 }} />
+1049 |                       <Line yAxisId="right" type="monotone" dataKey="score_kcal" name="Gasto (kCal)" stroke="#ff9800" strokeWidth={3} />
+1050 |                     </LineChart>
+1051 |                   </ResponsiveContainer>
+1052 |                 </div>
+1053 | 
+1054 |                 <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '15px' }}>
+1055 |                   {savedWods.map(w => (
+1056 |                     <div key={w.id} style={{ background: 'var(--bg-card, #181a1e)', padding: '20px', borderRadius: '8px', borderLeft: '4px solid var(--dyna-burgundy, #7A0F1B)' }}>
+1057 |                       <h3 style={{ margin: '0 0 10px 0', fontSize: '1.2rem' }}>{w.title}</h3>
+1058 |                       <div style={{ fontSize: '0.9rem', color: 'var(--text-muted, #8a8d94)', marginBottom: '15px' }}>
+1059 |                         <strong>Data:</strong> {new Date(w.created_at || '').toLocaleDateString('pt-BR')}<br />
+1060 |                         <strong>Resultado:</strong> {(w as any).score_watts?.toFixed(1) || '--'} W | {(w as any).score_kcal?.toFixed(0) || '--'} kCal
+1061 |                       </div>
+1062 |                       <button onClick={() => carregarDoSupabase(w)} style={{ width: '100%', padding: '10px', backgroundColor: 'var(--line-silver, #26272b)', color: '#fff', border: '1px solid #444', borderRadius: '4px', cursor: 'pointer' }}>Carregar Treino</button>
+1063 |                     </div>
+1064 |                   ))}
+1065 |                 </div>
+1066 |               </>
+1067 |             ) : (
+1068 |               <p style={{ color: 'var(--text-muted, #8a8d94)', textAlign: 'center', padding: '20px' }}>Nenhum treino salvo para este atleta.</p>
+1069 |             )}
+1070 |           </div>
+1071 |         )}
+1072 |       
+1073 |       </div> 
+1074 | 
+1075 |       <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
+1076 |         <div 
+1077 |           id="instagram-card-export" 
+1078 |           style={{
+1079 |             width: '420px', 
+1080 |             backgroundColor: '#111315',
+1081 |             color: '#fff',
+1082 |             fontFamily: 'sans-serif',
+1083 |             padding: '40px 20px',
+1084 |             boxSizing: 'border-box',
+1085 |             display: 'flex',
+1086 |             flexDirection: 'column',
+1087 |             gap: '20px',
+1088 |             backgroundImage: 'linear-gradient(to bottom, #111315, #1a1a1a)'
+1089 |           }}
+1090 |         >
+1091 |           <div style={{ textAlign: 'center' }}>
+1092 |             <h1 style={{ margin: 0, fontSize: '32px', fontStyle: 'italic', fontWeight: '900', letterSpacing: '1px' }}>DynaWOD</h1>
+1093 |             <p style={{ margin: '5px 0 0 0', color: '#8a8d94', fontSize: '13px', fontWeight: 'bold' }}>V2 - RESUMO DE TREINO</p>
+1094 |             <p style={{ margin: '2px 0 0 0', color: '#8a8d94', fontSize: '12px' }}>Data: {new Date().toLocaleDateString('pt-BR')}</p>
+1095 |           </div>
+1096 | 
+1097 |           <div style={{ border: '2px solid #26272b', borderRadius: '12px', padding: '20px', backgroundColor: '#181a1e' }}>
+1098 |             <h2 style={{ margin: '0 0 12px 0', fontSize: '20px', display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+1099 |               Prescription <span style={{ fontSize: '11px', color: '#8a8d94', fontWeight: 'normal' }}>(PLANTA BAIXA DO WOD)</span>
+1100 |             </h2>
+1101 |             <div style={{ color: '#d1d5db', fontSize: '16px', lineHeight: '1.6' }}>
+1102 |               
+1103 |               <strong style={{ color: '#fff', fontSize: '18px' }}>TREINO {tipoTreino.replace('_', ' ')}</strong><br />
+1104 |               
+1105 |               TIME CAP: <span style={{ color: '#fff' }}>{tempoAlvo || 'N/A'}</span> • RNDS: <span style={{ color: '#fff' }}>{roundsPrescritos || 'N/A'}</span><br />
+1106 |               <span style={{ color: '#8a8d94', fontSize: '14px' }}>Movimentos Cadastrados: {lousa.length}</span>
+1107 |             </div>
+1108 |           </div>
+1109 | 
+1110 |           <div style={{ border: '2px solid var(--dyna-red, #FF2B3D)', borderRadius: '12px', padding: '25px 15px', backgroundColor: '#181a1e', boxShadow: '0 0 25px rgba(255, 43, 61, 0.15)', position: 'relative', marginTop: '10px' }}>
+1111 |             
+1112 |             <h2 style={{ margin: 0, fontSize: '24px', position: 'absolute', top: '-15px', backgroundColor: '#181a1e', padding: '0 10px', color: 'var(--dyna-red, #FF2B3D)' }}>
+1113 |               Resultado
+1114 |             </h2>
+1115 |             
+1116 |             <div style={{ textAlign: 'center', marginBottom: '25px', marginTop: '15px' }}>
+1117 |               <span style={{ fontSize: '16px', color: '#8a8d94', fontWeight: 'bold' }}>TEMPO TOTAL:</span>
+1118 |               <div style={{ fontSize: '54px', fontWeight: '900', margin: '5px 0', textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>
+1119 |                 {tempoReal || '00:00'}
+1120 |               </div>
+1121 |               
+1122 |               {isScaled ? (
+1123 |                 <span style={{ backgroundColor: '#FF2B3D', color: '#fff', padding: '6px 16px', borderRadius: '20px', fontSize: '16px', fontWeight: '900', letterSpacing: '1px' }}>STATUS: SCALED</span>
+1124 |               ) : (
+1125 |                 <span style={{ backgroundColor: '#22c55e', color: '#fff', padding: '6px 16px', borderRadius: '20px', fontSize: '16px', fontWeight: '900', letterSpacing: '1px' }}>STATUS: RX</span>
+1126 |               )}
+1127 |             </div>
+1128 | 
+1129 |             <div style={{ display: 'flex', gap: '10px', justifyContent: 'space-between' }}>
+1130 |               
+1131 |               <div style={{ flex: 1, backgroundColor: '#111315', padding: '15px 5px', borderRadius: '10px', textAlign: 'center', border: '1px solid #26272b' }}>
+1132 |                 <div style={{ fontSize: '11px', color: '#8a8d94', marginBottom: '10px', fontWeight: 'bold' }}>POTÊNCIA MÉDIA</div>
+1133 |                 
+1134 |                 <svg width="70" height="35" viewBox="0 0 100 50" style={{ marginBottom: '8px' }}>
+1135 |                   <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="#26272b" strokeWidth="10" />
+1136 |                   <path d="M 10 50 A 40 40 0 0 1 70 20" fill="none" stroke="#FF2B3D" strokeWidth="10" strokeLinecap="round" />
+1137 |                   <line x1="50" y1="50" x2="65" y2="25" stroke="#fff" strokeWidth="3" strokeLinecap="round" />
+1138 |                   <circle cx="50" cy="50" r="4" fill="#fff" />
+1139 |                 </svg>
+1140 | 
+1141 |                 <div style={{ fontSize: '22px', fontWeight: '900' }}>
+1142 |                   {resultado ? resultado.potenciaReal.toFixed(0) : 0} <span style={{ fontSize: '12px', fontWeight: 'normal', color: '#8a8d94' }}>W</span>
+1143 |                 </div>
+1144 |               </div>
+1145 |               
+1146 |               <div style={{ flex: 1, backgroundColor: '#111315', padding: '15px 5px', borderRadius: '10px', textAlign: 'center', border: '1px solid #26272b' }}>
+1147 |                 <div style={{ fontSize: '11px', color: '#8a8d94', marginBottom: '10px', fontWeight: 'bold' }}>GASTO ENERGÉTICO</div>
+1148 |                 
+1149 |                 <svg width="70" height="35" viewBox="0 0 100 50" style={{ marginBottom: '8px' }}>
+1150 |                   <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="#26272b" strokeWidth="10" />
+1151 |                   <path d="M 10 50 A 40 40 0 0 1 85 30" fill="none" stroke="#ff9800" strokeWidth="10" strokeLinecap="round" />
+1152 |                   <path d="M 50 45 Q 40 45 45 30 Q 50 20 50 15 Q 50 25 55 30 Q 60 45 50 45" fill="#ff9800" />
+1153 |                 </svg>
+1154 | 
+1155 |                 <div style={{ fontSize: '22px', fontWeight: '900' }}>
+1156 |                   {resultado ? resultado.gastoMetabolico.toFixed(0) : 0} <span style={{ fontSize: '12px', fontWeight: 'normal', color: '#8a8d94' }}>kcal</span>
+1157 |                 </div>
+1158 |               </div>
+1159 | 
+1160 |             </div>
+1161 |           </div>
+1162 |           
+1163 |           <div style={{ textAlign: 'center', color: '#52525b', fontSize: '12px', marginTop: '10px' }}>
+1164 |             Gerado pelo aplicativo DynaWOD - dynawod.com
+1165 |           </div>
+1166 |         </div>
+1167 |       </div>
+1168 |       
+1169 |     </div>
+1170 |   );
+1171 | }
 
 --- FIM DO ARQUIVO: src\App.tsx ---
 
