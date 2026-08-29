@@ -12,14 +12,31 @@
   box-sizing: border-box;
 }
 
+/* FORÇA ROBOTO EM TODA A APLICAÇÃO PARA AS PALAVRAS */
+body, html, input, select, textarea, button, label, h1, h2, h3, h4, h5, h6, span, p, div {
+  font-family: 'Roboto', sans-serif;
+}
+
 body {
   margin: 0;
   padding: 0;
   background-color: var(--bg-dark);
   color: var(--text-main);
-  /* Fonte principal forçada aqui */
-  font-family: 'Roboto', sans-serif !important;
   -webkit-font-smoothing: antialiased;
+}
+
+/* --- TIPOGRAFIA EXCLUSIVA PARA NÚMEROS (Roboto Mono) --- */
+input[type="number"],
+input[placeholder*="mm:ss"],
+input[placeholder*="10:00"],
+input[placeholder*="12:30"],
+.font-mono,
+.result-value,
+.badge-round,
+.color-mech,
+.color-metabolic,
+.color-time {
+  font-family: 'Roboto Mono', monospace !important;
 }
 
 .container {
@@ -79,20 +96,6 @@ input, select, textarea, button {
   border-radius: 4px;
   font-size: 0.95rem;
   font-family: 'Roboto', sans-serif;
-}
-
-/* --- TIPOGRAFIA PARA NÚMEROS (Roboto Mono) --- */
-input[type="number"],
-input[placeholder*="mm:ss"],
-input[placeholder*="10:00"],
-input[placeholder*="12:30"],
-.font-mono,
-.result-value,
-.badge-round,
-.color-mech,
-.color-metabolic,
-.color-time {
-  font-family: 'Roboto Mono', monospace !important;
 }
 
 input:focus, select:focus, textarea:focus {

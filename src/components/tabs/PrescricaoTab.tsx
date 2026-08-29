@@ -153,7 +153,7 @@ export function PrescricaoTab({
       <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: 'var(--bg-card, #181a1e)', borderRadius: '8px', border: '1px solid #333' }}>
         <label style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1rem', cursor: 'pointer', margin: 0, color: hasBuyIn ? '#f39c12' : 'var(--text-muted, #8a8d94)' }}>
           <input type="checkbox" checked={hasBuyIn} onChange={e => setHasBuyIn(e.target.checked)} style={{ width: '18px', height: '18px', cursor: 'pointer' }} />
-          <strong>Habilitar Buy-in</strong> (Aquecimento / Entrada)
+          <strong>Habilitar Buy-in</strong>
         </label>
         
         {hasBuyIn && (
@@ -183,7 +183,7 @@ export function PrescricaoTab({
       <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: 'var(--bg-card, #181a1e)', borderRadius: '8px', border: '1px solid #333' }}>
         <label style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1rem', cursor: 'pointer', margin: 0, color: hasCashOut ? '#2196f3' : 'var(--text-muted, #8a8d94)' }}>
           <input type="checkbox" checked={hasCashOut} onChange={e => setHasCashOut(e.target.checked)} style={{ width: '18px', height: '18px', cursor: 'pointer' }} />
-          <strong>Habilitar Cash-out</strong> (Finalizador / Saída)
+          <strong>Habilitar Cash-out</strong>
         </label>
         
         {hasCashOut && (

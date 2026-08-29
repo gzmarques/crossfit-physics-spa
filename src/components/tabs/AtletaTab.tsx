@@ -105,7 +105,7 @@ export function AtletaTab({ selectedAthleteId, atleta, setAtleta, salvarPerfilAt
         }}
       >
         <Save size={22} />
-        Atualizar Perfil Oficial no Banco de Dados
+        Atualizar Perfil
       </button>
     </div>
   );
