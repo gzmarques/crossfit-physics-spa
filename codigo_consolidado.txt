@@ -27,6 +27,8 @@ ESTRUTURA COMPLETA DO PROJETO E CÓDIGOS-FONTE
 [ARQUIVO] src\index.css
 [ARQUIVO] src\lib\supabase.ts
 [ARQUIVO] src\main.tsx
+[ARQUIVO] src\services\authService.ts
+[ARQUIVO] src\services\wodService.ts
 [ARQUIVO] src\types.ts
 [ARQUIVO] src\utils\physicsEngine.ts
 [ARQUIVO] tsconfig.app.json
@@ -333,7 +335,7 @@ CONTEÚDO DOS ARQUIVOS
 
 --- INÍCIO DO ARQUIVO: src\App.tsx ---
   1 | import { useState, useEffect } from 'react';
-  2 | import { supabase } from './lib/supabase';
+  2 | import { wodService } from './services/wodService';
   3 | import type { Modalidade, WodTemplateRecord } from './types';
   4 | import html2canvas from 'html2canvas';
   5 | 
@@ -421,253 +423,254 @@ CONTEÚDO DOS ARQUIVOS
  87 | 
  88 |   const fetchWodsFromSupabase = async () => {
  89 |     const queryId = selectedAthleteId === 'me' ? session?.user.id : selectedAthleteId;
- 90 |     
- 91 |     const { data, error } = await supabase.from('wods').select('*').eq('athlete_id', queryId).order('created_at', { ascending: false });
- 92 |     if (!error && data) setSavedWods(data as WodTemplateRecord[]);
- 93 |   };
- 94 | 
- 95 |   const generateShortCode = () => Math.random().toString(36).substring(2, 8).toUpperCase();
- 96 | 
- 97 |   const salvarNoSupabase = async (isExporting = false) => {
- 98 |     if (!session || !userProfile) return null;
- 99 |     
-100 |     const targetAthleteId = selectedAthleteId === 'me' ? session.user.id : selectedAthleteId;
-101 |     const newShortCode = currentShortCode || generateShortCode();
+ 90 | 
+ 91 |     if (!queryId) return;
+ 92 |     
+ 93 |     try {
+ 94 |       const data = await wodService.getWodsByAthlete(queryId);
+ 95 |       setSavedWods(data);
+ 96 |     } catch (error) {
+ 97 |       console.error('Erro ao buscar histórico de WODs:', error);
+ 98 |     }
+ 99 |   };
+100 | 
+101 |   const generateShortCode = () => Math.random().toString(36).substring(2, 8).toUpperCase();
 102 | 
-103 |     const templatePayload = {
-104 |       title: nomeTreino.trim() !== '' ? nomeTreino : `Treino ${tipoTreino} - ${new Date().toLocaleDateString('pt-BR')}`,
-105 |       short_code: newShortCode,
-106 |       tipo_treino: tipoTreino,
-107 |       tempo_alvo: tempoAlvo,
-108 |       rounds_prescritos: roundsPrescritos,
-109 |       movimentos: lousa,
-110 |       creator_id: session.user.id
-111 |     };
-112 | 
-113 |     let activeTemplateId = currentTemplateId;
-114 | 
-115 |     if (activeTemplateId) {
-116 |       if (!isExporting && !window.confirm('Deseja sobrescrever as alterações na prescrição deste WOD?')) return null;
-117 |       
-118 |       const { error } = await supabase.from('wod_templates').update(templatePayload).eq('id', activeTemplateId);
-119 |       if (error) { alert('Erro ao atualizar Template: ' + error.message); return null; }
-120 |     } else {
-121 |       const { data, error } = await supabase.from('wod_templates').insert([templatePayload]).select('id, short_code').single();
-122 |       if (error) { alert('Erro ao criar Template: ' + error.message); return null; }
-123 |       
-124 |       activeTemplateId = data.id;
-125 |       setCurrentTemplateId(data.id);
-126 |       setCurrentShortCode(data.short_code);
-127 |     }
-128 | 
-129 |     const hasResult = tempoReal || roundsReal > 0 || (resultado && resultado.potenciaReal > 0);
-130 | 
-131 |     if (hasResult) {
-132 |       const resultPayload = {
-133 |         template_id: activeTemplateId, 
-134 |         athlete_id: targetAthleteId,
-135 |         tempo_real: tempoReal,
-136 |         rounds_real: roundsReal,
-137 |         score_watts: resultado ? resultado.potenciaReal : 0,
-138 |         score_kcal: resultado ? resultado.gastoMetabolico : 0,
-139 |         timeline: timelineState,
-140 |         cargas_adaptadas: isScaled
-141 |       };
-142 | 
-143 |       if (currentResultId) {
-144 |         const { error } = await supabase.from('wod_results').update(resultPayload).eq('id', currentResultId);
-145 |         if (error) console.error('Erro ao atualizar resultado:', error);
-146 |       } else {
-147 |         const { data, error } = await supabase.from('wod_results').insert([resultPayload]).select('id').single();
-148 |         if (error) {
-149 |           console.error('Erro ao salvar resultado:', error);
-150 |         } else {
-151 |           setCurrentResultId(data.id);
-152 |         }
-153 |       }
-154 |     }
-155 | 
-156 |     if (!isExporting) alert('Dados salvos com sucesso no DynaWOD!');
-157 |     
-158 |     return newShortCode;
-159 |   };
-160 | 
-161 |   const compartilharWod = async () => {
-162 |     const code = await salvarNoSupabase(true); 
-163 |     if (code) {
-164 |       navigator.clipboard.writeText(code);
-165 |       alert(`Código do WOD (${code}) copiado para a área de transferência! Envie para seus alunos.`);
-166 |     }
-167 |   };
-168 | 
-169 |   const importarWod = async () => {
-170 |     const codeToFind = window.prompt('Digite o código de 6 dígitos do WOD:');
-171 |     if (!codeToFind) return;
-172 | 
-173 |     const { data, error } = await supabase.from('wod_templates').select('*').eq('short_code', codeToFind.toUpperCase()).single();
-174 |     
-175 |     if (error || !data) {
-176 |       alert('WOD não encontrado. Verifique o código.');
-177 |       return;
-178 |     }
-179 | 
-180 |     carregarDoSupabase(data);
-181 |   };
-182 | 
-183 |   const clonarWod = () => {
-184 |     if (!window.confirm('Deseja usar este treino como base para criar um NOVO WOD seu? O vínculo com o original será quebrado.')) return;
-185 |     
-186 |     setCurrentTemplateId(null);
-187 |     setCurrentShortCode(null);
-188 |     setCurrentResultId(null);
-189 |     
-190 |     alert('Pronto! O WOD foi desvinculado. Faça suas alterações e clique em "Salvar WOD".');
-191 |   };
-192 | 
-193 |   const carregarDoSupabase = (rec: any) => {
-194 |     setTipoTreino(rec.tipo_treino); 
-195 |     setTempoAlvo(rec.tempo_alvo); 
-196 |     setRoundsPrescritos(rec.rounds_prescritos);
-197 |     
-198 |     if (rec.rounds_real !== undefined) setRoundsReal(rec.rounds_real);
-199 |     if (rec.tempo_real) setTempoReal(rec.tempo_real);
-200 |     if (rec.atleta) setAtleta(rec.atleta);
-201 |     if (rec.movimentos) setLousa(rec.movimentos);
-202 |     if (rec.timeline) setTimelineState(rec.timeline);
-203 |     
-204 |     setCurrentTemplateId(rec.id);
-205 |     setCurrentShortCode(rec.short_code);
-206 |     
-207 |     setActiveTab('prescricao');
-208 | 
-209 |     if (rec.title && !rec.title.startsWith('Treino')) setNomeTreino(rec.title);
-210 |     else setNomeTreino('');
-211 |   };
-212 | 
-213 |   if (loadingAuth) {
-214 |     return (
-215 |       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', backgroundColor: 'var(--bg-dark)' }}>
-216 |         <img 
-217 |           src="/loading.gif" 
-218 |           alt="Esquentando o motor biomecânico..." 
-219 |           style={{ width: '100%', maxWidth: '160px', height: 'auto', objectFit: 'contain' }} 
-220 |         />
-221 |       </div>
-222 |     );
-223 |   }
-224 | 
-225 |   if (!session) {
-226 |     return <LoginScreen onSignIn={signInWithGoogle} />;
-227 |   }
-228 | 
-229 |   if (isNewUser) {
-230 |     return (
-231 |       <OnboardingScreen 
-232 |         form={onboardForm} 
-233 |         setForm={setOnboardForm} 
-234 |         onSave={saveOnboardingProfile} 
-235 |         onSignOut={signOut} 
-236 |       />
-237 |     );
-238 |   }
-239 | 
-240 |   return (
-241 |     <div className="container" style={{ padding: 0, maxWidth: '1200px', margin: '0 auto' }}> 
-242 |       
-243 |       <Header 
-244 |         userProfile={userProfile}
-245 |         selectedAthleteId={selectedAthleteId}
-246 |         myAthletes={myAthletes}
-247 |         onAthleteChange={handleAthleteChange}
-248 |         onSignOut={signOut}
-249 |       />
-250 | 
-251 |       <div style={{ padding: '0 24px' }}>
-252 |         
-253 |         <Tabs activeTab={activeTab} setActiveTab={setActiveTab} />
-254 | 
-255 |         {activeTab === 'prescricao' && (
-256 |           <PrescricaoTab 
-257 |             nomeTreino={nomeTreino}
-258 |             setNomeTreino={setNomeTreino}
-259 |             tipoTreino={tipoTreino}
-260 |             setTipoTreino={setTipoTreino}
-261 |             tempoAlvo={tempoAlvo}
-262 |             setTempoAlvo={setTempoAlvo}
-263 |             roundsPrescritos={roundsPrescritos}
-264 |             setRoundsPrescritos={setRoundsPrescritos}
-265 |             lousa={lousa}
-266 |             addMovimento={addMovimento}
-267 |             removeMovimento={removeMovimento}
-268 |             updateMovimento={updateMovimento}
-269 |             handleDragStart={handleDragStart}
-270 |             handleDragEnter={handleDragEnter}
-271 |             handleDragEnd={handleDragEnd}
-272 |             currentShortCode={currentShortCode}
-273 |             currentTemplateId={currentTemplateId}
-274 |             importarWod={importarWod}
-275 |             compartilharWod={compartilharWod}
-276 |             clonarWod={clonarWod}
-277 |             salvarNoSupabase={salvarNoSupabase}
-278 |           />
-279 |         )}
-280 | 
-281 |         {activeTab === 'analise' && (
-282 |           <AnaliseTab
-283 |             tipoTreino={tipoTreino}
-284 |             tempoReal={tempoReal}
-285 |             setTempoReal={setTempoReal}
-286 |             roundsReal={roundsReal}
-287 |             setRoundsReal={setRoundsReal}
-288 |             isScaled={isScaled}
-289 |             setIsScaled={setIsScaled}
-290 |             lousa={lousa}
-291 |             timelineState={timelineState}
-292 |             handleTimelineChange={handleTimelineChange}
-293 |             processarWOD={processarWOD}
-294 |             resultado={resultado}
-295 |             gerarCardInstagram={gerarCardInstagram}
-296 |             roundsPrescritos={roundsPrescritos}
-297 |           />
-298 |         )}
-299 | 
-300 |         {activeTab === 'atleta' && (
-301 |           <AtletaTab
-302 |             selectedAthleteId={selectedAthleteId}
-303 |             atleta={atleta}
-304 |             setAtleta={setAtleta}
-305 |             salvarPerfilAtleta={salvarPerfilAtleta}
-306 |           />
-307 |         )}
-308 | 
-309 |         {activeTab === 'historico' && (
-310 |           <HistoricoTab
-311 |             selectedAthleteId={selectedAthleteId}
-312 |             userProfile={userProfile}
-313 |             sessionId={session?.user?.id}
-314 |             coachIdInput={coachIdInput}
-315 |             setCoachIdInput={setCoachIdInput}
-316 |             linkToCoach={linkToCoach}
-317 |             savedWods={savedWods}
-318 |             carregarDoSupabase={carregarDoSupabase}
-319 |           />
-320 |         )}
-321 |       
-322 |       </div> 
-323 | 
-324 |       <InstagramCard 
-325 |         tipoTreino={tipoTreino}
-326 |         tempoAlvo={tempoAlvo}
-327 |         roundsPrescritos={roundsPrescritos}
-328 |         lousaCount={lousa.length}
-329 |         tempoReal={tempoReal}
-330 |         isScaled={isScaled}
-331 |         resultado={resultado}
-332 |       />
-333 |       
-334 |     </div>
-335 |   );
-336 | }
+103 |   const salvarNoSupabase = async (isExporting = false) => {
+104 |     if (!session || !userProfile) return null;
+105 |     
+106 |     const targetAthleteId = selectedAthleteId === 'me' ? session.user.id : selectedAthleteId;
+107 |     const newShortCode = currentShortCode || generateShortCode();
+108 | 
+109 |     const templatePayload = {
+110 |       title: nomeTreino.trim() !== '' ? nomeTreino : `Treino ${tipoTreino} - ${new Date().toLocaleDateString('pt-BR')}`,
+111 |       short_code: newShortCode,
+112 |       tipo_treino: tipoTreino,
+113 |       tempo_alvo: tempoAlvo,
+114 |       rounds_prescritos: roundsPrescritos,
+115 |       movimentos: lousa,
+116 |       creator_id: session.user.id
+117 |     };
+118 | 
+119 |     let activeTemplateId = currentTemplateId;
+120 | 
+121 |     try {
+122 |       if (activeTemplateId) {
+123 |         if (!isExporting && !window.confirm('Deseja sobrescrever as alterações na prescrição deste WOD?')) return null;
+124 |         await wodService.updateTemplate(activeTemplateId, templatePayload);
+125 |       } else {
+126 |         const data = await wodService.createTemplate(templatePayload);
+127 |         activeTemplateId = data.id;
+128 |         setCurrentTemplateId(data.id);
+129 |         setCurrentShortCode(data.short_code);
+130 |       }
+131 | 
+132 |       const hasResult = tempoReal || roundsReal > 0 || (resultado && resultado.potenciaReal > 0);
+133 | 
+134 |       if (hasResult) {
+135 |         const resultPayload = {
+136 |           template_id: activeTemplateId, 
+137 |           athlete_id: targetAthleteId,
+138 |           tempo_real: tempoReal,
+139 |           rounds_real: roundsReal,
+140 |           score_watts: resultado ? resultado.potenciaReal : 0,
+141 |           score_kcal: resultado ? resultado.gastoMetabolico : 0,
+142 |           timeline: timelineState,
+143 |           cargas_adaptadas: isScaled
+144 |         };
+145 | 
+146 |         if (currentResultId) {
+147 |           await wodService.updateResult(currentResultId, resultPayload);
+148 |         } else {
+149 |           const data = await wodService.createResult(resultPayload);
+150 |           setCurrentResultId(data.id);
+151 |         }
+152 |       }
+153 | 
+154 |       if (!isExporting) alert('Dados salvos com sucesso no DynaWOD!');
+155 |       return newShortCode;
+156 | 
+157 |     } catch (error: any) {
+158 |       console.error('Erro ao salvar no banco:', error);
+159 |       alert('Ops! Erro ao comunicar com o banco de dados: ' + error.message);
+160 |       return null;
+161 |     }
+162 |   };
+163 | 
+164 |   const compartilharWod = async () => {
+165 |     const code = await salvarNoSupabase(true); 
+166 |     if (code) {
+167 |       navigator.clipboard.writeText(code);
+168 |       alert(`Código do WOD (${code}) copiado para a área de transferência! Envie para seus alunos.`);
+169 |     }
+170 |   };
+171 | 
+172 |   const importarWod = async () => {
+173 |     const codeToFind = window.prompt('Digite o código de 6 dígitos do WOD:');
+174 |     if (!codeToFind) return;
+175 | 
+176 |     try {
+177 |       const data = await wodService.getWodByShortCode(codeToFind.toUpperCase());
+178 |       carregarDoSupabase(data);
+179 |     } catch (error) {
+180 |       alert('WOD não encontrado. Verifique o código.');
+181 |     }
+182 |   };
+183 | 
+184 |   const clonarWod = () => {
+185 |     if (!window.confirm('Deseja usar este treino como base para criar um NOVO WOD seu? O vínculo com o original será quebrado.')) return;
+186 |     
+187 |     setCurrentTemplateId(null);
+188 |     setCurrentShortCode(null);
+189 |     setCurrentResultId(null);
+190 |     
+191 |     alert('Pronto! O WOD foi desvinculado. Faça suas alterações e clique em "Salvar WOD".');
+192 |   };
+193 | 
+194 |   const carregarDoSupabase = (rec: any) => {
+195 |     setTipoTreino(rec.tipo_treino); 
+196 |     setTempoAlvo(rec.tempo_alvo); 
+197 |     setRoundsPrescritos(rec.rounds_prescritos);
+198 |     
+199 |     if (rec.rounds_real !== undefined) setRoundsReal(rec.rounds_real);
+200 |     if (rec.tempo_real) setTempoReal(rec.tempo_real);
+201 |     if (rec.atleta) setAtleta(rec.atleta);
+202 |     if (rec.movimentos) setLousa(rec.movimentos);
+203 |     if (rec.timeline) setTimelineState(rec.timeline);
+204 |     
+205 |     setCurrentTemplateId(rec.id);
+206 |     setCurrentShortCode(rec.short_code);
+207 |     
+208 |     setActiveTab('prescricao');
+209 | 
+210 |     if (rec.title && !rec.title.startsWith('Treino')) setNomeTreino(rec.title);
+211 |     else setNomeTreino('');
+212 |   };
+213 | 
+214 |   if (loadingAuth) {
+215 |     return (
+216 |       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', backgroundColor: 'var(--bg-dark)' }}>
+217 |         <img 
+218 |           src="/loading.gif" 
+219 |           alt="Esquentando o motor biomecânico..." 
+220 |           style={{ width: '100%', maxWidth: '160px', height: 'auto', objectFit: 'contain' }} 
+221 |         />
+222 |       </div>
+223 |     );
+224 |   }
+225 | 
+226 |   if (!session) {
+227 |     return <LoginScreen onSignIn={signInWithGoogle} />;
+228 |   }
+229 | 
+230 |   if (isNewUser) {
+231 |     return (
+232 |       <OnboardingScreen 
+233 |         form={onboardForm} 
+234 |         setForm={setOnboardForm} 
+235 |         onSave={saveOnboardingProfile} 
+236 |         onSignOut={signOut} 
+237 |       />
+238 |     );
+239 |   }
+240 | 
+241 |   return (
+242 |     <div className="container" style={{ padding: 0, maxWidth: '1200px', margin: '0 auto' }}> 
+243 |       
+244 |       <Header 
+245 |         userProfile={userProfile}
+246 |         selectedAthleteId={selectedAthleteId}
+247 |         myAthletes={myAthletes}
+248 |         onAthleteChange={handleAthleteChange}
+249 |         onSignOut={signOut}
+250 |       />
+251 | 
+252 |       <div style={{ padding: '0 24px' }}>
+253 |         
+254 |         <Tabs activeTab={activeTab} setActiveTab={setActiveTab} />
+255 | 
+256 |         {activeTab === 'prescricao' && (
+257 |           <PrescricaoTab 
+258 |             nomeTreino={nomeTreino}
+259 |             setNomeTreino={setNomeTreino}
+260 |             tipoTreino={tipoTreino}
+261 |             setTipoTreino={setTipoTreino}
+262 |             tempoAlvo={tempoAlvo}
+263 |             setTempoAlvo={setTempoAlvo}
+264 |             roundsPrescritos={roundsPrescritos}
+265 |             setRoundsPrescritos={setRoundsPrescritos}
+266 |             lousa={lousa}
+267 |             addMovimento={addMovimento}
+268 |             removeMovimento={removeMovimento}
+269 |             updateMovimento={updateMovimento}
+270 |             handleDragStart={handleDragStart}
+271 |             handleDragEnter={handleDragEnter}
+272 |             handleDragEnd={handleDragEnd}
+273 |             currentShortCode={currentShortCode}
+274 |             currentTemplateId={currentTemplateId}
+275 |             importarWod={importarWod}
+276 |             compartilharWod={compartilharWod}
+277 |             clonarWod={clonarWod}
+278 |             salvarNoSupabase={salvarNoSupabase}
+279 |           />
+280 |         )}
+281 | 
+282 |         {activeTab === 'analise' && (
+283 |           <AnaliseTab
+284 |             tipoTreino={tipoTreino}
+285 |             tempoReal={tempoReal}
+286 |             setTempoReal={setTempoReal}
+287 |             roundsReal={roundsReal}
+288 |             setRoundsReal={setRoundsReal}
+289 |             isScaled={isScaled}
+290 |             setIsScaled={setIsScaled}
+291 |             lousa={lousa}
+292 |             timelineState={timelineState}
+293 |             handleTimelineChange={handleTimelineChange}
+294 |             processarWOD={processarWOD}
+295 |             resultado={resultado}
+296 |             gerarCardInstagram={gerarCardInstagram}
+297 |             roundsPrescritos={roundsPrescritos}
+298 |           />
+299 |         )}
+300 | 
+301 |         {activeTab === 'atleta' && (
+302 |           <AtletaTab
+303 |             selectedAthleteId={selectedAthleteId}
+304 |             atleta={atleta}
+305 |             setAtleta={setAtleta}
+306 |             salvarPerfilAtleta={salvarPerfilAtleta}
+307 |           />
+308 |         )}
+309 | 
+310 |         {activeTab === 'historico' && (
+311 |           <HistoricoTab
+312 |             selectedAthleteId={selectedAthleteId}
+313 |             userProfile={userProfile}
+314 |             sessionId={session?.user?.id}
+315 |             coachIdInput={coachIdInput}
+316 |             setCoachIdInput={setCoachIdInput}
+317 |             linkToCoach={linkToCoach}
+318 |             savedWods={savedWods}
+319 |             carregarDoSupabase={carregarDoSupabase}
+320 |           />
+321 |         )}
+322 |       
+323 |       </div> 
+324 | 
+325 |       <InstagramCard 
+326 |         tipoTreino={tipoTreino}
+327 |         tempoAlvo={tempoAlvo}
+328 |         roundsPrescritos={roundsPrescritos}
+329 |         lousaCount={lousa.length}
+330 |         tempoReal={tempoReal}
+331 |         isScaled={isScaled}
+332 |         resultado={resultado}
+333 |       />
+334 |       
+335 |     </div>
+336 |   );
+337 | }
 
 --- FIM DO ARQUIVO: src\App.tsx ---
 
@@ -1881,7 +1884,7 @@ CONTEÚDO DOS ARQUIVOS
 
 --- INÍCIO DO ARQUIVO: src\hooks\useAuth.ts ---
   1 | import { useState, useEffect } from 'react';
-  2 | import { supabase } from '../lib/supabase';
+  2 | import { authService } from '../services/authService';
   3 | import type { Session } from '@supabase/supabase-js';
   4 | import type { UserProfile, AtletaPerfil } from '../types';
   5 | 
@@ -1907,13 +1910,13 @@ CONTEÚDO DOS ARQUIVOS
  25 |   });
  26 | 
  27 |   useEffect(() => {
- 28 |     supabase.auth.getSession().then(({ data: { session } }) => {
+ 28 |     authService.getSession().then(({ data: { session } }) => {
  29 |       setSession(session);
  30 |       if (session) loadProfile(session.user);
  31 |       else setLoadingAuth(false);
  32 |     });
  33 | 
- 34 |     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+ 34 |     const { data: { subscription } } = authService.onAuthStateChange((_event, session) => {
  35 |       setSession(session);
  36 |       if (session) loadProfile(session.user);
  37 |     });
@@ -1922,114 +1925,124 @@ CONTEÚDO DOS ARQUIVOS
  40 |   }, []);
  41 | 
  42 |   const signInWithGoogle = async () => {
- 43 |     await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
+ 43 |     await authService.signInWithGoogle();
  44 |   };
  45 | 
  46 |   const signOut = async () => {
- 47 |     await supabase.auth.signOut();
+ 47 |     await authService.signOut();
  48 |     setUserProfile(null);
  49 |     // Para limpar corretamente a interface, retornamos ao 'me'
  50 |     setSelectedAthleteId('me');
  51 |   };
  52 | 
  53 |   const loadProfile = async (user: any) => {
- 54 |     const { data, error } = await supabase.from('profiles').select('*').eq('id', user.id).single();
- 55 |     
- 56 |     if (error || !data) {
- 57 |       setIsNewUser(true); 
- 58 |       setOnboardForm(prev => ({ 
- 59 |         ...prev, 
- 60 |         full_name: user.user_metadata?.full_name || user.user_metadata?.name || '' 
- 61 |       }));
- 62 |       setLoadingAuth(false);
- 63 |       return;
- 64 |     }
- 65 | 
- 66 |     setUserProfile(data as UserProfile);
- 67 |     syncAtletaState(data);
- 68 |     
- 69 |     if (data.is_coach) {
- 70 |       const { data: athletes } = await supabase.from('profiles').select('*').eq('coach_id', user.id);
- 71 |       if (athletes) setMyAthletes(athletes as UserProfile[]);
- 72 |     }
- 73 |     
- 74 |     setIsNewUser(false);
- 75 |     setLoadingAuth(false);
- 76 |   };
- 77 | 
- 78 |   const syncAtletaState = (prof: any) => {
- 79 |     setAtleta({
- 80 |       estatura: prof.estatura, peso: prof.peso, sexo: prof.sexo,
- 81 |       nivelTecnico: prof.nivel_tecnico, envergadura: prof.envergadura,
- 82 |       perna: prof.perna, bf: prof.bf, dataNascimento: prof.data_nascimento
- 83 |     });
- 84 |   };
- 85 | 
- 86 |   const saveOnboardingProfile = async () => {
- 87 |     if (!session) return;
- 88 |     if (!onboardForm.full_name || !onboardForm.data_nascimento) {
- 89 |       alert('⚠️ Por favor, preencha seu Nome Completo e a Data de Nascimento. O motor precisa da sua idade exata para calibrar o desgaste metabólico.');
- 90 |       return;
- 91 |     }
- 92 | 
- 93 |     const payload = { id: session.user.id, ...onboardForm };
- 94 |     const { error } = await supabase.from('profiles').insert([payload]);
- 95 |     
- 96 |     if (error) alert('Erro ao salvar perfil: ' + error.message);
- 97 |     else loadProfile(session.user);
- 98 |   };
- 99 | 
-100 |   const linkToCoach = async () => {
-101 |     if (!session || !coachIdInput) return;
-102 |     const { error } = await supabase.from('profiles').update({ coach_id: coachIdInput }).eq('id', session.user.id);
-103 |     if (error) alert('Erro ao vincular coach. Verifique o ID.');
-104 |     else { alert('Coach vinculado com sucesso!'); loadProfile(session.user); }
-105 |   };
-106 | 
-107 |   const salvarPerfilAtleta = async () => {
-108 |     if (!session) return;
-109 |     
-110 |     const targetId = selectedAthleteId === 'me' ? session.user.id : selectedAthleteId;
-111 |     const payload = {
-112 |       estatura: atleta.estatura, peso: atleta.peso, sexo: atleta.sexo,
-113 |       nivel_tecnico: atleta.nivelTecnico, envergadura: atleta.envergadura,
-114 |       perna: atleta.perna, bf: atleta.bf, data_nascimento: atleta.dataNascimento
-115 |     };
+ 54 |     try {
+ 55 |       const data = await authService.getProfileById(user.id);
+ 56 |       
+ 57 |       setUserProfile(data);
+ 58 |       syncAtletaState(data);
+ 59 |       
+ 60 |       if (data.is_coach) {
+ 61 |         try {
+ 62 |           const athletes = await authService.getAthletesByCoach(user.id);
+ 63 |           setMyAthletes(athletes);
+ 64 |         } catch (e) {
+ 65 |           console.error('Erro ao buscar alunos:', e);
+ 66 |         }
+ 67 |       }
+ 68 |       
+ 69 |       setIsNewUser(false);
+ 70 |     } catch (error) {
+ 71 |       // Se não encontrou o perfil, é usuário novo
+ 72 |       setIsNewUser(true); 
+ 73 |       setOnboardForm(prev => ({ 
+ 74 |         ...prev, 
+ 75 |         full_name: user.user_metadata?.full_name || user.user_metadata?.name || '' 
+ 76 |       }));
+ 77 |     } finally {
+ 78 |       setLoadingAuth(false);
+ 79 |     }
+ 80 |   };
+ 81 | 
+ 82 |   const syncAtletaState = (prof: any) => {
+ 83 |     setAtleta({
+ 84 |       estatura: prof.estatura, peso: prof.peso, sexo: prof.sexo,
+ 85 |       nivelTecnico: prof.nivel_tecnico, envergadura: prof.envergadura,
+ 86 |       perna: prof.perna, bf: prof.bf, dataNascimento: prof.data_nascimento
+ 87 |     });
+ 88 |   };
+ 89 | 
+ 90 |   const saveOnboardingProfile = async () => {
+ 91 |     if (!session) return;
+ 92 |     if (!onboardForm.full_name || !onboardForm.data_nascimento) {
+ 93 |       alert('⚠️ Por favor, preencha seu Nome Completo e a Data de Nascimento. O motor precisa da sua idade exata para calibrar o desgaste metabólico.');
+ 94 |       return;
+ 95 |     }
+ 96 | 
+ 97 |     const payload = { id: session.user.id, ...onboardForm };
+ 98 |     try {
+ 99 |       await authService.createProfile(payload);
+100 |       loadProfile(session.user);
+101 |     } catch (error: any) {
+102 |       alert('Erro ao salvar perfil: ' + error.message);
+103 |     }
+104 |   };
+105 | 
+106 |   const linkToCoach = async () => {
+107 |     if (!session || !coachIdInput) return;
+108 |     try {
+109 |       await authService.updateCoachId(session.user.id, coachIdInput);
+110 |       alert('Coach vinculado com sucesso!');
+111 |       loadProfile(session.user);
+112 |     } catch (error) {
+113 |       alert('Erro ao vincular coach. Verifique o ID.');
+114 |     }
+115 |   };
 116 | 
-117 |     const { error } = await supabase.from('profiles').update(payload).eq('id', targetId);
-118 | 
-119 |     if (error) {
-120 |       alert('Erro ao atualizar perfil oficial: ' + error.message);
-121 |     } else {
-122 |       alert('Perfil oficial atualizado com sucesso no banco de dados!');
-123 |       if (targetId === session.user.id) {
-124 |         loadProfile(session.user);
-125 |       } else {
-126 |         supabase.from('profiles').select('*').eq('coach_id', session.user.id)
-127 |           .then(({ data }) => { if (data) setMyAthletes(data as UserProfile[]); });
-128 |       }
-129 |     }
-130 |   };
-131 | 
-132 |   const handleAthleteChange = (targetId: string) => {
-133 |     setSelectedAthleteId(targetId);
-134 |     if (targetId === 'me' && userProfile) {
-135 |       syncAtletaState(userProfile);
-136 |     } else {
-137 |       const athlete = myAthletes.find(a => a.id === targetId);
-138 |       if (athlete) syncAtletaState(athlete);
+117 |   const salvarPerfilAtleta = async () => {
+118 |     if (!session) return;
+119 |     
+120 |     const targetId = selectedAthleteId === 'me' ? session.user.id : selectedAthleteId;
+121 |     const payload = {
+122 |       estatura: atleta.estatura, peso: atleta.peso, sexo: atleta.sexo,
+123 |       nivel_tecnico: atleta.nivelTecnico, envergadura: atleta.envergadura,
+124 |       perna: atleta.perna, bf: atleta.bf, data_nascimento: atleta.dataNascimento
+125 |     };
+126 | 
+127 |     try {
+128 |       await authService.updateProfile(targetId, payload);
+129 |       alert('Perfil oficial atualizado com sucesso no banco de dados!');
+130 |       
+131 |       if (targetId === session.user.id) {
+132 |         loadProfile(session.user);
+133 |       } else {
+134 |         const athletes = await authService.getAthletesByCoach(session.user.id);
+135 |         setMyAthletes(athletes);
+136 |       }
+137 |     } catch (error: any) {
+138 |       alert('Erro ao atualizar perfil oficial: ' + error.message);
 139 |     }
 140 |   };
 141 | 
-142 |   // Retornamos tudo que o App.tsx vai precisar
-143 |   return {
-144 |     session, loadingAuth, userProfile, isNewUser,
-145 |     myAthletes, selectedAthleteId, coachIdInput, setCoachIdInput,
-146 |     atleta, setAtleta, onboardForm, setOnboardForm,
-147 |     signInWithGoogle, signOut, saveOnboardingProfile,
-148 |     linkToCoach, salvarPerfilAtleta, handleAthleteChange
-149 |   };
-150 | }
+142 |   const handleAthleteChange = (targetId: string) => {
+143 |     setSelectedAthleteId(targetId);
+144 |     if (targetId === 'me' && userProfile) {
+145 |       syncAtletaState(userProfile);
+146 |     } else {
+147 |       const athlete = myAthletes.find(a => a.id === targetId);
+148 |       if (athlete) syncAtletaState(athlete);
+149 |     }
+150 |   };
+151 | 
+152 |   // Retornamos tudo que o App.tsx vai precisar
+153 |   return {
+154 |     session, loadingAuth, userProfile, isNewUser,
+155 |     myAthletes, selectedAthleteId, coachIdInput, setCoachIdInput,
+156 |     atleta, setAtleta, onboardForm, setOnboardForm,
+157 |     signInWithGoogle, signOut, saveOnboardingProfile,
+158 |     linkToCoach, salvarPerfilAtleta, handleAthleteChange
+159 |   };
+160 | }
 
 --- FIM DO ARQUIVO: src\hooks\useAuth.ts ---
 
@@ -2639,6 +2652,137 @@ CONTEÚDO DOS ARQUIVOS
  11 | 
 
 --- FIM DO ARQUIVO: src\main.tsx ---
+
+========================================
+
+--- INÍCIO DO ARQUIVO: src\services\authService.ts ---
+  1 | import { supabase } from '../lib/supabase';
+  2 | import type { UserProfile } from '../types';
+  3 | 
+  4 | export const authService = {
+  5 |   // --- MÉTODOS DE AUTENTICAÇÃO ---
+  6 |   async getSession() {
+  7 |     return supabase.auth.getSession();
+  8 |   },
+  9 |   
+ 10 |   onAuthStateChange(callback: (event: any, session: any) => void) {
+ 11 |     return supabase.auth.onAuthStateChange(callback);
+ 12 |   },
+ 13 |   
+ 14 |   async signInWithGoogle() {
+ 15 |     return supabase.auth.signInWithOAuth({ 
+ 16 |       provider: 'google', 
+ 17 |       options: { redirectTo: window.location.origin } 
+ 18 |     });
+ 19 |   },
+ 20 |   
+ 21 |   async signOut() {
+ 22 |     return supabase.auth.signOut();
+ 23 |   },
+ 24 | 
+ 25 |   // --- MÉTODOS DE PERFIL (PROFILES) ---
+ 26 |   async getProfileById(userId: string) {
+ 27 |     const { data, error } = await supabase
+ 28 |       .from('profiles')
+ 29 |       .select('*')
+ 30 |       .eq('id', userId)
+ 31 |       .single();
+ 32 |       
+ 33 |     if (error) throw error;
+ 34 |     return data as UserProfile;
+ 35 |   },
+ 36 | 
+ 37 |   async getAthletesByCoach(coachId: string) {
+ 38 |     const { data, error } = await supabase
+ 39 |       .from('profiles')
+ 40 |       .select('*')
+ 41 |       .eq('coach_id', coachId);
+ 42 |       
+ 43 |     if (error) throw error;
+ 44 |     return data as UserProfile[];
+ 45 |   },
+ 46 | 
+ 47 |   async createProfile(payload: any) {
+ 48 |     const { error } = await supabase.from('profiles').insert([payload]);
+ 49 |     if (error) throw error;
+ 50 |   },
+ 51 | 
+ 52 |   async updateCoachId(userId: string, coachId: string) {
+ 53 |     const { error } = await supabase.from('profiles').update({ coach_id: coachId }).eq('id', userId);
+ 54 |     if (error) throw error;
+ 55 |   },
+ 56 | 
+ 57 |   async updateProfile(userId: string, payload: any) {
+ 58 |     const { error } = await supabase.from('profiles').update(payload).eq('id', userId);
+ 59 |     if (error) throw error;
+ 60 |   }
+ 61 | };
+
+--- FIM DO ARQUIVO: src\services\authService.ts ---
+
+========================================
+
+--- INÍCIO DO ARQUIVO: src\services\wodService.ts ---
+  1 | import { supabase } from '../lib/supabase';
+  2 | import type { WodTemplateRecord } from '../types';
+  3 | 
+  4 | export const wodService = {
+  5 |   async getWodsByAthlete(athleteId: string) {
+  6 |     const { data, error } = await supabase
+  7 |       .from('wods')
+  8 |       .select('*')
+  9 |       .eq('athlete_id', athleteId)
+ 10 |       .order('created_at', { ascending: false });
+ 11 |     
+ 12 |     if (error) throw error;
+ 13 |     return data as WodTemplateRecord[];
+ 14 |   },
+ 15 | 
+ 16 |   async getWodByShortCode(shortCode: string) {
+ 17 |     const { data, error } = await supabase
+ 18 |       .from('wod_templates')
+ 19 |       .select('*')
+ 20 |       .eq('short_code', shortCode)
+ 21 |       .single();
+ 22 |       
+ 23 |     if (error) throw error;
+ 24 |     return data;
+ 25 |   },
+ 26 | 
+ 27 |   async updateTemplate(id: string, payload: any) {
+ 28 |     const { error } = await supabase.from('wod_templates').update(payload).eq('id', id);
+ 29 |     if (error) throw error;
+ 30 |   },
+ 31 | 
+ 32 |   async createTemplate(payload: any) {
+ 33 |     const { data, error } = await supabase
+ 34 |       .from('wod_templates')
+ 35 |       .insert([payload])
+ 36 |       .select('id, short_code')
+ 37 |       .single();
+ 38 |       
+ 39 |     if (error) throw error;
+ 40 |     return data;
+ 41 |   },
+ 42 | 
+ 43 |   async updateResult(id: string, payload: any) {
+ 44 |     const { error } = await supabase.from('wod_results').update(payload).eq('id', id);
+ 45 |     if (error) throw error;
+ 46 |   },
+ 47 | 
+ 48 |   async createResult(payload: any) {
+ 49 |     const { data, error } = await supabase
+ 50 |       .from('wod_results')
+ 51 |       .insert([payload])
+ 52 |       .select('id')
+ 53 |       .single();
+ 54 |       
+ 55 |     if (error) throw error;
+ 56 |     return data;
+ 57 |   }
+ 58 | };
+
+--- FIM DO ARQUIVO: src\services\wodService.ts ---
 
 ========================================
 

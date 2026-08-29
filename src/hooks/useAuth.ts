@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { authService } from '../services/authService';
 import type { Session } from '@supabase/supabase-js';
 import type { UserProfile, AtletaPerfil } from '../types';
 
@@ -25,13 +25,13 @@ export function useAuth() {
   });
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    authService.getSession().then(({ data: { session } }) => {
       setSession(session);
       if (session) loadProfile(session.user);
       else setLoadingAuth(false);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = authService.onAuthStateChange((_event, session) => {
       setSession(session);
       if (session) loadProfile(session.user);
     });
@@ -40,39 +40,43 @@ export function useAuth() {
   }, []);
 
   const signInWithGoogle = async () => {
-    await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
+    await authService.signInWithGoogle();
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    await authService.signOut();
     setUserProfile(null);
     // Para limpar corretamente a interface, retornamos ao 'me'
     setSelectedAthleteId('me');
   };
 
   const loadProfile = async (user: any) => {
-    const { data, error } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-    
-    if (error || !data) {
+    try {
+      const data = await authService.getProfileById(user.id);
+      
+      setUserProfile(data);
+      syncAtletaState(data);
+      
+      if (data.is_coach) {
+        try {
+          const athletes = await authService.getAthletesByCoach(user.id);
+          setMyAthletes(athletes);
+        } catch (e) {
+          console.error('Erro ao buscar alunos:', e);
+        }
+      }
+      
+      setIsNewUser(false);
+    } catch (error) {
+      // Se não encontrou o perfil, é usuário novo
       setIsNewUser(true); 
       setOnboardForm(prev => ({ 
         ...prev, 
         full_name: user.user_metadata?.full_name || user.user_metadata?.name || '' 
       }));
+    } finally {
       setLoadingAuth(false);
-      return;
     }
-
-    setUserProfile(data as UserProfile);
-    syncAtletaState(data);
-    
-    if (data.is_coach) {
-      const { data: athletes } = await supabase.from('profiles').select('*').eq('coach_id', user.id);
-      if (athletes) setMyAthletes(athletes as UserProfile[]);
-    }
-    
-    setIsNewUser(false);
-    setLoadingAuth(false);
   };
 
   const syncAtletaState = (prof: any) => {
@@ -91,17 +95,23 @@ export function useAuth() {
     }
 
     const payload = { id: session.user.id, ...onboardForm };
-    const { error } = await supabase.from('profiles').insert([payload]);
-    
-    if (error) alert('Erro ao salvar perfil: ' + error.message);
-    else loadProfile(session.user);
+    try {
+      await authService.createProfile(payload);
+      loadProfile(session.user);
+    } catch (error: any) {
+      alert('Erro ao salvar perfil: ' + error.message);
+    }
   };
 
   const linkToCoach = async () => {
     if (!session || !coachIdInput) return;
-    const { error } = await supabase.from('profiles').update({ coach_id: coachIdInput }).eq('id', session.user.id);
-    if (error) alert('Erro ao vincular coach. Verifique o ID.');
-    else { alert('Coach vinculado com sucesso!'); loadProfile(session.user); }
+    try {
+      await authService.updateCoachId(session.user.id, coachIdInput);
+      alert('Coach vinculado com sucesso!');
+      loadProfile(session.user);
+    } catch (error) {
+      alert('Erro ao vincular coach. Verifique o ID.');
+    }
   };
 
   const salvarPerfilAtleta = async () => {
@@ -114,18 +124,18 @@ export function useAuth() {
       perna: atleta.perna, bf: atleta.bf, data_nascimento: atleta.dataNascimento
     };
 
-    const { error } = await supabase.from('profiles').update(payload).eq('id', targetId);
-
-    if (error) {
-      alert('Erro ao atualizar perfil oficial: ' + error.message);
-    } else {
+    try {
+      await authService.updateProfile(targetId, payload);
       alert('Perfil oficial atualizado com sucesso no banco de dados!');
+      
       if (targetId === session.user.id) {
         loadProfile(session.user);
       } else {
-        supabase.from('profiles').select('*').eq('coach_id', session.user.id)
-          .then(({ data }) => { if (data) setMyAthletes(data as UserProfile[]); });
+        const athletes = await authService.getAthletesByCoach(session.user.id);
+        setMyAthletes(athletes);
       }
+    } catch (error: any) {
+      alert('Erro ao atualizar perfil oficial: ' + error.message);
     }
   };
 

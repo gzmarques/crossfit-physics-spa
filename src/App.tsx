@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from './lib/supabase';
+import { wodService } from './services/wodService';
 import type { Modalidade, WodTemplateRecord } from './types';
 import html2canvas from 'html2canvas';
 
@@ -87,9 +87,15 @@ export default function App() {
 
   const fetchWodsFromSupabase = async () => {
     const queryId = selectedAthleteId === 'me' ? session?.user.id : selectedAthleteId;
+
+    if (!queryId) return;
     
-    const { data, error } = await supabase.from('wods').select('*').eq('athlete_id', queryId).order('created_at', { ascending: false });
-    if (!error && data) setSavedWods(data as WodTemplateRecord[]);
+    try {
+      const data = await wodService.getWodsByAthlete(queryId);
+      setSavedWods(data);
+    } catch (error) {
+      console.error('Erro ao buscar histórico de WODs:', error);
+    }
   };
 
   const generateShortCode = () => Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -112,50 +118,47 @@ export default function App() {
 
     let activeTemplateId = currentTemplateId;
 
-    if (activeTemplateId) {
-      if (!isExporting && !window.confirm('Deseja sobrescrever as alterações na prescrição deste WOD?')) return null;
-      
-      const { error } = await supabase.from('wod_templates').update(templatePayload).eq('id', activeTemplateId);
-      if (error) { alert('Erro ao atualizar Template: ' + error.message); return null; }
-    } else {
-      const { data, error } = await supabase.from('wod_templates').insert([templatePayload]).select('id, short_code').single();
-      if (error) { alert('Erro ao criar Template: ' + error.message); return null; }
-      
-      activeTemplateId = data.id;
-      setCurrentTemplateId(data.id);
-      setCurrentShortCode(data.short_code);
-    }
-
-    const hasResult = tempoReal || roundsReal > 0 || (resultado && resultado.potenciaReal > 0);
-
-    if (hasResult) {
-      const resultPayload = {
-        template_id: activeTemplateId, 
-        athlete_id: targetAthleteId,
-        tempo_real: tempoReal,
-        rounds_real: roundsReal,
-        score_watts: resultado ? resultado.potenciaReal : 0,
-        score_kcal: resultado ? resultado.gastoMetabolico : 0,
-        timeline: timelineState,
-        cargas_adaptadas: isScaled
-      };
-
-      if (currentResultId) {
-        const { error } = await supabase.from('wod_results').update(resultPayload).eq('id', currentResultId);
-        if (error) console.error('Erro ao atualizar resultado:', error);
+    try {
+      if (activeTemplateId) {
+        if (!isExporting && !window.confirm('Deseja sobrescrever as alterações na prescrição deste WOD?')) return null;
+        await wodService.updateTemplate(activeTemplateId, templatePayload);
       } else {
-        const { data, error } = await supabase.from('wod_results').insert([resultPayload]).select('id').single();
-        if (error) {
-          console.error('Erro ao salvar resultado:', error);
+        const data = await wodService.createTemplate(templatePayload);
+        activeTemplateId = data.id;
+        setCurrentTemplateId(data.id);
+        setCurrentShortCode(data.short_code);
+      }
+
+      const hasResult = tempoReal || roundsReal > 0 || (resultado && resultado.potenciaReal > 0);
+
+      if (hasResult) {
+        const resultPayload = {
+          template_id: activeTemplateId, 
+          athlete_id: targetAthleteId,
+          tempo_real: tempoReal,
+          rounds_real: roundsReal,
+          score_watts: resultado ? resultado.potenciaReal : 0,
+          score_kcal: resultado ? resultado.gastoMetabolico : 0,
+          timeline: timelineState,
+          cargas_adaptadas: isScaled
+        };
+
+        if (currentResultId) {
+          await wodService.updateResult(currentResultId, resultPayload);
         } else {
+          const data = await wodService.createResult(resultPayload);
           setCurrentResultId(data.id);
         }
       }
-    }
 
-    if (!isExporting) alert('Dados salvos com sucesso no DynaWOD!');
-    
-    return newShortCode;
+      if (!isExporting) alert('Dados salvos com sucesso no DynaWOD!');
+      return newShortCode;
+
+    } catch (error: any) {
+      console.error('Erro ao salvar no banco:', error);
+      alert('Ops! Erro ao comunicar com o banco de dados: ' + error.message);
+      return null;
+    }
   };
 
   const compartilharWod = async () => {
@@ -170,14 +173,12 @@ export default function App() {
     const codeToFind = window.prompt('Digite o código de 6 dígitos do WOD:');
     if (!codeToFind) return;
 
-    const { data, error } = await supabase.from('wod_templates').select('*').eq('short_code', codeToFind.toUpperCase()).single();
-    
-    if (error || !data) {
+    try {
+      const data = await wodService.getWodByShortCode(codeToFind.toUpperCase());
+      carregarDoSupabase(data);
+    } catch (error) {
       alert('WOD não encontrado. Verifique o código.');
-      return;
     }
-
-    carregarDoSupabase(data);
   };
 
   const clonarWod = () => {
