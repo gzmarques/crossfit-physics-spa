@@ -3,7 +3,7 @@ import { Copy, X, Download, Share2, Save } from 'lucide-react';
 import { SearchableMovementSelect } from '../shared/SearchableMovementSelect';
 import { movimentosDB } from '../../data/movements';
 import { useWodStore } from '../../store/useWodStore';
-import type { Modalidade } from '../../types';
+import type { Modalidade, ItemLousa } from '../../types';
 
 interface PrescricaoTabProps {
   currentShortCode: string | null;
@@ -21,22 +21,102 @@ export function PrescricaoTab({
   const { 
     nomeTreino, setNomeTreino, tipoTreino, setTipoTreino, tempoAlvo, setTempoAlvo,
     roundsPrescritos, setRoundsPrescritos, lousa, addMovimento, removeMovimento, 
-    updateMovimento, reorderMovimento
+    updateMovimento, reorderMovimento,
+    hasBuyIn, setHasBuyIn, hasCashOut, setHasCashOut
   } = useWodStore();
 
-  const dragItem = useRef<number | null>(null);
-  const dragOverItem = useRef<number | null>(null);
+  const dragItem = useRef<string | null>(null);
+  const dragOverItem = useRef<string | null>(null);
 
-  const handleDragStart = (index: number) => { dragItem.current = index; };
-  const handleDragEnter = (index: number) => { dragOverItem.current = index; };
+  const handleDragStart = (id: string) => { dragItem.current = id; };
+  const handleDragEnter = (id: string) => { dragOverItem.current = id; };
   
   const handleDragEnd = (e: React.DragEvent<HTMLDivElement>) => {
     e.currentTarget.style.opacity = '1';
-    if (dragItem.current !== null && dragOverItem.current !== null && dragItem.current !== dragOverItem.current) {
+    if (dragItem.current && dragOverItem.current && dragItem.current !== dragOverItem.current) {
       reorderMovimento(dragItem.current, dragOverItem.current);
     }
     dragItem.current = null;
     dragOverItem.current = null;
+  };
+
+  const renderMovimento = (item: ItemLousa) => {
+    const cfg = movimentosDB[item.movId] || movimentosDB['pushup'];
+    return (
+      <div 
+        key={item.originalId} 
+        className="wod-item"
+        draggable
+        onDragStart={(e) => {
+          handleDragStart(item.originalId);
+          e.currentTarget.style.opacity = '0.5';
+        }}
+        onDragEnter={() => handleDragEnter(item.originalId)}
+        onDragEnd={handleDragEnd}
+        onDragOver={(e) => e.preventDefault()}
+      >
+        <div className="drag-handle">
+          <svg width="10" height="20" viewBox="0 0 8 20" fill="currentColor">
+            <circle cx="2" cy="2" r="1.5"/><circle cx="6" cy="2" r="1.5"/>
+            <circle cx="2" cy="10" r="1.5"/><circle cx="6" cy="10" r="1.5"/>
+            <circle cx="2" cy="18" r="1.5"/><circle cx="6" cy="18" r="1.5"/>
+          </svg>
+        </div>
+
+        <div>
+          <label>Movimento</label>
+          <div style={{ marginTop: '5px' }}>
+            <SearchableMovementSelect 
+              value={item.movId} 
+              onChange={(newId) => updateMovimento(item.originalId, 'movId', newId)} 
+              movimentosDB={movimentosDB} 
+            />
+          </div>
+        </div>
+        
+        <div>
+          <label>Reps/Mts</label>
+          <input type="number" value={item.reps} onChange={e => updateMovimento(item.originalId, 'reps', Number(e.target.value))} />
+        </div>
+        
+        <div>
+          <label>Carga/Téc.</label>
+          <div style={{ display: 'flex', gap: '5px' }}>
+            <input type="number" disabled={!cfg.usaCarga} value={item.carga} onChange={e => updateMovimento(item.originalId, 'carga', Number(e.target.value))} />
+            <select value={item.tecnica} onChange={e => updateMovimento(item.originalId, 'tecnica', e.target.value)}>
+              <option value="tng">T&G</option>
+              <option value="drop">Drop</option>
+            </select>
+          </div>
+        </div>
+        
+        <div>
+          <div style={{ display: 'flex', gap: '5px' }}>
+            <div style={{ flex: 1 }}>
+              <label>{cfg.paramExtra ? cfg.paramExtra.label : 'Param.'}</label>
+              <input type="text" disabled={!cfg.paramExtra} value={item.extraVal || ''} onChange={e => updateMovimento(item.originalId, 'extraVal', e.target.value)} />
+            </div>
+            {cfg.paramExtra2 && (
+              <div style={{ flex: 1 }}>
+                <label>{cfg.paramExtra2.label}</label>
+                <select value={item.extraVal2 || cfg.paramExtra2.val} onChange={e => updateMovimento(item.originalId, 'extraVal2', e.target.value)}>
+                  {cfg.paramExtra2.options?.map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+        </div>
+        
+        <div className="actions-col">
+          <button className="btn-action" onClick={() => addMovimento(item.originalId, item.phase)} title="Duplicar">
+            <Copy size={"1.2em"} color="var(--line-silver)" />
+          </button>
+          <button className="btn-remove" onClick={() => removeMovimento(item.originalId)}><X size={"1.2em"} /></button>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -68,92 +148,54 @@ export function PrescricaoTab({
       <hr style={{ borderColor: 'var(--line-silver, #26272b)', margin: '25px 0' }} />
 
       <h2>Quadro de Movimentos</h2>
-      <button className="btn-add" onClick={() => addMovimento(null)} style={{ backgroundColor: 'transparent', color: 'var(--dyna-red, #FF2B3D)', border: '1px dashed var(--dyna-red, #FF2B3D)', padding: '10px 15px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', width: '100%', marginBottom: '15px' }}>+ Adicionar Exercício</button>
       
-      <div className="wod-list">
-        {lousa.map((item, index) => {
-          const cfg = movimentosDB[item.movId] || movimentosDB['pushup'];
-          return (
-            <div 
-              key={item.originalId} 
-              className="wod-item"
-              draggable
-              onDragStart={(e) => {
-                handleDragStart(index);
-                e.currentTarget.style.opacity = '0.5';
-              }}
-              onDragEnter={() => handleDragEnter(index)}
-              onDragEnd={handleDragEnd}
-              onDragOver={(e) => e.preventDefault()}
-            >
-              <div className="drag-handle">
-                <svg width="10" height="20" viewBox="0 0 8 20" fill="currentColor">
-                  <circle cx="2" cy="2" r="1.5"/><circle cx="6" cy="2" r="1.5"/>
-                  <circle cx="2" cy="10" r="1.5"/><circle cx="6" cy="10" r="1.5"/>
-                  <circle cx="2" cy="18" r="1.5"/><circle cx="6" cy="18" r="1.5"/>
-                </svg>
-              </div>
-
-              <div>
-                <label>Fase</label>
-                <select value={item.phase} onChange={e => updateMovimento(item.originalId, 'phase', e.target.value)}>
-                  <option value="buyin">Buy-in</option>
-                  <option value="round">WOD</option>
-                  <option value="cashout">Cash-out</option>
-                </select>
-                <div style={{ marginTop: '5px' }}>
-                  <SearchableMovementSelect 
-                    value={item.movId} 
-                    onChange={(newId) => updateMovimento(item.originalId, 'movId', newId)} 
-                    movimentosDB={movimentosDB} 
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <label>Reps/Mts</label>
-                <input type="number" value={item.reps} onChange={e => updateMovimento(item.originalId, 'reps', Number(e.target.value))} />
-              </div>
-              
-              <div>
-                <label>Carga/Téc.</label>
-                <div style={{ display: 'flex', gap: '5px' }}>
-                  <input type="number" disabled={!cfg.usaCarga} value={item.carga} onChange={e => updateMovimento(item.originalId, 'carga', Number(e.target.value))} />
-                  <select value={item.tecnica} onChange={e => updateMovimento(item.originalId, 'tecnica', e.target.value)}>
-                    <option value="tng">T&G</option>
-                    <option value="drop">Drop</option>
-                  </select>
-                </div>
-              </div>
-              
-              <div>
-                <div style={{ display: 'flex', gap: '5px' }}>
-                  <div style={{ flex: 1 }}>
-                    <label>{cfg.paramExtra ? cfg.paramExtra.label : 'Param.'}</label>
-                    <input type="text" disabled={!cfg.paramExtra} value={item.extraVal || ''} onChange={e => updateMovimento(item.originalId, 'extraVal', e.target.value)} />
-                  </div>
-                  {cfg.paramExtra2 && (
-                    <div style={{ flex: 1 }}>
-                      <label>{cfg.paramExtra2.label}</label>
-                      <select value={item.extraVal2 || cfg.paramExtra2.val} onChange={e => updateMovimento(item.originalId, 'extraVal2', e.target.value)}>
-                        {cfg.paramExtra2.options?.map(opt => (
-                          <option key={opt.value} value={opt.value}>{opt.label}</option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-                </div>
-              </div>
-              
-              <div className="actions-col">
-                <button className="btn-action" onClick={() => addMovimento(item.originalId)} title="Duplicar">
-                  <Copy size={"1.2em"} color="var(--line-silver)" />
-                </button>
-                <button className="btn-remove" onClick={() => removeMovimento(item.originalId)}><X size={"1.2em"} /></button>
-              </div>
+      {/* SEÇÃO: BUY-IN */}
+      <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: 'var(--bg-card, #181a1e)', borderRadius: '8px', border: '1px solid #333' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1rem', cursor: 'pointer', margin: 0, color: hasBuyIn ? '#f39c12' : 'var(--text-muted, #8a8d94)' }}>
+          <input type="checkbox" checked={hasBuyIn} onChange={e => setHasBuyIn(e.target.checked)} style={{ width: '18px', height: '18px', cursor: 'pointer' }} />
+          <strong>Habilitar Buy-in</strong> (Aquecimento / Entrada)
+        </label>
+        
+        {hasBuyIn && (
+          <div style={{ marginTop: '15px' }}>
+            <div className="wod-list" style={{ marginBottom: '10px' }}>
+              {lousa.filter(m => m.phase === 'buyin').map(item => renderMovimento(item))}
             </div>
-          );
-        })}
+            <button onClick={() => addMovimento(null, 'buyin')} style={{ backgroundColor: 'transparent', color: '#f39c12', border: '1px dashed #f39c12', padding: '10px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', width: '100%' }}>
+              + Adicionar Movimento (Buy-in)
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* SEÇÃO PRINCIPAL: WOD */}
+      <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: 'var(--bg-card, #181a1e)', borderRadius: '8px', border: '1px solid var(--dyna-red, #FF2B3D)' }}>
+        <h3 style={{ margin: '0 0 15px 0', color: 'var(--dyna-red, #FF2B3D)', fontSize: '1.1rem' }}>WOD Principal</h3>
+        <div className="wod-list" style={{ marginBottom: '10px' }}>
+          {lousa.filter(m => m.phase === 'round').map(item => renderMovimento(item))}
+        </div>
+        <button onClick={() => addMovimento(null, 'round')} style={{ backgroundColor: 'transparent', color: 'var(--dyna-red, #FF2B3D)', border: '1px dashed var(--dyna-red, #FF2B3D)', padding: '10px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', width: '100%' }}>
+          + Adicionar Movimento ao WOD
+        </button>
+      </div>
+
+      {/* SEÇÃO: CASH-OUT */}
+      <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: 'var(--bg-card, #181a1e)', borderRadius: '8px', border: '1px solid #333' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1rem', cursor: 'pointer', margin: 0, color: hasCashOut ? '#2196f3' : 'var(--text-muted, #8a8d94)' }}>
+          <input type="checkbox" checked={hasCashOut} onChange={e => setHasCashOut(e.target.checked)} style={{ width: '18px', height: '18px', cursor: 'pointer' }} />
+          <strong>Habilitar Cash-out</strong> (Finalizador / Saída)
+        </label>
+        
+        {hasCashOut && (
+          <div style={{ marginTop: '15px' }}>
+            <div className="wod-list" style={{ marginBottom: '10px' }}>
+              {lousa.filter(m => m.phase === 'cashout').map(item => renderMovimento(item))}
+            </div>
+            <button onClick={() => addMovimento(null, 'cashout')} style={{ backgroundColor: 'transparent', color: '#2196f3', border: '1px dashed #2196f3', padding: '10px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', width: '100%' }}>
+              + Adicionar Movimento (Cash-out)
+            </button>
+          </div>
+        )}
       </div>
 
       <hr style={{ borderColor: 'var(--line-silver, #26272b)', margin: '25px 0' }} />

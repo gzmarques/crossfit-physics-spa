@@ -1504,7 +1504,7 @@ CONTEÚDO DOS ARQUIVOS
   3 | import { SearchableMovementSelect } from '../shared/SearchableMovementSelect';
   4 | import { movimentosDB } from '../../data/movements';
   5 | import { useWodStore } from '../../store/useWodStore';
-  6 | import type { Modalidade } from '../../types';
+  6 | import type { Modalidade, ItemLousa } from '../../types';
   7 | 
   8 | interface PrescricaoTabProps {
   9 |   currentShortCode: string | null;
@@ -1522,173 +1522,215 @@ CONTEÚDO DOS ARQUIVOS
  21 |   const { 
  22 |     nomeTreino, setNomeTreino, tipoTreino, setTipoTreino, tempoAlvo, setTempoAlvo,
  23 |     roundsPrescritos, setRoundsPrescritos, lousa, addMovimento, removeMovimento, 
- 24 |     updateMovimento, reorderMovimento
- 25 |   } = useWodStore();
- 26 | 
- 27 |   const dragItem = useRef<number | null>(null);
- 28 |   const dragOverItem = useRef<number | null>(null);
- 29 | 
- 30 |   const handleDragStart = (index: number) => { dragItem.current = index; };
- 31 |   const handleDragEnter = (index: number) => { dragOverItem.current = index; };
- 32 |   
- 33 |   const handleDragEnd = (e: React.DragEvent<HTMLDivElement>) => {
- 34 |     e.currentTarget.style.opacity = '1';
- 35 |     if (dragItem.current !== null && dragOverItem.current !== null && dragItem.current !== dragOverItem.current) {
- 36 |       reorderMovimento(dragItem.current, dragOverItem.current);
- 37 |     }
- 38 |     dragItem.current = null;
- 39 |     dragOverItem.current = null;
- 40 |   };
- 41 | 
- 42 |   return (
- 43 |     <div className="panel">
- 44 |       <h2>Estrutura do Treino</h2>
- 45 |       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', marginBottom: '15px' }}>
- 46 |         <div className="form-group" style={{ marginBottom: 0 }}>
- 47 |           <label>Nome do Treino (Opcional)</label>
- 48 |           <input type="text" value={nomeTreino} onChange={e => setNomeTreino(e.target.value)} placeholder="Ex: Murph, Fran, Open 24.1..." />
- 49 |         </div>
- 50 |         <div className="form-group" style={{ marginBottom: 0 }}>
- 51 |           <label>Modalidade</label>
- 52 |           <select value={tipoTreino} onChange={e => setTipoTreino(e.target.value as Modalidade)}>
- 53 |             <option value="FOR_TIME">For Time</option>
- 54 |             <option value="AMRAP">AMRAP</option>
- 55 |             <option value="EMOM">EMOM</option>
- 56 |           </select>
- 57 |         </div>
- 58 |         <div className="form-group" style={{ marginBottom: 0 }}>
- 59 |           <label>{tipoTreino === 'FOR_TIME' ? 'Time Cap (mm:ss)' : 'Tempo Total'}</label>
- 60 |           <input type="text" value={tempoAlvo} onChange={e => setTempoAlvo(e.target.value)} placeholder="Ex: 10:00" />
- 61 |         </div>
- 62 |         <div className="form-group" style={{ marginBottom: 0 }}>
- 63 |           <label>Rounds Prescritos</label>
- 64 |           <input type="number" value={roundsPrescritos} onChange={e => setRoundsPrescritos(Number(e.target.value))} />
- 65 |         </div>
- 66 |       </div>
- 67 | 
- 68 |       <hr style={{ borderColor: 'var(--line-silver, #26272b)', margin: '25px 0' }} />
- 69 | 
- 70 |       <h2>Quadro de Movimentos</h2>
- 71 |       <button className="btn-add" onClick={() => addMovimento(null)} style={{ backgroundColor: 'transparent', color: 'var(--dyna-red, #FF2B3D)', border: '1px dashed var(--dyna-red, #FF2B3D)', padding: '10px 15px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', width: '100%', marginBottom: '15px' }}>+ Adicionar Exercício</button>
- 72 |       
- 73 |       <div className="wod-list">
- 74 |         {lousa.map((item, index) => {
- 75 |           const cfg = movimentosDB[item.movId] || movimentosDB['pushup'];
- 76 |           return (
- 77 |             <div 
- 78 |               key={item.originalId} 
- 79 |               className="wod-item"
- 80 |               draggable
- 81 |               onDragStart={(e) => {
- 82 |                 handleDragStart(index);
- 83 |                 e.currentTarget.style.opacity = '0.5';
- 84 |               }}
- 85 |               onDragEnter={() => handleDragEnter(index)}
- 86 |               onDragEnd={handleDragEnd}
- 87 |               onDragOver={(e) => e.preventDefault()}
- 88 |             >
- 89 |               <div className="drag-handle">
- 90 |                 <svg width="10" height="20" viewBox="0 0 8 20" fill="currentColor">
- 91 |                   <circle cx="2" cy="2" r="1.5"/><circle cx="6" cy="2" r="1.5"/>
- 92 |                   <circle cx="2" cy="10" r="1.5"/><circle cx="6" cy="10" r="1.5"/>
- 93 |                   <circle cx="2" cy="18" r="1.5"/><circle cx="6" cy="18" r="1.5"/>
- 94 |                 </svg>
- 95 |               </div>
- 96 | 
- 97 |               <div>
- 98 |                 <label>Fase</label>
- 99 |                 <select value={item.phase} onChange={e => updateMovimento(item.originalId, 'phase', e.target.value)}>
-100 |                   <option value="buyin">Buy-in</option>
-101 |                   <option value="round">WOD</option>
-102 |                   <option value="cashout">Cash-out</option>
-103 |                 </select>
-104 |                 <div style={{ marginTop: '5px' }}>
-105 |                   <SearchableMovementSelect 
-106 |                     value={item.movId} 
-107 |                     onChange={(newId) => updateMovimento(item.originalId, 'movId', newId)} 
-108 |                     movimentosDB={movimentosDB} 
-109 |                   />
-110 |                 </div>
-111 |               </div>
-112 |               
-113 |               <div>
-114 |                 <label>Reps/Mts</label>
-115 |                 <input type="number" value={item.reps} onChange={e => updateMovimento(item.originalId, 'reps', Number(e.target.value))} />
-116 |               </div>
-117 |               
-118 |               <div>
-119 |                 <label>Carga/Téc.</label>
-120 |                 <div style={{ display: 'flex', gap: '5px' }}>
-121 |                   <input type="number" disabled={!cfg.usaCarga} value={item.carga} onChange={e => updateMovimento(item.originalId, 'carga', Number(e.target.value))} />
-122 |                   <select value={item.tecnica} onChange={e => updateMovimento(item.originalId, 'tecnica', e.target.value)}>
-123 |                     <option value="tng">T&G</option>
-124 |                     <option value="drop">Drop</option>
-125 |                   </select>
-126 |                 </div>
-127 |               </div>
-128 |               
-129 |               <div>
-130 |                 <div style={{ display: 'flex', gap: '5px' }}>
-131 |                   <div style={{ flex: 1 }}>
-132 |                     <label>{cfg.paramExtra ? cfg.paramExtra.label : 'Param.'}</label>
-133 |                     <input type="text" disabled={!cfg.paramExtra} value={item.extraVal || ''} onChange={e => updateMovimento(item.originalId, 'extraVal', e.target.value)} />
-134 |                   </div>
-135 |                   {cfg.paramExtra2 && (
-136 |                     <div style={{ flex: 1 }}>
-137 |                       <label>{cfg.paramExtra2.label}</label>
-138 |                       <select value={item.extraVal2 || cfg.paramExtra2.val} onChange={e => updateMovimento(item.originalId, 'extraVal2', e.target.value)}>
-139 |                         {cfg.paramExtra2.options?.map(opt => (
-140 |                           <option key={opt.value} value={opt.value}>{opt.label}</option>
-141 |                         ))}
-142 |                       </select>
-143 |                     </div>
-144 |                   )}
-145 |                 </div>
-146 |               </div>
-147 |               
-148 |               <div className="actions-col">
-149 |                 <button className="btn-action" onClick={() => addMovimento(item.originalId)} title="Duplicar">
-150 |                   <Copy size={"1.2em"} color="var(--line-silver)" />
-151 |                 </button>
-152 |                 <button className="btn-remove" onClick={() => removeMovimento(item.originalId)}><X size={"1.2em"} /></button>
-153 |               </div>
-154 |             </div>
-155 |           );
-156 |         })}
-157 |       </div>
-158 | 
-159 |       <hr style={{ borderColor: 'var(--line-silver, #26272b)', margin: '25px 0' }} />
-160 |       
-161 |       <h2>Gerenciar WOD</h2>
-162 |       {currentShortCode && (
-163 |         <p style={{ color: 'var(--text-muted, #8a8d94)', fontSize: '0.9rem', marginBottom: '15px' }}>
-164 |           Código deste treino: <strong style={{ color: '#fff', letterSpacing: '2px' }}>{currentShortCode}</strong>
-165 |         </p>
-166 |       )}
-167 |       
-168 |       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
-169 |         <button onClick={importarWod} style={{ flex: '1 1 140px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '1rem', backgroundColor: 'var(--bg-card, #181a1e)', color: '#fff', border: '1px solid var(--line-silver, #26272b)' }}>
-170 |           <Download size={22} style={{ flexShrink: 0 }} /> 
-171 |           <span>Importar</span>
-172 |         </button>
-173 |         <button onClick={compartilharWod} style={{ flex: '1 1 140px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '1rem', backgroundColor: 'var(--dyna-burgundy, #7A0F1B)', color: '#fff', border: 'none', fontWeight: '600' }}>
-174 |           <Share2 size={22} style={{ flexShrink: 0 }} /> 
-175 |           <span>Copiar</span>
-176 |         </button>
-177 |         {currentTemplateId && (
-178 |           <button onClick={clonarWod} style={{ flex: '1 1 140px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '1rem', backgroundColor: '#3b82f6', color: '#fff', border: 'none', fontWeight: 'bold' }}>
-179 |             <Copy size={22} style={{ flexShrink: 0 }} /> 
-180 |             <span>Duplicar</span>
-181 |           </button>
-182 |         )}
-183 |         <button onClick={() => salvarNoSupabase(false)} style={{ flex: '1 1 140px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '1rem', backgroundColor: 'var(--dyna-red, #FF2B3D)', color: '#fff', border: 'none', fontWeight: 'bold' }}>
-184 |           <Save size={22} style={{ flexShrink: 0 }} /> 
-185 |           <span>{currentTemplateId ? 'Atualizar WOD' : 'Salvar WOD'}</span>
-186 |         </button>
-187 |       </div>
-188 |     </div>
-189 |   );
-190 | }
+ 24 |     updateMovimento, reorderMovimento,
+ 25 |     hasBuyIn, setHasBuyIn, hasCashOut, setHasCashOut
+ 26 |   } = useWodStore();
+ 27 | 
+ 28 |   const dragItem = useRef<string | null>(null);
+ 29 |   const dragOverItem = useRef<string | null>(null);
+ 30 | 
+ 31 |   const handleDragStart = (id: string) => { dragItem.current = id; };
+ 32 |   const handleDragEnter = (id: string) => { dragOverItem.current = id; };
+ 33 |   
+ 34 |   const handleDragEnd = (e: React.DragEvent<HTMLDivElement>) => {
+ 35 |     e.currentTarget.style.opacity = '1';
+ 36 |     if (dragItem.current && dragOverItem.current && dragItem.current !== dragOverItem.current) {
+ 37 |       reorderMovimento(dragItem.current, dragOverItem.current);
+ 38 |     }
+ 39 |     dragItem.current = null;
+ 40 |     dragOverItem.current = null;
+ 41 |   };
+ 42 | 
+ 43 |   const renderMovimento = (item: ItemLousa) => {
+ 44 |     const cfg = movimentosDB[item.movId] || movimentosDB['pushup'];
+ 45 |     return (
+ 46 |       <div 
+ 47 |         key={item.originalId} 
+ 48 |         className="wod-item"
+ 49 |         draggable
+ 50 |         onDragStart={(e) => {
+ 51 |           handleDragStart(item.originalId);
+ 52 |           e.currentTarget.style.opacity = '0.5';
+ 53 |         }}
+ 54 |         onDragEnter={() => handleDragEnter(item.originalId)}
+ 55 |         onDragEnd={handleDragEnd}
+ 56 |         onDragOver={(e) => e.preventDefault()}
+ 57 |       >
+ 58 |         <div className="drag-handle">
+ 59 |           <svg width="10" height="20" viewBox="0 0 8 20" fill="currentColor">
+ 60 |             <circle cx="2" cy="2" r="1.5"/><circle cx="6" cy="2" r="1.5"/>
+ 61 |             <circle cx="2" cy="10" r="1.5"/><circle cx="6" cy="10" r="1.5"/>
+ 62 |             <circle cx="2" cy="18" r="1.5"/><circle cx="6" cy="18" r="1.5"/>
+ 63 |           </svg>
+ 64 |         </div>
+ 65 | 
+ 66 |         <div>
+ 67 |           <label>Movimento</label>
+ 68 |           <div style={{ marginTop: '5px' }}>
+ 69 |             <SearchableMovementSelect 
+ 70 |               value={item.movId} 
+ 71 |               onChange={(newId) => updateMovimento(item.originalId, 'movId', newId)} 
+ 72 |               movimentosDB={movimentosDB} 
+ 73 |             />
+ 74 |           </div>
+ 75 |         </div>
+ 76 |         
+ 77 |         <div>
+ 78 |           <label>Reps/Mts</label>
+ 79 |           <input type="number" value={item.reps} onChange={e => updateMovimento(item.originalId, 'reps', Number(e.target.value))} />
+ 80 |         </div>
+ 81 |         
+ 82 |         <div>
+ 83 |           <label>Carga/Téc.</label>
+ 84 |           <div style={{ display: 'flex', gap: '5px' }}>
+ 85 |             <input type="number" disabled={!cfg.usaCarga} value={item.carga} onChange={e => updateMovimento(item.originalId, 'carga', Number(e.target.value))} />
+ 86 |             <select value={item.tecnica} onChange={e => updateMovimento(item.originalId, 'tecnica', e.target.value)}>
+ 87 |               <option value="tng">T&G</option>
+ 88 |               <option value="drop">Drop</option>
+ 89 |             </select>
+ 90 |           </div>
+ 91 |         </div>
+ 92 |         
+ 93 |         <div>
+ 94 |           <div style={{ display: 'flex', gap: '5px' }}>
+ 95 |             <div style={{ flex: 1 }}>
+ 96 |               <label>{cfg.paramExtra ? cfg.paramExtra.label : 'Param.'}</label>
+ 97 |               <input type="text" disabled={!cfg.paramExtra} value={item.extraVal || ''} onChange={e => updateMovimento(item.originalId, 'extraVal', e.target.value)} />
+ 98 |             </div>
+ 99 |             {cfg.paramExtra2 && (
+100 |               <div style={{ flex: 1 }}>
+101 |                 <label>{cfg.paramExtra2.label}</label>
+102 |                 <select value={item.extraVal2 || cfg.paramExtra2.val} onChange={e => updateMovimento(item.originalId, 'extraVal2', e.target.value)}>
+103 |                   {cfg.paramExtra2.options?.map(opt => (
+104 |                     <option key={opt.value} value={opt.value}>{opt.label}</option>
+105 |                   ))}
+106 |                 </select>
+107 |               </div>
+108 |             )}
+109 |           </div>
+110 |         </div>
+111 |         
+112 |         <div className="actions-col">
+113 |           <button className="btn-action" onClick={() => addMovimento(item.originalId, item.phase)} title="Duplicar">
+114 |             <Copy size={"1.2em"} color="var(--line-silver)" />
+115 |           </button>
+116 |           <button className="btn-remove" onClick={() => removeMovimento(item.originalId)}><X size={"1.2em"} /></button>
+117 |         </div>
+118 |       </div>
+119 |     );
+120 |   };
+121 | 
+122 |   return (
+123 |     <div className="panel">
+124 |       <h2>Estrutura do Treino</h2>
+125 |       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', marginBottom: '15px' }}>
+126 |         <div className="form-group" style={{ marginBottom: 0 }}>
+127 |           <label>Nome do Treino (Opcional)</label>
+128 |           <input type="text" value={nomeTreino} onChange={e => setNomeTreino(e.target.value)} placeholder="Ex: Murph, Fran, Open 24.1..." />
+129 |         </div>
+130 |         <div className="form-group" style={{ marginBottom: 0 }}>
+131 |           <label>Modalidade</label>
+132 |           <select value={tipoTreino} onChange={e => setTipoTreino(e.target.value as Modalidade)}>
+133 |             <option value="FOR_TIME">For Time</option>
+134 |             <option value="AMRAP">AMRAP</option>
+135 |             <option value="EMOM">EMOM</option>
+136 |           </select>
+137 |         </div>
+138 |         <div className="form-group" style={{ marginBottom: 0 }}>
+139 |           <label>{tipoTreino === 'FOR_TIME' ? 'Time Cap (mm:ss)' : 'Tempo Total'}</label>
+140 |           <input type="text" value={tempoAlvo} onChange={e => setTempoAlvo(e.target.value)} placeholder="Ex: 10:00" />
+141 |         </div>
+142 |         <div className="form-group" style={{ marginBottom: 0 }}>
+143 |           <label>Rounds Prescritos</label>
+144 |           <input type="number" value={roundsPrescritos} onChange={e => setRoundsPrescritos(Number(e.target.value))} />
+145 |         </div>
+146 |       </div>
+147 | 
+148 |       <hr style={{ borderColor: 'var(--line-silver, #26272b)', margin: '25px 0' }} />
+149 | 
+150 |       <h2>Quadro de Movimentos</h2>
+151 |       
+152 |       {/* SEÇÃO: BUY-IN */}
+153 |       <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: 'var(--bg-card, #181a1e)', borderRadius: '8px', border: '1px solid #333' }}>
+154 |         <label style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1rem', cursor: 'pointer', margin: 0, color: hasBuyIn ? '#f39c12' : 'var(--text-muted, #8a8d94)' }}>
+155 |           <input type="checkbox" checked={hasBuyIn} onChange={e => setHasBuyIn(e.target.checked)} style={{ width: '18px', height: '18px', cursor: 'pointer' }} />
+156 |           <strong>Habilitar Buy-in</strong> (Aquecimento / Entrada)
+157 |         </label>
+158 |         
+159 |         {hasBuyIn && (
+160 |           <div style={{ marginTop: '15px' }}>
+161 |             <div className="wod-list" style={{ marginBottom: '10px' }}>
+162 |               {lousa.filter(m => m.phase === 'buyin').map(item => renderMovimento(item))}
+163 |             </div>
+164 |             <button onClick={() => addMovimento(null, 'buyin')} style={{ backgroundColor: 'transparent', color: '#f39c12', border: '1px dashed #f39c12', padding: '10px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', width: '100%' }}>
+165 |               + Adicionar Movimento (Buy-in)
+166 |             </button>
+167 |           </div>
+168 |         )}
+169 |       </div>
+170 | 
+171 |       {/* SEÇÃO PRINCIPAL: WOD */}
+172 |       <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: 'var(--bg-card, #181a1e)', borderRadius: '8px', border: '1px solid var(--dyna-red, #FF2B3D)' }}>
+173 |         <h3 style={{ margin: '0 0 15px 0', color: 'var(--dyna-red, #FF2B3D)', fontSize: '1.1rem' }}>WOD Principal</h3>
+174 |         <div className="wod-list" style={{ marginBottom: '10px' }}>
+175 |           {lousa.filter(m => m.phase === 'round').map(item => renderMovimento(item))}
+176 |         </div>
+177 |         <button onClick={() => addMovimento(null, 'round')} style={{ backgroundColor: 'transparent', color: 'var(--dyna-red, #FF2B3D)', border: '1px dashed var(--dyna-red, #FF2B3D)', padding: '10px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', width: '100%' }}>
+178 |           + Adicionar Movimento ao WOD
+179 |         </button>
+180 |       </div>
+181 | 
+182 |       {/* SEÇÃO: CASH-OUT */}
+183 |       <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: 'var(--bg-card, #181a1e)', borderRadius: '8px', border: '1px solid #333' }}>
+184 |         <label style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1rem', cursor: 'pointer', margin: 0, color: hasCashOut ? '#2196f3' : 'var(--text-muted, #8a8d94)' }}>
+185 |           <input type="checkbox" checked={hasCashOut} onChange={e => setHasCashOut(e.target.checked)} style={{ width: '18px', height: '18px', cursor: 'pointer' }} />
+186 |           <strong>Habilitar Cash-out</strong> (Finalizador / Saída)
+187 |         </label>
+188 |         
+189 |         {hasCashOut && (
+190 |           <div style={{ marginTop: '15px' }}>
+191 |             <div className="wod-list" style={{ marginBottom: '10px' }}>
+192 |               {lousa.filter(m => m.phase === 'cashout').map(item => renderMovimento(item))}
+193 |             </div>
+194 |             <button onClick={() => addMovimento(null, 'cashout')} style={{ backgroundColor: 'transparent', color: '#2196f3', border: '1px dashed #2196f3', padding: '10px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', width: '100%' }}>
+195 |               + Adicionar Movimento (Cash-out)
+196 |             </button>
+197 |           </div>
+198 |         )}
+199 |       </div>
+200 | 
+201 |       <hr style={{ borderColor: 'var(--line-silver, #26272b)', margin: '25px 0' }} />
+202 |       
+203 |       <h2>Gerenciar WOD</h2>
+204 |       {currentShortCode && (
+205 |         <p style={{ color: 'var(--text-muted, #8a8d94)', fontSize: '0.9rem', marginBottom: '15px' }}>
+206 |           Código deste treino: <strong style={{ color: '#fff', letterSpacing: '2px' }}>{currentShortCode}</strong>
+207 |         </p>
+208 |       )}
+209 |       
+210 |       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+211 |         <button onClick={importarWod} style={{ flex: '1 1 140px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '1rem', backgroundColor: 'var(--bg-card, #181a1e)', color: '#fff', border: '1px solid var(--line-silver, #26272b)' }}>
+212 |           <Download size={22} style={{ flexShrink: 0 }} /> 
+213 |           <span>Importar</span>
+214 |         </button>
+215 |         <button onClick={compartilharWod} style={{ flex: '1 1 140px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '1rem', backgroundColor: 'var(--dyna-burgundy, #7A0F1B)', color: '#fff', border: 'none', fontWeight: '600' }}>
+216 |           <Share2 size={22} style={{ flexShrink: 0 }} /> 
+217 |           <span>Copiar</span>
+218 |         </button>
+219 |         {currentTemplateId && (
+220 |           <button onClick={clonarWod} style={{ flex: '1 1 140px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '1rem', backgroundColor: '#3b82f6', color: '#fff', border: 'none', fontWeight: 'bold' }}>
+221 |             <Copy size={22} style={{ flexShrink: 0 }} /> 
+222 |             <span>Duplicar</span>
+223 |           </button>
+224 |         )}
+225 |         <button onClick={() => salvarNoSupabase(false)} style={{ flex: '1 1 140px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '1rem', backgroundColor: 'var(--dyna-red, #FF2B3D)', color: '#fff', border: 'none', fontWeight: 'bold' }}>
+226 |           <Save size={22} style={{ flexShrink: 0 }} /> 
+227 |           <span>{currentTemplateId ? 'Atualizar WOD' : 'Salvar WOD'}</span>
+228 |         </button>
+229 |       </div>
+230 |     </div>
+231 |   );
+232 | }
 
 --- FIM DO ARQUIVO: src\components\tabs\PrescricaoTab.tsx ---
 
@@ -2888,7 +2930,7 @@ CONTEÚDO DOS ARQUIVOS
 
 --- INÍCIO DO ARQUIVO: src\store\useWodStore.ts ---
   1 | import { create } from 'zustand';
-  2 | import type { ItemLousa, Modalidade } from '../types';
+  2 | import type { ItemLousa, Modalidade, Phase } from '../types';
   3 | 
   4 | interface WodState {
   5 |   // Estados
@@ -2897,66 +2939,99 @@ CONTEÚDO DOS ARQUIVOS
   8 |   tempoAlvo: string;
   9 |   roundsPrescritos: number;
  10 |   lousa: ItemLousa[];
- 11 | 
- 12 |   // Ações
- 13 |   setNomeTreino: (nome: string) => void;
- 14 |   setTipoTreino: (tipo: Modalidade) => void;
- 15 |   setTempoAlvo: (tempo: string) => void;
- 16 |   setRoundsPrescritos: (rounds: number) => void;
- 17 |   setLousa: (lousa: ItemLousa[]) => void;
- 18 |   addMovimento: (baseId?: string | null) => void;
- 19 |   removeMovimento: (id: string) => void;
- 20 |   updateMovimento: (id: string, field: keyof ItemLousa, val: any) => void;
- 21 |   reorderMovimento: (fromIndex: number, toIndex: number) => void;
- 22 | }
- 23 | 
- 24 | export const useWodStore = create<WodState>((set, get) => ({
- 25 |   nomeTreino: '',
- 26 |   tipoTreino: 'FOR_TIME',
- 27 |   tempoAlvo: '05:00',
- 28 |   roundsPrescritos: 3,
- 29 |   lousa: [{ originalId: crypto.randomUUID(), movId: 'thruster', phase: 'round', reps: 21, carga: 43, tecnica: 'tng', extraVal: '' }],
- 30 | 
- 31 |   setNomeTreino: (nome) => set({ nomeTreino: nome }),
- 32 |   setTipoTreino: (tipo) => set({ tipoTreino: tipo }),
- 33 |   setTempoAlvo: (tempo) => set({ tempoAlvo: tempo }),
- 34 |   setRoundsPrescritos: (rounds) => set({ roundsPrescritos: rounds }),
- 35 |   setLousa: (lousa) => set({ lousa }),
- 36 | 
- 37 |   addMovimento: (baseId = null) => {
- 38 |     const { lousa } = get();
- 39 |     const newId = crypto.randomUUID();
- 40 |     let newItem: ItemLousa = { originalId: newId, movId: 'air_squat', phase: 'round', reps: 10, carga: 0, tecnica: 'tng', extraVal: '' };
- 41 |     
- 42 |     if (baseId) {
- 43 |       const idx = lousa.findIndex(m => m.originalId === baseId);
- 44 |       if (idx !== -1) {
- 45 |         newItem = { ...lousa[idx], originalId: newId };
- 46 |         const updated = [...lousa];
- 47 |         updated.splice(idx + 1, 0, newItem);
- 48 |         set({ lousa: updated });
- 49 |         return;
- 50 |       }
- 51 |     }
- 52 |     set({ lousa: [...lousa, newItem] });
- 53 |   },
- 54 | 
- 55 |   removeMovimento: (id) => set((state) => ({
- 56 |     lousa: state.lousa.filter(m => m.originalId !== id)
- 57 |   })),
- 58 | 
- 59 |   updateMovimento: (id, field, val) => set((state) => ({
- 60 |     lousa: state.lousa.map(item => item.originalId === id ? { ...item, [field]: val } : item)
- 61 |   })),
- 62 | 
- 63 |   reorderMovimento: (fromIndex, toIndex) => set((state) => {
- 64 |     const newLousa = [...state.lousa];
- 65 |     const draggedItem = newLousa[fromIndex];
- 66 |     newLousa.splice(fromIndex, 1);
- 67 |     newLousa.splice(toIndex, 0, draggedItem);
- 68 |     return { lousa: newLousa };
- 69 |   })
- 70 | }));
+ 11 |   
+ 12 |   // Toggles de Visibilidade/Ativação
+ 13 |   hasBuyIn: boolean;
+ 14 |   hasCashOut: boolean;
+ 15 | 
+ 16 |   // Ações
+ 17 |   setNomeTreino: (nome: string) => void;
+ 18 |   setTipoTreino: (tipo: Modalidade) => void;
+ 19 |   setTempoAlvo: (tempo: string) => void;
+ 20 |   setRoundsPrescritos: (rounds: number) => void;
+ 21 |   setLousa: (lousa: ItemLousa[]) => void;
+ 22 |   
+ 23 |   setHasBuyIn: (val: boolean) => void;
+ 24 |   setHasCashOut: (val: boolean) => void;
+ 25 | 
+ 26 |   addMovimento: (baseId?: string | null, phase?: Phase) => void;
+ 27 |   removeMovimento: (id: string) => void;
+ 28 |   updateMovimento: (id: string, field: keyof ItemLousa, val: any) => void;
+ 29 |   reorderMovimento: (fromId: string, toId: string) => void;
+ 30 | }
+ 31 | 
+ 32 | export const useWodStore = create<WodState>((set, get) => ({
+ 33 |   nomeTreino: '',
+ 34 |   tipoTreino: 'FOR_TIME',
+ 35 |   tempoAlvo: '05:00',
+ 36 |   roundsPrescritos: 3,
+ 37 |   lousa: [{ originalId: crypto.randomUUID(), movId: 'thruster', phase: 'round', reps: 21, carga: 43, tecnica: 'tng', extraVal: '' }],
+ 38 |   
+ 39 |   hasBuyIn: false,
+ 40 |   hasCashOut: false,
+ 41 | 
+ 42 |   setNomeTreino: (nome) => set({ nomeTreino: nome }),
+ 43 |   setTipoTreino: (tipo) => set({ tipoTreino: tipo }),
+ 44 |   setTempoAlvo: (tempo) => set({ tempoAlvo: tempo }),
+ 45 |   setRoundsPrescritos: (rounds) => set({ roundsPrescritos: rounds }),
+ 46 |   
+ 47 |   // Ao carregar um WOD (ex: do Histórico), ativamos os painéis automaticamente se houver dados
+ 48 |   setLousa: (lousa) => set({ 
+ 49 |     lousa,
+ 50 |     hasBuyIn: lousa.some(m => m.phase === 'buyin'),
+ 51 |     hasCashOut: lousa.some(m => m.phase === 'cashout')
+ 52 |   }),
+ 53 | 
+ 54 |   // Se o usuário desativar o painel, removemos os movimentos daquela fase
+ 55 |   setHasBuyIn: (val) => set((state) => ({
+ 56 |     hasBuyIn: val,
+ 57 |     lousa: val ? state.lousa : state.lousa.filter(m => m.phase !== 'buyin')
+ 58 |   })),
+ 59 | 
+ 60 |   setHasCashOut: (val) => set((state) => ({
+ 61 |     hasCashOut: val,
+ 62 |     lousa: val ? state.lousa : state.lousa.filter(m => m.phase !== 'cashout')
+ 63 |   })),
+ 64 | 
+ 65 |   addMovimento: (baseId = null, phase = 'round') => {
+ 66 |     const { lousa } = get();
+ 67 |     const newId = crypto.randomUUID();
+ 68 |     let newItem: ItemLousa = { originalId: newId, movId: 'air_squat', phase, reps: 10, carga: 0, tecnica: 'tng', extraVal: '' };
+ 69 |     
+ 70 |     if (baseId) {
+ 71 |       const idx = lousa.findIndex(m => m.originalId === baseId);
+ 72 |       if (idx !== -1) {
+ 73 |         newItem = { ...lousa[idx], originalId: newId, phase }; 
+ 74 |         const updated = [...lousa];
+ 75 |         updated.splice(idx + 1, 0, newItem);
+ 76 |         set({ lousa: updated });
+ 77 |         return;
+ 78 |       }
+ 79 |     }
+ 80 |     set({ lousa: [...lousa, newItem] });
+ 81 |   },
+ 82 | 
+ 83 |   removeMovimento: (id) => set((state) => ({
+ 84 |     lousa: state.lousa.filter(m => m.originalId !== id)
+ 85 |   })),
+ 86 | 
+ 87 |   updateMovimento: (id, field, val) => set((state) => ({
+ 88 |     lousa: state.lousa.map(item => item.originalId === id ? { ...item, [field]: val } : item)
+ 89 |   })),
+ 90 | 
+ 91 |   // Modificado para usar ID no Drag and Drop (evita bugs ao arrastar em listas filtradas)
+ 92 |   reorderMovimento: (fromId, toId) => set((state) => {
+ 93 |     const fromIndex = state.lousa.findIndex(m => m.originalId === fromId);
+ 94 |     const toIndex = state.lousa.findIndex(m => m.originalId === toId);
+ 95 |     
+ 96 |     if (fromIndex === -1 || toIndex === -1) return state;
+ 97 | 
+ 98 |     const newLousa = [...state.lousa];
+ 99 |     const [draggedItem] = newLousa.splice(fromIndex, 1);
+100 |     newLousa.splice(toIndex, 0, draggedItem);
+101 |     return { lousa: newLousa };
+102 |   })
+103 | }));
 
 --- FIM DO ARQUIVO: src\store\useWodStore.ts ---
 
