@@ -12,9 +12,14 @@
   box-sizing: border-box;
 }
 
-/* FORÇA ROBOTO EM TODA A APLICAÇÃO PARA AS PALAVRAS */
-body, html, input, select, textarea, button, label, h1, h2, h3, h4, h5, h6, span, p, div {
-  font-family: 'Roboto', sans-serif;
+/* FORÇA INTER COMO FONTE BASE E MONTSERRAT PARA TÍTULOS */
+body, html, input, select, textarea, button, label, span, p, div {
+  font-family: 'Inter', sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Montserrat', sans-serif;
+  letter-spacing: -0.5px; /* Deixa a Montserrat levemente mais unida e esportiva */
 }
 
 body {
@@ -86,16 +91,15 @@ label {
   font-weight: bold;
 }
 
-/* Forçando a herança para elementos de formulário */
 input, select, textarea, button {
   width: 100%;
   padding: 10px;
   background-color: #2c2c2c;
-  border: 1px solid var(--line-silver); /* Troquei var(--border) por line-silver para garantir que a borda apareça */
+  border: 1px solid var(--line-silver);
   color: var(--text-main);
   border-radius: 4px;
   font-size: 0.95rem;
-  font-family: 'Roboto', sans-serif;
+  font-family: 'Inter', sans-serif; /* Atualizado para Inter */
 }
 
 input:focus, select:focus, textarea:focus {
@@ -348,7 +352,7 @@ button:hover {
   width: 420px;
   background-color: #111315;
   color: #fff;
-  font-family: 'Roboto', sans-serif;
+  font-family: 'Inter', sans-serif; /* Atualizado para Inter */
   padding: 40px 20px;
   box-sizing: border-box;
   display: flex;
@@ -367,6 +371,7 @@ button:hover {
   font-style: italic;
   font-weight: 900;
   letter-spacing: 1px;
+  font-family: 'Montserrat', sans-serif;
 }
 
 .insta-subtitle {
@@ -513,7 +518,7 @@ button:hover {
   font-size: 12px;
   font-weight: normal;
   color: #8a8d94;
-  font-family: 'Roboto', sans-serif;
+  font-family: 'Inter', sans-serif; /* Atualizado para Inter */
 }
 
 .insta-footer {
