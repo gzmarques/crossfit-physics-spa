@@ -197,13 +197,17 @@ CONTEÚDO DOS ARQUIVOS
   7 |     <link rel="icon" type="image/png" href="/favicon.png" />
   8 |     <link rel="apple-touch-icon" href="/dynawod-192.png" />
   9 |     <meta name="theme-color" content="#1e1e1e" />
- 10 |   </head>
- 11 |   <body>
- 12 |     <div id="root"></div>
- 13 |     <script type="module" src="/src/main.tsx"></script>
- 14 |   </body>
- 15 | </html>
- 16 | 
+ 10 |     
+ 11 |     <!-- Google Fonts: Roboto e Roboto Mono -->
+ 12 |     <link rel="preconnect" href="https://fonts.googleapis.com">
+ 13 |     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+ 14 |     <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;700&family=Roboto:ital,wght@0,400;0,500;0,700;0,900;1,400;1,700;1,900&display=swap" rel="stylesheet">
+ 15 |   </head>
+ 16 |   <body>
+ 17 |     <div id="root"></div>
+ 18 |     <script type="module" src="/src/main.tsx"></script>
+ 19 |   </body>
+ 20 | </html>
 
 --- FIM DO ARQUIVO: index.html ---
 
@@ -2264,496 +2268,513 @@ CONTEÚDO DOS ARQUIVOS
  17 |   padding: 0;
  18 |   background-color: var(--bg-dark);
  19 |   color: var(--text-main);
- 20 |   font-family: 'Inter', 'SF Pro Text', sans-serif;
- 21 |   -webkit-font-smoothing: antialiased;
- 22 | }
- 23 | 
- 24 | .container {
- 25 |   max-width: 1150px;
- 26 |   width: 100%;
- 27 | }
- 28 | 
- 29 | h1 {
- 30 |   text-align: center;
- 31 |   border-bottom: 2px solid var(--accent);
- 32 |   padding-bottom: 10px;
- 33 |   margin-bottom: 25px;
- 34 | }
- 35 | 
- 36 | .grid {
- 37 |   display: grid;
- 38 |   grid-template-columns: 1fr 1fr;
- 39 |   gap: 20px;
- 40 |   margin-bottom: 20px;
- 41 | }
- 42 | 
- 43 | .panel {
- 44 |   background-color: var(--panel-bg);
- 45 |   border: 1px solid var(--border);
- 46 |   border-radius: 8px;
- 47 |   padding: 20px;
- 48 |   margin-bottom: 20px;
- 49 | }
- 50 | 
- 51 | .panel h2 {
- 52 |   margin-top: 0;
- 53 |   color: var(--accent);
- 54 |   font-size: 1.2rem;
- 55 |   border-bottom: 1px solid var(--border);
- 56 |   padding-bottom: 10px;
- 57 | }
- 58 | 
- 59 | .form-group {
- 60 |   margin-bottom: 15px;
- 61 | }
- 62 | 
- 63 | label {
- 64 |   display: block;
- 65 |   margin-bottom: 5px;
- 66 |   font-size: 0.85rem;
- 67 |   color: var(--text-muted);
- 68 |   font-weight: bold;
- 69 | }
- 70 | 
- 71 | input, select, textarea {
- 72 |   width: 100%;
- 73 |   padding: 10px;
- 74 |   background-color: #2c2c2c;
- 75 |   border: 1px solid var(--border);
- 76 |   color: var(--text-main);
- 77 |   border-radius: 4px;
- 78 |   font-size: 0.95rem;
- 79 | }
- 80 | 
- 81 | input:focus, select:focus, textarea:focus {
- 82 |   outline: none;
- 83 |   border-bottom: 2px solid var(--accent);
- 84 | }
- 85 | 
- 86 | input:disabled {
- 87 |   background-color: #1a1a1a;
- 88 |   cursor: not-allowed;
- 89 |   opacity: 0.6;
- 90 | }
- 91 | 
- 92 | .tabs {
- 93 |   display: flex;
- 94 |   border-bottom: 1px solid var(--border);
- 95 |   margin-bottom: 20px;
- 96 |   gap: 5px;
- 97 | }
- 98 | 
- 99 | .tab-btn {
-100 |   background: #252525;
-101 |   color: var(--text-muted);
-102 |   border: 1px solid var(--border);
-103 |   border-bottom: none;
-104 |   padding: 12px 20px;
-105 |   border-radius: 8px 8px 0 0;
-106 |   cursor: pointer;
-107 |   font-weight: bold;
-108 |   width: auto;
-109 | }
-110 | 
-111 | .tab-btn.active {
-112 |   background: var(--accent);
-113 |   color: white;
-114 |   border-color: var(--accent);
-115 | }
-116 | 
-117 | .wod-list {
-118 |   margin-bottom: 20px;
-119 | }
-120 | 
-121 | .wod-item {
-122 |   position: relative;
-123 |   background-color: #252525;
-124 |   padding: 15px 15px 15px 40px; /* Padding esquerdo aumentado para o pegador */
-125 |   margin-bottom: 10px;
-126 |   border-radius: 4px;
-127 |   display: grid;
-128 |   grid-template-columns: 2fr 0.8fr 1.2fr 1fr auto;
-129 |   gap: 12px;
-130 |   align-items: end;
-131 |   cursor: grab;
-132 |   transition: box-shadow 0.2s, background-color 0.2s, opacity 0.2s;
-133 | }
-134 | 
-135 | .wod-item:active { 
-136 |   cursor: grabbing; 
-137 | }
-138 | 
-139 | .drag-handle {
-140 |   position: absolute; 
-141 |   left: 0; 
-142 |   top: 0; 
-143 |   bottom: 0; 
-144 |   width: 25px;
-145 |   background-color: var(--dyna-red);
-146 |   border-radius: 4px 0 0 4px;
-147 |   display: flex; 
-148 |   align-items: center; 
-149 |   justify-content: center;
-150 |   color: rgba(255, 255, 255, 0.7);
-151 | }
-152 | 
-153 | .wod-item-analise {
-154 |   background-color: #252525;
-155 |   padding: 12px;
-156 |   margin-bottom: 8px;
-157 |   border-radius: 4px;
-158 |   border-left: 4px solid var(--accent);
-159 |   display: grid;
-160 |   grid-template-columns: auto 2fr 0.6fr 0.8fr 0.8fr;
-161 |   gap: 15px;
-162 |   align-items: center;
-163 | }
-164 | 
-165 | .badge-round {
-166 |   background: #111;
-167 |   color: var(--accent);
-168 |   padding: 5px 10px;
-169 |   border-radius: 15px;
-170 |   font-size: 0.8rem;
-171 |   font-weight: bold;
-172 |   text-transform: uppercase;
-173 | }
-174 | 
-175 | .badge-buyin { color: #f39c12; }
-176 | .badge-cashout { color: #2196f3; }
-177 | 
-178 | button {
-179 |   width: 100%;
-180 |   padding: 12px;
-181 |   background-color: var(--accent);
-182 |   color: white;
-183 |   border: none;
-184 |   border-radius: 4px;
-185 |   font-size: 1rem;
-186 |   font-weight: bold;
-187 |   cursor: pointer;
-188 | }
-189 | 
-190 | button:hover {
-191 |   background-color: #b71c1c;
-192 | }
-193 | 
-194 | .btn-add { background-color: #388e3c; margin-bottom: 15px; }
-195 | .btn-add:hover { background-color: #2e7d32; }
-196 | 
-197 | .actions-col {
-198 |   display: flex;
-199 |   gap: 8px;
-200 |   align-items: center;
-201 |   justify-content: flex-end;
-202 | }
-203 | 
-204 | .btn-action, .btn-remove {
-205 |   width: 40px;
-206 |   height: 40px;
-207 |   padding: 0;
-208 |   display: flex;
-209 |   align-items: center;
-210 |   justify-content: center;
-211 |   border-radius: 4px;
-212 | }
+ 20 |   /* Fonte principal forçada aqui */
+ 21 |   font-family: 'Roboto', sans-serif !important;
+ 22 |   -webkit-font-smoothing: antialiased;
+ 23 | }
+ 24 | 
+ 25 | .container {
+ 26 |   max-width: 1150px;
+ 27 |   width: 100%;
+ 28 | }
+ 29 | 
+ 30 | h1 {
+ 31 |   text-align: center;
+ 32 |   border-bottom: 2px solid var(--accent);
+ 33 |   padding-bottom: 10px;
+ 34 |   margin-bottom: 25px;
+ 35 | }
+ 36 | 
+ 37 | .grid {
+ 38 |   display: grid;
+ 39 |   grid-template-columns: 1fr 1fr;
+ 40 |   gap: 20px;
+ 41 |   margin-bottom: 20px;
+ 42 | }
+ 43 | 
+ 44 | .panel {
+ 45 |   background-color: var(--panel-bg);
+ 46 |   border: 1px solid var(--border);
+ 47 |   border-radius: 8px;
+ 48 |   padding: 20px;
+ 49 |   margin-bottom: 20px;
+ 50 | }
+ 51 | 
+ 52 | .panel h2 {
+ 53 |   margin-top: 0;
+ 54 |   color: var(--accent);
+ 55 |   font-size: 1.2rem;
+ 56 |   border-bottom: 1px solid var(--border);
+ 57 |   padding-bottom: 10px;
+ 58 | }
+ 59 | 
+ 60 | .form-group {
+ 61 |   margin-bottom: 15px;
+ 62 | }
+ 63 | 
+ 64 | label {
+ 65 |   display: block;
+ 66 |   margin-bottom: 5px;
+ 67 |   font-size: 0.85rem;
+ 68 |   color: var(--text-muted);
+ 69 |   font-weight: bold;
+ 70 | }
+ 71 | 
+ 72 | /* Forçando a herança para elementos de formulário */
+ 73 | input, select, textarea, button {
+ 74 |   width: 100%;
+ 75 |   padding: 10px;
+ 76 |   background-color: #2c2c2c;
+ 77 |   border: 1px solid var(--line-silver); /* Troquei var(--border) por line-silver para garantir que a borda apareça */
+ 78 |   color: var(--text-main);
+ 79 |   border-radius: 4px;
+ 80 |   font-size: 0.95rem;
+ 81 |   font-family: 'Roboto', sans-serif;
+ 82 | }
+ 83 | 
+ 84 | /* --- TIPOGRAFIA PARA NÚMEROS (Roboto Mono) --- */
+ 85 | input[type="number"],
+ 86 | input[placeholder*="mm:ss"],
+ 87 | input[placeholder*="10:00"],
+ 88 | input[placeholder*="12:30"],
+ 89 | .font-mono,
+ 90 | .result-value,
+ 91 | .badge-round,
+ 92 | .color-mech,
+ 93 | .color-metabolic,
+ 94 | .color-time {
+ 95 |   font-family: 'Roboto Mono', monospace !important;
+ 96 | }
+ 97 | 
+ 98 | input:focus, select:focus, textarea:focus {
+ 99 |   outline: none;
+100 |   border-bottom: 2px solid var(--accent);
+101 | }
+102 | 
+103 | input:disabled {
+104 |   background-color: #1a1a1a;
+105 |   cursor: not-allowed;
+106 |   opacity: 0.6;
+107 | }
+108 | 
+109 | .tabs {
+110 |   display: flex;
+111 |   border-bottom: 1px solid var(--border);
+112 |   margin-bottom: 20px;
+113 |   gap: 5px;
+114 | }
+115 | 
+116 | .tab-btn {
+117 |   background: #252525;
+118 |   color: var(--text-muted);
+119 |   border: 1px solid var(--border);
+120 |   border-bottom: none;
+121 |   padding: 12px 20px;
+122 |   border-radius: 8px 8px 0 0;
+123 |   cursor: pointer;
+124 |   font-weight: bold;
+125 |   width: auto;
+126 | }
+127 | 
+128 | .tab-btn.active {
+129 |   background: var(--accent);
+130 |   color: white;
+131 |   border-color: var(--accent);
+132 | }
+133 | 
+134 | .wod-list {
+135 |   margin-bottom: 20px;
+136 | }
+137 | 
+138 | .wod-item {
+139 |   position: relative;
+140 |   background-color: #252525;
+141 |   padding: 15px 15px 15px 40px; /* Padding esquerdo aumentado para o pegador */
+142 |   margin-bottom: 10px;
+143 |   border-radius: 4px;
+144 |   display: grid;
+145 |   grid-template-columns: 2fr 0.8fr 1.2fr 1fr auto;
+146 |   gap: 12px;
+147 |   align-items: end;
+148 |   cursor: grab;
+149 |   transition: box-shadow 0.2s, background-color 0.2s, opacity 0.2s;
+150 | }
+151 | 
+152 | .wod-item:active { 
+153 |   cursor: grabbing; 
+154 | }
+155 | 
+156 | .drag-handle {
+157 |   position: absolute; 
+158 |   left: 0; 
+159 |   top: 0; 
+160 |   bottom: 0; 
+161 |   width: 25px;
+162 |   background-color: var(--dyna-red);
+163 |   border-radius: 4px 0 0 4px;
+164 |   display: flex; 
+165 |   align-items: center; 
+166 |   justify-content: center;
+167 |   color: rgba(255, 255, 255, 0.7);
+168 | }
+169 | 
+170 | .wod-item-analise {
+171 |   background-color: #252525;
+172 |   padding: 12px;
+173 |   margin-bottom: 8px;
+174 |   border-radius: 4px;
+175 |   border-left: 4px solid var(--accent);
+176 |   display: grid;
+177 |   grid-template-columns: auto 2fr 0.6fr 0.8fr 0.8fr;
+178 |   gap: 15px;
+179 |   align-items: center;
+180 | }
+181 | 
+182 | .badge-round {
+183 |   background: #111;
+184 |   color: var(--accent);
+185 |   padding: 5px 10px;
+186 |   border-radius: 15px;
+187 |   font-size: 0.8rem;
+188 |   font-weight: bold;
+189 |   text-transform: uppercase;
+190 | }
+191 | 
+192 | .badge-buyin { color: #f39c12; }
+193 | .badge-cashout { color: #2196f3; }
+194 | 
+195 | button {
+196 |   width: 100%;
+197 |   padding: 12px;
+198 |   background-color: var(--accent);
+199 |   color: white;
+200 |   border: none;
+201 |   border-radius: 4px;
+202 |   font-size: 1rem;
+203 |   font-weight: bold;
+204 |   cursor: pointer;
+205 | }
+206 | 
+207 | button:hover {
+208 |   background-color: #b71c1c;
+209 | }
+210 | 
+211 | .btn-add { background-color: #388e3c; margin-bottom: 15px; }
+212 | .btn-add:hover { background-color: #2e7d32; }
 213 | 
-214 | .btn-action { background-color: #444; }
-215 | .btn-remove { background-color: var(--accent); }
-216 | 
-217 | .results {
-218 |   margin-top: 10px;
-219 |   background-color: var(--panel-bg);
-220 |   border: 1px solid var(--accent);
-221 |   border-radius: 8px;
-222 |   padding: 20px;
-223 |   text-align: center;
-224 | }
-225 | 
-226 | .result-value {
-227 |   font-size: 2.2rem;
-228 |   font-weight: bold;
-229 |   color: var(--accent);
-230 | }
-231 | 
-232 | .result-detail {
-233 |   color: var(--text-muted);
-234 |   font-size: 0.9rem;
-235 |   margin-top: 15px;
-236 |   text-align: left;
-237 |   background: #252525;
-238 |   padding: 10px;
-239 |   border-radius: 4px;
-240 |   line-height: 1.5;
+214 | .actions-col {
+215 |   display: flex;
+216 |   gap: 8px;
+217 |   align-items: center;
+218 |   justify-content: flex-end;
+219 | }
+220 | 
+221 | .btn-action, .btn-remove {
+222 |   width: 40px;
+223 |   height: 40px;
+224 |   padding: 0;
+225 |   display: flex;
+226 |   align-items: center;
+227 |   justify-content: center;
+228 |   border-radius: 4px;
+229 | }
+230 | 
+231 | .btn-action { background-color: #444; }
+232 | .btn-remove { background-color: var(--accent); }
+233 | 
+234 | .results {
+235 |   margin-top: 10px;
+236 |   background-color: var(--panel-bg);
+237 |   border: 1px solid var(--accent);
+238 |   border-radius: 8px;
+239 |   padding: 20px;
+240 |   text-align: center;
 241 | }
 242 | 
-243 | .color-metabolic { color: #f39c12; }
-244 | .color-mech { color: #2196f3; }
-245 | .color-time { color: #9c27b0; }
-246 | .color-transition { color: #888888; }
-247 | 
-248 | /* Adaptações para Telas Mórmeis e Dispositivos Móveis */
-249 | @media (max-width: 950px) {
-250 |   .grid {
-251 |     grid-template-columns: 1fr;
-252 |   }
-253 |   
-254 |   .wod-item {
-255 |     grid-template-columns: 1fr 1fr;
-256 |     gap: 10px;
-257 |   }
-258 | 
-259 |   .wod-item > div:first-child {
-260 |     grid-column: span 2;
-261 |   }
-262 | 
-263 |   .actions-col {
-264 |     grid-column: span 2;
-265 |   }
-266 | 
-267 |   .wod-item-analise {
-268 |     grid-template-columns: 1fr 1fr;
-269 |     gap: 10px;
-270 |   }
-271 | 
-272 |   .wod-item-analise > div:first-child,
-273 |   .wod-item-analise > div:nth-child(2) {
-274 |     grid-column: span 2;
-275 |   }
-276 | }
-277 | 
-278 |   /* --- COMPONENTE DE BUSCA DE MOVIMENTOS --- */
-279 |   .searchable-select {
-280 |     position: relative;
-281 |     width: 100%;
+243 | .result-value {
+244 |   font-size: 2.2rem;
+245 |   font-weight: bold;
+246 |   color: var(--accent);
+247 | }
+248 | 
+249 | .result-detail {
+250 |   color: var(--text-muted);
+251 |   font-size: 0.9rem;
+252 |   margin-top: 15px;
+253 |   text-align: left;
+254 |   background: #252525;
+255 |   padding: 10px;
+256 |   border-radius: 4px;
+257 |   line-height: 1.5;
+258 | }
+259 | 
+260 | .color-metabolic { color: #f39c12; }
+261 | .color-mech { color: #2196f3; }
+262 | .color-time { color: #9c27b0; }
+263 | .color-transition { color: #888888; }
+264 | 
+265 | /* Adaptações para Telas Mórmeis e Dispositivos Móveis */
+266 | @media (max-width: 950px) {
+267 |   .grid {
+268 |     grid-template-columns: 1fr;
+269 |   }
+270 |   
+271 |   .wod-item {
+272 |     grid-template-columns: 1fr 1fr;
+273 |     gap: 10px;
+274 |   }
+275 | 
+276 |   .wod-item > div:first-child {
+277 |     grid-column: span 2;
+278 |   }
+279 | 
+280 |   .actions-col {
+281 |     grid-column: span 2;
 282 |   }
-283 |   .search-input {
-284 |     cursor: text;
-285 |     width: 100%;
-286 |   }
-287 |   .dropdown-list {
-288 |     position: absolute;
-289 |     z-index: 100;
-290 |     width: 100%;
-291 |     max-height: 250px;
-292 |     overflow-y: auto;
-293 |     background: #2c2c2c;
-294 |     border: 1px solid var(--dyna-red);
-295 |     border-top: none;
-296 |     border-radius: 0 0 4px 4px;
-297 |     box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-298 |   }
-299 |   .dropdown-item {
-300 |     padding: 10px;
-301 |     cursor: pointer;
-302 |     border-bottom: 1px solid #333;
-303 |     font-size: 0.9rem;
-304 |     color: #fff;
-305 |   }
-306 |   .dropdown-item:hover {
-307 |     background: var(--dyna-red);
-308 |     color: white;
-309 |   }
-310 |   .dropdown-group {
-311 |     padding: 5px 10px;
-312 |     background: #1a1a1a;
-313 |     color: var(--dyna-red);
-314 |     font-weight: bold;
-315 |     font-size: 0.8rem;
-316 |     text-transform: uppercase;
-317 |     border-bottom: 1px solid #333;
-318 |   }
-319 | 
-320 | /* --- INSTAGRAM EXPORT CARD --- */
-321 | .insta-export-wrapper {
-322 |   position: absolute;
-323 |   left: -9999px;
-324 |   top: 0;
-325 | }
-326 | 
-327 | .insta-card {
-328 |   width: 420px;
-329 |   background-color: #111315;
-330 |   color: #fff;
-331 |   font-family: 'Roboto', sans-serif;
-332 |   padding: 40px 20px;
-333 |   box-sizing: border-box;
-334 |   display: flex;
-335 |   flex-direction: column;
-336 |   gap: 20px;
-337 |   background-image: linear-gradient(to bottom, #111315, #1a1a1a);
-338 | }
-339 | 
-340 | .insta-header {
-341 |   text-align: center;
+283 | 
+284 |   .wod-item-analise {
+285 |     grid-template-columns: 1fr 1fr;
+286 |     gap: 10px;
+287 |   }
+288 | 
+289 |   .wod-item-analise > div:first-child,
+290 |   .wod-item-analise > div:nth-child(2) {
+291 |     grid-column: span 2;
+292 |   }
+293 | }
+294 | 
+295 |   /* --- COMPONENTE DE BUSCA DE MOVIMENTOS --- */
+296 |   .searchable-select {
+297 |     position: relative;
+298 |     width: 100%;
+299 |   }
+300 |   .search-input {
+301 |     cursor: text;
+302 |     width: 100%;
+303 |   }
+304 |   .dropdown-list {
+305 |     position: absolute;
+306 |     z-index: 100;
+307 |     width: 100%;
+308 |     max-height: 250px;
+309 |     overflow-y: auto;
+310 |     background: #2c2c2c;
+311 |     border: 1px solid var(--dyna-red);
+312 |     border-top: none;
+313 |     border-radius: 0 0 4px 4px;
+314 |     box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+315 |   }
+316 |   .dropdown-item {
+317 |     padding: 10px;
+318 |     cursor: pointer;
+319 |     border-bottom: 1px solid #333;
+320 |     font-size: 0.9rem;
+321 |     color: #fff;
+322 |   }
+323 |   .dropdown-item:hover {
+324 |     background: var(--dyna-red);
+325 |     color: white;
+326 |   }
+327 |   .dropdown-group {
+328 |     padding: 5px 10px;
+329 |     background: #1a1a1a;
+330 |     color: var(--dyna-red);
+331 |     font-weight: bold;
+332 |     font-size: 0.8rem;
+333 |     text-transform: uppercase;
+334 |     border-bottom: 1px solid #333;
+335 |   }
+336 | 
+337 | /* --- INSTAGRAM EXPORT CARD --- */
+338 | .insta-export-wrapper {
+339 |   position: absolute;
+340 |   left: -9999px;
+341 |   top: 0;
 342 | }
 343 | 
-344 | .insta-title {
-345 |   margin: 0;
-346 |   font-size: 32px;
-347 |   font-style: italic;
-348 |   font-weight: 900;
-349 |   letter-spacing: 1px;
-350 | }
-351 | 
-352 | .insta-subtitle {
-353 |   margin: 5px 0 0 0;
-354 |   color: #8a8d94;
-355 |   font-size: 13px;
-356 |   font-weight: bold;
-357 | }
-358 | 
-359 | .insta-date {
-360 |   margin: 2px 0 0 0;
-361 |   color: #8a8d94;
-362 |   font-size: 12px;
-363 |   font-family: 'Roboto Mono', monospace;
-364 | }
-365 | 
-366 | .insta-section {
-367 |   border: 2px solid #26272b;
-368 |   border-radius: 12px;
-369 |   padding: 20px;
-370 |   background-color: #181a1e;
-371 | }
-372 | 
-373 | .insta-section-title {
-374 |   margin: 0 0 12px 0;
-375 |   font-size: 20px;
-376 |   display: flex;
-377 |   align-items: baseline;
-378 |   gap: 8px;
-379 | }
-380 | 
-381 | .insta-section-subtitle {
-382 |   font-size: 11px;
-383 |   color: #8a8d94;
-384 |   font-weight: normal;
-385 | }
-386 | 
-387 | .insta-prescription-content {
-388 |   color: #d1d5db;
-389 |   font-size: 16px;
-390 |   line-height: 1.6;
-391 | }
-392 | 
-393 | .insta-highlight {
-394 |   color: #fff;
-395 | }
-396 | 
-397 | .insta-highlight-large {
-398 |   color: #fff;
-399 |   font-size: 18px;
-400 | }
-401 | 
-402 | .insta-text-muted {
-403 |   color: #8a8d94;
-404 |   font-size: 14px;
-405 | }
-406 | 
-407 | .insta-result-section {
-408 |   border: 2px solid var(--dyna-red, #FF2B3D);
-409 |   border-radius: 12px;
-410 |   padding: 25px 15px;
-411 |   background-color: #181a1e;
-412 |   box-shadow: 0 0 25px rgba(255, 43, 61, 0.15);
-413 |   position: relative;
-414 |   margin-top: 10px;
-415 | }
-416 | 
-417 | .insta-result-title {
-418 |   margin: 0;
-419 |   font-size: 24px;
-420 |   position: absolute;
-421 |   top: -15px;
-422 |   background-color: #181a1e;
-423 |   padding: 0 10px;
-424 |   color: var(--dyna-red, #FF2B3D);
-425 | }
-426 | 
-427 | .insta-time-container {
-428 |   text-align: center;
-429 |   margin-bottom: 25px;
-430 |   margin-top: 15px;
-431 | }
-432 | 
-433 | .insta-time-label {
-434 |   font-size: 16px;
-435 |   color: #8a8d94;
-436 |   font-weight: bold;
-437 | }
-438 | 
-439 | .insta-time-value {
-440 |   font-size: 54px;
-441 |   font-weight: 900;
-442 |   margin: 5px 0;
-443 |   text-shadow: 0 2px 10px rgba(0,0,0,0.5);
-444 |   font-family: 'Roboto Mono', monospace;
-445 | }
-446 | 
-447 | .insta-status {
-448 |   color: #fff;
-449 |   padding: 6px 16px;
-450 |   border-radius: 20px;
+344 | .insta-card {
+345 |   width: 420px;
+346 |   background-color: #111315;
+347 |   color: #fff;
+348 |   font-family: 'Roboto', sans-serif;
+349 |   padding: 40px 20px;
+350 |   box-sizing: border-box;
+351 |   display: flex;
+352 |   flex-direction: column;
+353 |   gap: 20px;
+354 |   background-image: linear-gradient(to bottom, #111315, #1a1a1a);
+355 | }
+356 | 
+357 | .insta-header {
+358 |   text-align: center;
+359 | }
+360 | 
+361 | .insta-title {
+362 |   margin: 0;
+363 |   font-size: 32px;
+364 |   font-style: italic;
+365 |   font-weight: 900;
+366 |   letter-spacing: 1px;
+367 | }
+368 | 
+369 | .insta-subtitle {
+370 |   margin: 5px 0 0 0;
+371 |   color: #8a8d94;
+372 |   font-size: 13px;
+373 |   font-weight: bold;
+374 | }
+375 | 
+376 | .insta-date {
+377 |   margin: 2px 0 0 0;
+378 |   color: #8a8d94;
+379 |   font-size: 12px;
+380 |   font-family: 'Roboto Mono', monospace;
+381 | }
+382 | 
+383 | .insta-section {
+384 |   border: 2px solid #26272b;
+385 |   border-radius: 12px;
+386 |   padding: 20px;
+387 |   background-color: #181a1e;
+388 | }
+389 | 
+390 | .insta-section-title {
+391 |   margin: 0 0 12px 0;
+392 |   font-size: 20px;
+393 |   display: flex;
+394 |   align-items: baseline;
+395 |   gap: 8px;
+396 | }
+397 | 
+398 | .insta-section-subtitle {
+399 |   font-size: 11px;
+400 |   color: #8a8d94;
+401 |   font-weight: normal;
+402 | }
+403 | 
+404 | .insta-prescription-content {
+405 |   color: #d1d5db;
+406 |   font-size: 16px;
+407 |   line-height: 1.6;
+408 | }
+409 | 
+410 | .insta-highlight {
+411 |   color: #fff;
+412 | }
+413 | 
+414 | .insta-highlight-large {
+415 |   color: #fff;
+416 |   font-size: 18px;
+417 | }
+418 | 
+419 | .insta-text-muted {
+420 |   color: #8a8d94;
+421 |   font-size: 14px;
+422 | }
+423 | 
+424 | .insta-result-section {
+425 |   border: 2px solid var(--dyna-red, #FF2B3D);
+426 |   border-radius: 12px;
+427 |   padding: 25px 15px;
+428 |   background-color: #181a1e;
+429 |   box-shadow: 0 0 25px rgba(255, 43, 61, 0.15);
+430 |   position: relative;
+431 |   margin-top: 10px;
+432 | }
+433 | 
+434 | .insta-result-title {
+435 |   margin: 0;
+436 |   font-size: 24px;
+437 |   position: absolute;
+438 |   top: -15px;
+439 |   background-color: #181a1e;
+440 |   padding: 0 10px;
+441 |   color: var(--dyna-red, #FF2B3D);
+442 | }
+443 | 
+444 | .insta-time-container {
+445 |   text-align: center;
+446 |   margin-bottom: 25px;
+447 |   margin-top: 15px;
+448 | }
+449 | 
+450 | .insta-time-label {
 451 |   font-size: 16px;
-452 |   font-weight: 900;
-453 |   letter-spacing: 1px;
+452 |   color: #8a8d94;
+453 |   font-weight: bold;
 454 | }
 455 | 
-456 | .insta-status-scaled {
-457 |   background-color: #FF2B3D;
-458 | }
-459 | 
-460 | .insta-status-rx {
-461 |   background-color: #22c55e;
+456 | .insta-time-value {
+457 |   font-size: 54px;
+458 |   font-weight: 900;
+459 |   margin: 5px 0;
+460 |   text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+461 |   font-family: 'Roboto Mono', monospace;
 462 | }
 463 | 
-464 | .insta-metrics-row {
-465 |   display: flex;
-466 |   gap: 10px;
-467 |   justify-content: space-between;
-468 | }
-469 | 
-470 | .insta-metric-box {
-471 |   flex: 1;
-472 |   background-color: #111315;
-473 |   padding: 15px 5px;
-474 |   border-radius: 10px;
-475 |   text-align: center;
-476 |   border: 1px solid #26272b;
-477 | }
-478 | 
-479 | .insta-metric-title {
-480 |   font-size: 11px;
-481 |   color: #8a8d94;
-482 |   margin-bottom: 10px;
-483 |   font-weight: bold;
-484 | }
-485 | 
-486 | .insta-metric-value {
-487 |   font-size: 22px;
-488 |   font-weight: 900;
-489 |   font-family: 'Roboto Mono', monospace;
-490 | }
-491 | 
-492 | .insta-metric-unit {
-493 |   font-size: 12px;
-494 |   font-weight: normal;
-495 |   color: #8a8d94;
-496 |   font-family: 'Roboto', sans-serif;
-497 | }
-498 | 
-499 | .insta-footer {
-500 |   text-align: center;
-501 |   color: #52525b;
-502 |   font-size: 12px;
-503 |   margin-top: 10px;
-504 | }
-505 | 
-506 | /* Classe utilitária para aplicar Roboto Mono em spans genéricos do card */
-507 | .font-mono {
-508 |   font-family: 'Roboto Mono', monospace !important;
-509 | }
+464 | .insta-status {
+465 |   color: #fff;
+466 |   padding: 6px 16px;
+467 |   border-radius: 20px;
+468 |   font-size: 16px;
+469 |   font-weight: 900;
+470 |   letter-spacing: 1px;
+471 | }
+472 | 
+473 | .insta-status-scaled {
+474 |   background-color: #FF2B3D;
+475 | }
+476 | 
+477 | .insta-status-rx {
+478 |   background-color: #22c55e;
+479 | }
+480 | 
+481 | .insta-metrics-row {
+482 |   display: flex;
+483 |   gap: 10px;
+484 |   justify-content: space-between;
+485 | }
+486 | 
+487 | .insta-metric-box {
+488 |   flex: 1;
+489 |   background-color: #111315;
+490 |   padding: 15px 5px;
+491 |   border-radius: 10px;
+492 |   text-align: center;
+493 |   border: 1px solid #26272b;
+494 | }
+495 | 
+496 | .insta-metric-title {
+497 |   font-size: 11px;
+498 |   color: #8a8d94;
+499 |   margin-bottom: 10px;
+500 |   font-weight: bold;
+501 | }
+502 | 
+503 | .insta-metric-value {
+504 |   font-size: 22px;
+505 |   font-weight: 900;
+506 |   font-family: 'Roboto Mono', monospace;
+507 | }
+508 | 
+509 | .insta-metric-unit {
+510 |   font-size: 12px;
+511 |   font-weight: normal;
+512 |   color: #8a8d94;
+513 |   font-family: 'Roboto', sans-serif;
+514 | }
+515 | 
+516 | .insta-footer {
+517 |   text-align: center;
+518 |   color: #52525b;
+519 |   font-size: 12px;
+520 |   margin-top: 10px;
+521 | }
+522 | 
+523 | /* Classe utilitária para aplicar Roboto Mono em spans genéricos do card */
+524 | .font-mono {
+525 |   font-family: 'Roboto Mono', monospace !important;
+526 | }
 
 --- FIM DO ARQUIVO: src\index.css ---
 
