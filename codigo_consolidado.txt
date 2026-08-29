@@ -1726,169 +1726,153 @@ CONTEÚDO DOS ARQUIVOS
   1 | import type { MovimentoConfig } from '../types';
   2 | 
   3 | export const movimentosDB: Record<string, MovimentoConfig> = {
-  4 |   'pushup': { nome: 'Push-ups', grupo: 'Empurrada BW', categoria: 'alavanca_parcial', usaCarga: false },
-  5 |   'ring_dip_strict': { nome: 'Strict Ring Dip', grupo: 'Empurrada BW', categoria: 'vertical_bw', usaCarga: false },
-  6 |   'ring_dip_kipping': { nome: 'Kipping Ring Dip', grupo: 'Empurrada BW', categoria: 'vertical_bw', usaCarga: false },
-  7 |   'bar_dip_strict': { nome: 'Strict Bar Dip', grupo: 'Empurrada BW', categoria: 'vertical_bw', usaCarga: false },
-  8 |   'bar_dip_kipping': { nome: 'Kipping Bar Dip', grupo: 'Empurrada BW', categoria: 'vertical_bw', usaCarga: false },
-  9 |   'hspu_strict': { nome: 'Strict HSPU', grupo: 'Empurrada BW', categoria: 'vertical_bw', usaCarga: false },
- 10 |   'hspu_kipping': { nome: 'Kipping HSPU', grupo: 'Empurrada BW', categoria: 'vertical_bw', usaCarga: false },
- 11 |   'wf_hspu': { nome: 'Wall-Facing HSPU', grupo: 'Ginástica de Elite', categoria: 'wf_hspu', usaCarga: false },
- 12 |   'free_hspu': { nome: 'Freestanding HSPU', grupo: 'Ginástica de Elite', categoria: 'free_hspu', usaCarga: false },
- 13 |   'deficit_hspu_strict': { nome: 'Strict Deficit HSPU', grupo: 'Empurrada BW', categoria: 'vertical_bw', usaCarga: false },
- 14 |   'deficit_hspu_kipping': { nome: 'Kipping Deficit HSPU', grupo: 'Empurrada BW', categoria: 'vertical_bw', usaCarga: false },
- 15 |   'handstand_walk': { nome: 'Handstand Walk', grupo: 'Empurrada BW', categoria: 'hs_walk', usaCarga: false, paramExtra: { label: 'Trecho (m)', val: '10', type: 'number' } },
- 16 |   'hs_stairs_up': { nome: 'HS Stairs Ascent', grupo: 'Empurrada BW', categoria: 'hs_incline_up', usaCarga: false, paramExtra: { label: 'Trecho;Alt (m)', val: '5;1', type: 'text' } },
- 17 |   'hs_stairs_down': { nome: 'HS Stairs Descent', grupo: 'Empurrada BW', categoria: 'hs_incline_down', usaCarga: false, paramExtra: { label: 'Trecho;Alt (m)', val: '5;1', type: 'text' } },
- 18 |   'hs_ramp_up': { nome: 'HS Ramp Ascent', grupo: 'Empurrada BW', categoria: 'hs_incline_up', usaCarga: false, paramExtra: { label: 'Trecho;Alt (m)', val: '5;1', type: 'text' } },
- 19 |   'hs_ramp_down': { nome: 'HS Ramp Descent', grupo: 'Empurrada BW', categoria: 'hs_incline_down', usaCarga: false, paramExtra: { label: 'Trecho;Alt (m)', val: '5;1', type: 'text' } },
- 20 |   'wall_walk': { nome: 'Wall Walk', grupo: 'Empurrada BW', categoria: 'wall_walk', usaCarga: false },
- 21 |   
- 22 |   'bench_press': { nome: 'Bench Press', grupo: 'Empurrada Carga', categoria: 'bench_press', usaCarga: true },
- 23 |   'push_press': { nome: 'Push Press', grupo: 'Empurrada Carga', categoria: 'lpo_jerk', usaCarga: true },
- 24 |   'db_strict_press': { nome: 'Dumbbell Strict Press', grupo: 'LPO Assimétrico', categoria: 'db_press', usaCarga: true },
- 25 |   
- 26 |   'ring_row': { nome: 'Ring Row', grupo: 'Puxada BW', categoria: 'alavanca_parcial', usaCarga: false },
- 27 |   'bulgarian_row_floor': { nome: 'Bulgarian Row (Chão)', grupo: 'Puxada BW', categoria: 'alavanca_parcial', usaCarga: false },
- 28 |   'bulgarian_row_susp': { nome: 'Bulgarian Row (Suspensão)', grupo: 'Puxada BW', categoria: 'alavanca_horizontal', usaCarga: false },
- 29 |   'pullup_strict': { nome: 'Strict Pull-up', grupo: 'Puxada BW', categoria: 'vertical_bw', usaCarga: false },
- 30 |   'pullup_kipping': { nome: 'Kipping Pull-up', grupo: 'Puxada BW', categoria: 'vertical_bw', usaCarga: false },
- 31 |   'pullup_butterfly': { nome: 'Butterfly Pull-up', grupo: 'Puxada BW', categoria: 'vertical_bw', usaCarga: false },
- 32 |   'c2b_strict': { nome: 'Strict Chest-to-bar', grupo: 'Puxada BW', categoria: 'vertical_bw', usaCarga: false },
- 33 |   'c2b_kipping': { nome: 'Kipping Chest-to-bar', grupo: 'Puxada BW', categoria: 'vertical_bw', usaCarga: false },
- 34 |   'c2b_butterfly': { nome: 'Butterfly Chest-to-bar', grupo: 'Puxada BW', categoria: 'vertical_bw', usaCarga: false },
- 35 |   'bar_pullover': { nome: 'Bar Pullover', grupo: 'Ginástica de Elite', categoria: 'pullover', usaCarga: false },
- 36 |   'rope_climb': { nome: 'Rope Climb', grupo: 'Ginástica Vertical', categoria: 'rope_climb', usaCarga: false, paramExtra: { label: 'Altura (m)', val: '4.5', type: 'number' } },
- 37 |   'rope_climb_legless': { nome: 'Legless Rope Climb', grupo: 'Ginástica Vertical', categoria: 'rope_climb', usaCarga: false, paramExtra: { label: 'Altura (m)', val: '4.5', type: 'number' } },
- 38 |   'rope_ascend_floor': { nome: 'Rope Ascend (Do chão)', grupo: 'Ginástica Vertical', categoria: 'rope_ascend_floor', usaCarga: false },
- 39 |   'pegboard': { nome: 'Pegboard Ascent', grupo: 'Ginástica Vertical', categoria: 'pegboard', usaCarga: false, paramExtra: { label: 'Altura (m)', val: '3.0', type: 'number' } },
- 40 |   'strict_bmu': { nome: 'Strict BMU', grupo: 'Ginástica Avançada', categoria: 'vertical_bw_total', usaCarga: false },
- 41 |   'bar_muscle_up': { nome: 'BMU (Kipping)', grupo: 'Ginástica Avançada', categoria: 'vertical_bw_total', usaCarga: false },
- 42 |   'strict_rmu': { nome: 'Strict RMU', grupo: 'Ginástica Avançada', categoria: 'vertical_bw_total', usaCarga: false },
- 43 |   'ring_muscle_up': { nome: 'RMU (Kipping)', grupo: 'Ginástica Avançada', categoria: 'vertical_bw_total', usaCarga: false },
- 44 |   
- 45 |   'air_squat': { nome: 'Air Squat', grupo: 'Agachamento BW', categoria: 'squat_bw', usaCarga: false },
- 46 |   'pistol_squat': { nome: 'Pistol Squat (Alt)', grupo: 'Agachamento BW', categoria: 'squat_bw', usaCarga: false, isUnilateral: true },
- 47 |   'box_step_up': { nome: 'Box Step-up', grupo: 'Agachamento BW', categoria: 'box_step_up', usaCarga: false, paramExtra: { label: 'Caixa(m) 0=Auto', val: '0', type: 'number' }, isUnilateral: true },
- 48 |   'high_box_step_up': { nome: 'High Box Step-up', grupo: 'Agachamento BW', categoria: 'box_step_up', usaCarga: false, isHighBox: true, paramExtra: { label: 'Caixa(m) 0=Auto', val: '0', type: 'number' }, isUnilateral: true },
- 49 |   'box_jump': { nome: 'Box Jump', grupo: 'Agachamento BW', categoria: 'box_jump', usaCarga: false, paramExtra: { label: 'Caixa(m) 0=Auto', val: '0', type: 'number' } },
- 50 |   'high_box_jump': { nome: 'High Box Jump', grupo: 'Agachamento BW', categoria: 'box_jump', usaCarga: false, isHighBox: true, paramExtra: { label: 'Caixa(m) 0=Auto', val: '0', type: 'number' } },
- 51 |   'box_jump_over': { nome: 'Box Jump Over', grupo: 'Agachamento BW', categoria: 'box_jump_over', usaCarga: false, paramExtra: { label: 'Caixa(m) 0=Auto', val: '0', type: 'number' } },
- 52 |   'high_box_jump_over': { nome: 'High Box Jump Over', grupo: 'Agachamento BW', categoria: 'box_jump_over', usaCarga: false, isHighBox: true, paramExtra: { label: 'Caixa(m) 0=Auto', val: '0', type: 'number' } },
- 53 |   
- 54 |   'front_squat': { nome: 'Front Squat', grupo: 'Agachamento Carga', categoria: 'squat_carga', usaCarga: true },
- 55 |   'back_squat': { nome: 'Back Squat', grupo: 'Agachamento Carga', categoria: 'squat_carga', usaCarga: true },
- 56 |   'overhead_squat': { nome: 'Overhead Squat', grupo: 'Agachamento Carga', categoria: 'squat_carga', usaCarga: true },
- 57 |   
- 58 |   'walking_lunge': { nome: 'Walking Lunge', grupo: 'Lunges', categoria: 'lunge_bw', usaCarga: false, isUnilateral: true },
- 59 |   'lunge_suitcase': { nome: 'Lunge (Suitcase)', grupo: 'Lunges', categoria: 'lunge_carga', usaCarga: true, isUnilateral: true },
- 60 |   'lunge_front_rack': { nome: 'Lunge (Front Rack)', grupo: 'Lunges', categoria: 'lunge_carga', usaCarga: true, isUnilateral: true },
- 61 |   'lunge_overhead': { nome: 'Lunge (Overhead)', grupo: 'Lunges', categoria: 'lunge_carga', usaCarga: true, isUnilateral: true },
- 62 |   
- 63 |   'deadlift': { nome: 'Deadlift', grupo: 'LPO / Força', categoria: 'deadlift', usaCarga: true },
- 64 |   'clean': { nome: 'Squat Clean', grupo: 'LPO / Força', categoria: 'lpo_floor_squat', usaCarga: true, fatorH: 0.85, paramExtra: { label: 'VBT (m/s)', val: '0', type: 'number' } },
- 65 |   'clean_power': { nome: 'Power Clean', grupo: 'LPO / Força', categoria: 'lpo_floor_power', usaCarga: true, fatorH: 0.85, paramExtra: { label: 'VBT (m/s)', val: '0', type: 'number' } },
- 66 |   'clean_hang_squat': { nome: 'Hang Squat Clean', grupo: 'LPO / Força', categoria: 'lpo_hang_squat', usaCarga: true, fatorH: 0.60, paramExtra: { label: 'VBT (m/s)', val: '0', type: 'number' } },
- 67 |   'clean_hang_power': { nome: 'Hang Power Clean', grupo: 'LPO / Força', categoria: 'lpo_hang_power', usaCarga: true, fatorH: 0.60, paramExtra: { label: 'VBT (m/s)', val: '0', type: 'number' } },
- 68 |   'clean_jerk': { nome: 'Clean & Jerk', grupo: 'LPO / Força', categoria: 'lpo_cj', usaCarga: true, paramExtra: { label: 'VBT (m/s)', val: '0', type: 'number' } },
- 69 |   'hang_clean_jerk': { nome: 'Hang Clean & Jerk', grupo: 'LPO / Força', categoria: 'lpo_hang_cj', usaCarga: true, paramExtra: { label: 'VBT (m/s)', val: '0', type: 'number' } },
- 70 |   'snatch': { nome: 'Squat Snatch', grupo: 'LPO / Força', categoria: 'lpo_floor_squat', usaCarga: true, fatorH: 1.00, paramExtra: { label: 'VBT (m/s)', val: '0', type: 'number' } },
- 71 |   'snatch_power': { nome: 'Power Snatch', grupo: 'LPO / Força', categoria: 'lpo_floor_power', usaCarga: true, fatorH: 1.00, paramExtra: { label: 'VBT (m/s)', val: '0', type: 'number' } },
- 72 |   'snatch_hang_squat': { nome: 'Hang Squat Snatch', grupo: 'LPO / Força', categoria: 'lpo_hang_squat', usaCarga: true, fatorH: 0.75, paramExtra: { label: 'VBT (m/s)', val: '0', type: 'number' } },
- 73 |   'snatch_hang_power': { nome: 'Hang Power Snatch', grupo: 'LPO / Força', categoria: 'lpo_hang_power', usaCarga: true, fatorH: 0.75, paramExtra: { label: 'VBT (m/s)', val: '0', type: 'number' } },
- 74 |   'push_jerk': { nome: 'Push/Split Jerk', grupo: 'LPO / Força', categoria: 'lpo_jerk', usaCarga: true },
- 75 |   
- 76 |   'db_snatch': { nome: 'Dumbbell Snatch (Alt)', grupo: 'Cargas Irregulares', categoria: 'lpo_floor_power', usaCarga: true, fatorH: 1.00 },
- 77 |   'db_clean': { nome: 'Dumbbell Clean', grupo: 'Cargas Irregulares', categoria: 'lpo_floor_power', usaCarga: true, fatorH: 0.85 },
- 78 |   'db_hang_clean': { nome: 'Dumbbell Hang Clean', grupo: 'Cargas Irregulares', categoria: 'lpo_hang_power', usaCarga: true, fatorH: 0.60 },
- 79 |   'db_jerk': { nome: 'Dumbbell Push Jerk', grupo: 'Cargas Irregulares', categoria: 'lpo_jerk', usaCarga: true },
- 80 |   'db_clean_jerk': { nome: 'DB Clean & Jerk', grupo: 'Cargas Irregulares', categoria: 'db_cj', usaCarga: true },
- 81 |   'db_hang_clean_jerk': { nome: 'DB Hang Clean & Jerk', grupo: 'Cargas Irregulares', categoria: 'db_hang_cj', usaCarga: true },
- 82 |   'sandbag_clean': { nome: 'Sandbag Clean (Ombro)', grupo: 'LPO Assimétrico', categoria: 'sandbag_clean', usaCarga: true },
- 83 |   'dball_over_shoulder': { nome: 'D-Ball / Sandbag Over Shoulder', grupo: 'Hyrox / Strongman', categoria: 'dball_shoulder', usaCarga: true, paramExtra: { label: 'Diâmetro(m)', val: '0.35', type: 'number'} },
- 84 |   
- 85 |   'turkish_get_up': { nome: 'TGU', grupo: 'Híbridos Complexos', categoria: 'tgu', usaCarga: true },
- 86 |   'thruster': { nome: 'Thruster', grupo: 'Híbridos Complexos', categoria: 'lpo_floor_squat', usaCarga: true, fatorH: 1.00 },
- 87 |   'wall_ball': { nome: 'Wall Ball', grupo: 'Híbridos Complexos', categoria: 'wall_ball', usaCarga: true, paramExtra: { label: 'Alvo (m)', val: '3.0', type: 'number' } }, 
- 88 |   'devil_press': { nome: 'Devil Press', grupo: 'Híbridos Complexos', categoria: 'devil_press', usaCarga: true },
- 89 |   
- 90 |   'burpee': { nome: 'Burpee Tradicional', grupo: 'Burpees', categoria: 'vertical_hibrido', usaCarga: false },
- 91 |   'burpee_line': { nome: 'Burpee Over Line', grupo: 'Burpees', categoria: 'vertical_hibrido_extra', usaCarga: false },
- 92 |   'burpee_broad_jump': { nome: 'Burpee Broad Jump', grupo: 'Burpees', categoria: 'burpee_broad_jump', usaCarga: false, paramExtra: { label: 'Dist (m)', val: '1.5', type: 'number' } },
- 93 |   'burpee_over_db': { nome: 'Burpee Over DB', grupo: 'Burpees', categoria: 'burpee_over_obj', usaCarga: false, paramExtra: { label: 'Alt DB(m)', val: '0.20', type: 'number' } },
- 94 |   'burpee_over_kb': { nome: 'Burpee Over KB', grupo: 'Burpees', categoria: 'burpee_over_obj', usaCarga: false, paramExtra: { label: 'Alt KB(m)', val: '0.30', type: 'number' } },
- 95 |   'burpee_box_jump': { nome: 'Burpee Box Jump', grupo: 'Burpees', categoria: 'burpee_box_jump', usaCarga: false, paramExtra: { label: 'Caixa(m) 0=Auto', val: '0', type: 'number' } },
- 96 |   'burpee_high_box_jump': { nome: 'Burpee High Box Jump', grupo: 'Burpees', categoria: 'burpee_box_jump', usaCarga: false, isHighBox: true, paramExtra: { label: 'Caixa(m) 0=Auto', val: '0', type: 'number' } },
- 97 |   'burpee_box_jump_over': { nome: 'Burpee Box Jump Over', grupo: 'Burpees', categoria: 'burpee_box_jump_over', usaCarga: false, paramExtra: { label: 'Caixa(m) 0=Auto', val: '0', type: 'number' } },
- 98 |   'burpee_high_box_jump_over': { nome: 'Burpee High Box Jump Over', grupo: 'Burpees', categoria: 'burpee_box_jump_over', usaCarga: false, isHighBox: true, paramExtra: { label: 'Caixa(m) 0=Auto', val: '0', type: 'number' } },
- 99 |   'burpee_pullup': { nome: 'Burpee Pull-up', grupo: 'Burpees', categoria: 'burpee_pullup', usaCarga: false },
-100 |   
-101 |   'kb_swing_am': { nome: 'KB Swing (Amer.)', grupo: 'Hinge BW', categoria: 'arc_carga', usaCarga: true },
-102 |   'kb_swing_russo': { nome: 'KB Swing (Russo)', grupo: 'Hinge BW', categoria: 'arc_carga_parcial', usaCarga: true },
-103 |   'situp': { nome: 'Sit-up (Abmat)', grupo: 'Core BW', categoria: 'core_situp', usaCarga: false }, 
-104 |   'v_ups': { nome: 'V-Ups', grupo: 'Core BW', categoria: 'core_vup', usaCarga: false }, 
-105 |   'ghd_situp': { nome: 'GHD Sit-up', grupo: 'Core BW', categoria: 'core_ghd', usaCarga: false }, 
-106 |   't2b_strict': { nome: 'Strict Toes to Bar', grupo: 'Core BW', categoria: 'core_t2b', usaCarga: false },
-107 |   't2b_kipping': { nome: 'Kipping Toes to Bar', grupo: 'Core BW', categoria: 'core_t2b', usaCarga: false },
-108 |   'k2e_strict': { nome: 'Strict Knees to Elbows', grupo: 'Core BW', categoria: 'core_k2e', usaCarga: false },
-109 |   'k2e_kipping': { nome: 'Kipping Knees to Elbows', grupo: 'Core BW', categoria: 'core_k2e', usaCarga: false },
-110 |   
-111 |   'run': { nome: 'Corrida', grupo: 'Monostrutural', categoria: 'corrida', usaCarga: false, paramExtra: { label: 'Dist (m)', val: '400', type: 'number' } },
-112 |   'air_runner': { nome: 'Curved Treadmill (AirRunner)', grupo: 'Monostrutural', categoria: 'air_runner', usaCarga: false, paramExtra: { label: 'Dist (m)', val: '400', type: 'number' } },
-113 |   'shuttle_run': { nome: 'Shuttle Run', grupo: 'Monostrutural', categoria: 'shuttle_run', usaCarga: false, paramExtra: { label: 'Tiro (m)', val: '7.5', type: 'number' } },
-114 |   'farmers_carry': { 
-115 |     nome: 'Farmer\'s Carry', grupo: 'Monostrutural', categoria: 'corrida_carga', usaCarga: true, 
-116 |     paramExtra: { label: 'Trecho (m)', val: '10', type: 'number' },
-117 |     paramExtra2: { 
-118 |       label: 'Terreno (η)', val: '1.0', type: 'select', 
-119 |       options: [ {label: 'Ginásio/Alcatrão', value: '1.0'}, {label: 'Terra/Cascalho', value: '1.1'}, {label: 'Grama/Turf', value: '1.2'}, {label: 'Areia Solta', value: '2.1'} ] 
-120 |     }
-121 |   }, 
-122 |   'yoke_carry': { 
-123 |     nome: 'Yoke Carry', grupo: 'Hyrox / Strongman', categoria: 'yoke_carry', usaCarga: true, 
-124 |     paramExtra: { label: 'Trecho (m)', val: '10', type: 'number' },
-125 |     paramExtra2: { 
-126 |       label: 'Terreno (η)', val: '1.0', type: 'select', 
-127 |       options: [ {label: 'Ginásio/Alcatrão', value: '1.0'}, {label: 'Terra/Cascalho', value: '1.1'}, {label: 'Grama/Turf', value: '1.2'}, {label: 'Areia Solta', value: '2.1'} ] 
-128 |     }
-129 |   },
-130 |   'sled_push': { 
-131 |     nome: 'Sled Push', grupo: 'Monostrutural', categoria: 'friccao_horizontal_push', usaCarga: true, 
-132 |     paramExtra: { label: 'Trecho (m)', val: '10', type: 'number' },
-133 |     paramExtra2: { 
-134 |       label: 'Superfície (μ)', val: '0.35', type: 'select', 
-135 |       options: [ {label: 'Grama Sintética', value: '0.35'}, {label: 'Grama Natural', value: '0.50'}, {label: 'Asfalto', value: '0.65'}, {label: 'Emborrachado', value: '0.85'} ] 
-136 |     } 
-137 |   }, 
-138 |   'sled_pull': { 
-139 |     nome: 'Sled Pull', grupo: 'Monostrutural', categoria: 'friccao_horizontal_pull', usaCarga: true, 
-140 |     paramExtra: { label: 'Trecho (m)', val: '10', type: 'number' },
-141 |     paramExtra2: { 
-142 |       label: 'Superfície (μ)', val: '0.35', type: 'select', 
-143 |       options: [ {label: 'Grama Sintética', value: '0.35'}, {label: 'Grama Natural', value: '0.50'}, {label: 'Asfalto', value: '0.65'}, {label: 'Emborrachado', value: '0.85'} ] 
-144 |     } 
-145 |   }, 
-146 |   'heavy_sled_pull': { 
-147 |     nome: 'Heavy Sled Pull', grupo: 'Hyrox / Strongman', categoria: 'friccao_horizontal_pull_heavy', usaCarga: true, 
-148 |     paramExtra: { label: 'Trecho (m)', val: '10', type: 'number' },
-149 |     paramExtra2: { 
-150 |       label: 'Superfície (μ)', val: '0.35', type: 'select', 
-151 |       options: [ {label: 'Grama Sintética', value: '0.35'}, {label: 'Grama Natural', value: '0.50'}, {label: 'Asfalto', value: '0.65'}, {label: 'Emborrachado', value: '0.85'} ] 
-152 |     } 
-153 |   },
-154 |   
-155 |   'row': { nome: 'Remo (Concept2)', grupo: 'Ergômetros', categoria: 'remo', usaCarga: false, paramExtra: { label: 'Pace ou Cal', val: '2:00', type: 'text' } },
-156 |   'skierg': { nome: 'SkiErg (Concept2)', grupo: 'Ergômetros', categoria: 'remo', usaCarga: false, paramExtra: { label: 'Pace ou Cal', val: '2:10', type: 'text' } },
-157 |   'bike_erg': { nome: 'BikeErg (Concept2)', grupo: 'Ergômetros', categoria: 'bike', usaCarga: false, paramExtra: { label: 'RPM', val: '70', type: 'number' } },
-158 |   'echo_bike': { nome: 'Rogue Echo Bike', grupo: 'Ergômetros', categoria: 'echo_bike', usaCarga: false, paramExtra: { label: 'RPM', val: '60', type: 'number' } },
-159 |   'assault_bike': { nome: 'Assault AirBike', grupo: 'Ergômetros', categoria: 'assault_bike', usaCarga: false, paramExtra: { label: 'RPM', val: '60', type: 'number' } },
-160 |   
-161 |   'single_under': { nome: 'Single-unders', grupo: 'Corda', categoria: 'vertical_bw_total', usaCarga: false, paramExtra: { label: 'Salto(m)', val: '0.05', type: 'number'} },
-162 |   'su_crossover': { nome: 'SU Crossover', grupo: 'Corda', categoria: 'vertical_bw_total', usaCarga: false, paramExtra: { label: 'Salto(m)', val: '0.08', type: 'number'} },
-163 |   'double_under': { nome: 'Double-unders', grupo: 'Corda', categoria: 'vertical_bw_total', usaCarga: false, paramExtra: { label: 'Salto(m)', val: '0.12', type: 'number'} },
-164 |   'du_crossover': { nome: 'DU Crossover', grupo: 'Corda', categoria: 'vertical_bw_total', usaCarga: false, paramExtra: { label: 'Salto(m)', val: '0.15', type: 'number'} },
-165 |   'heavy_du': { nome: 'Heavy Rope Double-Unders', grupo: 'Corda', categoria: 'heavy_du', usaCarga: false, paramExtra: { label: 'Massa Corda(kg)', val: '1.5', type: 'number'} }
-166 | };
+  4 |   // === EMPURRADA BW ===
+  5 |   'pushup': { nome: 'Push-ups', grupo: 'Empurrada BW', categoria: 'alavanca_parcial', usaCarga: false, estilosPermitidos: ['normal'] },
+  6 |   'ring_dip': { nome: 'Ring Dip', grupo: 'Empurrada BW', categoria: 'vertical_bw', usaCarga: false, estilosPermitidos: ['kipping', 'strict'] },
+  7 |   'bar_dip': { nome: 'Bar Dip', grupo: 'Empurrada BW', categoria: 'vertical_bw', usaCarga: false, estilosPermitidos: ['kipping', 'strict'] },
+  8 |   'hspu': { nome: 'Handstand Push-up (HSPU)', grupo: 'Empurrada BW', categoria: 'vertical_bw', usaCarga: false, estilosPermitidos: ['kipping', 'strict'], paramExtra: { label: 'Déficit (m)', val: '0', type: 'number' } },
+  9 |   'wf_hspu': { nome: 'Wall-Facing HSPU', grupo: 'Ginástica de Elite', categoria: 'wf_hspu', usaCarga: false, estilosPermitidos: ['strict'] },
+ 10 |   'free_hspu': { nome: 'Freestanding HSPU', grupo: 'Ginástica de Elite', categoria: 'free_hspu', usaCarga: false, estilosPermitidos: ['strict'] },
+ 11 |   'handstand_walk': { nome: 'Handstand Walk', grupo: 'Empurrada BW', categoria: 'hs_walk', usaCarga: false, estilosPermitidos: ['normal'], paramExtra: { label: 'Trecho (m)', val: '10', type: 'number' } },
+ 12 |   'hs_stairs_up': { nome: 'HS Stairs Ascent', grupo: 'Empurrada BW', categoria: 'hs_incline_up', usaCarga: false, estilosPermitidos: ['normal'], paramExtra: { label: 'Trecho;Alt (m)', val: '5;1', type: 'text' } },
+ 13 |   'hs_stairs_down': { nome: 'HS Stairs Descent', grupo: 'Empurrada BW', categoria: 'hs_incline_down', usaCarga: false, estilosPermitidos: ['normal'], paramExtra: { label: 'Trecho;Alt (m)', val: '5;1', type: 'text' } },
+ 14 |   'hs_ramp_up': { nome: 'HS Ramp Ascent', grupo: 'Empurrada BW', categoria: 'hs_incline_up', usaCarga: false, estilosPermitidos: ['normal'], paramExtra: { label: 'Trecho;Alt (m)', val: '5;1', type: 'text' } },
+ 15 |   'hs_ramp_down': { nome: 'HS Ramp Descent', grupo: 'Empurrada BW', categoria: 'hs_incline_down', usaCarga: false, estilosPermitidos: ['normal'], paramExtra: { label: 'Trecho;Alt (m)', val: '5;1', type: 'text' } },
+ 16 |   'wall_walk': { nome: 'Wall Walk', grupo: 'Empurrada BW', categoria: 'wall_walk', usaCarga: false, estilosPermitidos: ['normal'] },
+ 17 |   
+ 18 |   // === EMPURRADA CARGA ===
+ 19 |   'bench_press': { nome: 'Bench Press', grupo: 'Empurrada Carga', categoria: 'bench_press', usaCarga: true, estilosPermitidos: ['tng', 'drop'] },
+ 20 |   'push_press': { nome: 'Push Press', grupo: 'Empurrada Carga', categoria: 'lpo_jerk', usaCarga: true, estilosPermitidos: ['tng', 'drop'] },
+ 21 |   'db_strict_press': { nome: 'Dumbbell Strict Press', grupo: 'LPO Assimétrico', categoria: 'db_press', usaCarga: true, estilosPermitidos: ['normal', 'tng'] },
+ 22 |   
+ 23 |   // === PUXADA BW E GINÁSTICA AVANÇADA ===
+ 24 |   'ring_row': { nome: 'Ring Row', grupo: 'Puxada BW', categoria: 'alavanca_parcial', usaCarga: false, estilosPermitidos: ['normal'] },
+ 25 |   'bulgarian_row_floor': { nome: 'Bulgarian Row (Chão)', grupo: 'Puxada BW', categoria: 'alavanca_parcial', usaCarga: false, estilosPermitidos: ['normal'] },
+ 26 |   'bulgarian_row_susp': { nome: 'Bulgarian Row (Suspensão)', grupo: 'Puxada BW', categoria: 'alavanca_horizontal', usaCarga: false, estilosPermitidos: ['normal'] },
+ 27 |   'pullup': { nome: 'Pull-up', grupo: 'Puxada BW', categoria: 'vertical_bw', usaCarga: false, estilosPermitidos: ['kipping', 'butterfly', 'strict'] },
+ 28 |   'c2b': { nome: 'Chest-to-bar', grupo: 'Puxada BW', categoria: 'vertical_bw', usaCarga: false, estilosPermitidos: ['kipping', 'butterfly', 'strict'] },
+ 29 |   'bmu': { nome: 'Bar Muscle-up (BMU)', grupo: 'Ginástica Avançada', categoria: 'vertical_bw_total', usaCarga: false, estilosPermitidos: ['kipping', 'strict'] },
+ 30 |   'rmu': { nome: 'Ring Muscle-up (RMU)', grupo: 'Ginástica Avançada', categoria: 'vertical_bw_total', usaCarga: false, estilosPermitidos: ['kipping', 'strict'] },
+ 31 |   'bar_pullover': { nome: 'Bar Pullover', grupo: 'Ginástica de Elite', categoria: 'pullover', usaCarga: false, estilosPermitidos: ['normal'] },
+ 32 |   'rope_climb': { nome: 'Rope Climb', grupo: 'Ginástica Vertical', categoria: 'rope_climb', usaCarga: false, estilosPermitidos: ['normal'], paramExtra: { label: 'Altura (m)', val: '4.5', type: 'number' } },
+ 33 |   'rope_climb_legless': { nome: 'Legless Rope Climb', grupo: 'Ginástica Vertical', categoria: 'rope_climb', usaCarga: false, estilosPermitidos: ['strict'], paramExtra: { label: 'Altura (m)', val: '4.5', type: 'number' } },
+ 34 |   'rope_ascend_floor': { nome: 'Rope Ascend (Do chão)', grupo: 'Ginástica Vertical', categoria: 'rope_ascend_floor', usaCarga: false, estilosPermitidos: ['normal'] },
+ 35 |   'pegboard': { nome: 'Pegboard Ascent', grupo: 'Ginástica Vertical', categoria: 'pegboard', usaCarga: false, estilosPermitidos: ['normal'], paramExtra: { label: 'Altura (m)', val: '3.0', type: 'number' } },
+ 36 |   
+ 37 |   // === AGACHAMENTO BW ===
+ 38 |   'air_squat': { nome: 'Air Squat', grupo: 'Agachamento BW', categoria: 'squat_bw', usaCarga: false, estilosPermitidos: ['normal'] },
+ 39 |   'pistol_squat': { nome: 'Pistol Squat (Alt)', grupo: 'Agachamento BW', categoria: 'squat_bw', usaCarga: false, estilosPermitidos: ['normal'], isUnilateral: true },
+ 40 |   'box_step_up': { nome: 'Box Step-up', grupo: 'Agachamento BW', categoria: 'box_step_up', usaCarga: false, estilosPermitidos: ['normal'], paramExtra: { label: 'Caixa(m) 0=Auto', val: '0', type: 'number' }, isUnilateral: true },
+ 41 |   'box_jump': { nome: 'Box Jump', grupo: 'Agachamento BW', categoria: 'box_jump', usaCarga: false, estilosPermitidos: ['normal'], paramExtra: { label: 'Caixa(m) 0=Auto', val: '0', type: 'number' } },
+ 42 |   'box_jump_over': { nome: 'Box Jump Over', grupo: 'Agachamento BW', categoria: 'box_jump_over', usaCarga: false, estilosPermitidos: ['normal'], paramExtra: { label: 'Caixa(m) 0=Auto', val: '0', type: 'number' } },
+ 43 |   
+ 44 |   // === AGACHAMENTO CARGA ===
+ 45 |   'front_squat': { nome: 'Front Squat', grupo: 'Agachamento Carga', categoria: 'squat_carga', usaCarga: true, estilosPermitidos: ['tng', 'drop'] },
+ 46 |   'back_squat': { nome: 'Back Squat', grupo: 'Agachamento Carga', categoria: 'squat_carga', usaCarga: true, estilosPermitidos: ['tng', 'drop'] },
+ 47 |   'overhead_squat': { nome: 'Overhead Squat', grupo: 'Agachamento Carga', categoria: 'squat_carga', usaCarga: true, estilosPermitidos: ['tng', 'drop'] },
+ 48 |   'db_box_step_over': { nome: 'DB Box Step-over', grupo: 'Agachamento Carga', categoria: 'box_step_up', usaCarga: true, estilosPermitidos: ['normal'], paramExtra: { label: 'Caixa(m) 0=Auto', val: '0', type: 'number' }, isUnilateral: true },
+ 49 |   'sandbag_squat': { nome: 'Sandbag/D-Ball Squat', grupo: 'Agachamento Carga', categoria: 'squat_carga', usaCarga: true, estilosPermitidos: ['normal'] },
+ 50 |   
+ 51 |   // === LUNGES ===
+ 52 |   'walking_lunge': { nome: 'Walking Lunge', grupo: 'Lunges', categoria: 'lunge_bw', usaCarga: false, estilosPermitidos: ['normal'], isUnilateral: true },
+ 53 |   'lunge_suitcase': { nome: 'Lunge (Suitcase)', grupo: 'Lunges', categoria: 'lunge_carga', usaCarga: true, estilosPermitidos: ['normal', 'tng'], isUnilateral: true },
+ 54 |   'lunge_front_rack': { nome: 'Lunge (Front Rack)', grupo: 'Lunges', categoria: 'lunge_carga', usaCarga: true, estilosPermitidos: ['normal', 'tng'], isUnilateral: true },
+ 55 |   'lunge_overhead': { nome: 'Lunge (Overhead)', grupo: 'Lunges', categoria: 'lunge_carga', usaCarga: true, estilosPermitidos: ['normal', 'tng'], isUnilateral: true },
+ 56 |   
+ 57 |   // === LPO E FORÇA ===
+ 58 |   'deadlift': { nome: 'Deadlift', grupo: 'LPO / Força', categoria: 'deadlift', usaCarga: true, estilosPermitidos: ['tng', 'drop'] },
+ 59 |   'clean': { nome: 'Squat Clean', grupo: 'LPO / Força', categoria: 'lpo_floor_squat', usaCarga: true, estilosPermitidos: ['tng', 'drop'], fatorH: 0.85, paramExtra: { label: 'VBT (m/s)', val: '0', type: 'number' } },
+ 60 |   'clean_power': { nome: 'Power Clean', grupo: 'LPO / Força', categoria: 'lpo_floor_power', usaCarga: true, estilosPermitidos: ['tng', 'drop'], fatorH: 0.85, paramExtra: { label: 'VBT (m/s)', val: '0', type: 'number' } },
+ 61 |   'clean_hang_squat': { nome: 'Hang Squat Clean', grupo: 'LPO / Força', categoria: 'lpo_hang_squat', usaCarga: true, estilosPermitidos: ['tng', 'drop'], fatorH: 0.60, paramExtra: { label: 'VBT (m/s)', val: '0', type: 'number' } },
+ 62 |   'clean_hang_power': { nome: 'Hang Power Clean', grupo: 'LPO / Força', categoria: 'lpo_hang_power', usaCarga: true, estilosPermitidos: ['tng', 'drop'], fatorH: 0.60, paramExtra: { label: 'VBT (m/s)', val: '0', type: 'number' } },
+ 63 |   'clean_jerk': { nome: 'Clean & Jerk', grupo: 'LPO / Força', categoria: 'lpo_cj', usaCarga: true, estilosPermitidos: ['tng', 'drop'], paramExtra: { label: 'VBT (m/s)', val: '0', type: 'number' } },
+ 64 |   'hang_clean_jerk': { nome: 'Hang Clean & Jerk', grupo: 'LPO / Força', categoria: 'lpo_hang_cj', usaCarga: true, estilosPermitidos: ['tng', 'drop'], paramExtra: { label: 'VBT (m/s)', val: '0', type: 'number' } },
+ 65 |   'snatch': { nome: 'Squat Snatch', grupo: 'LPO / Força', categoria: 'lpo_floor_squat', usaCarga: true, estilosPermitidos: ['tng', 'drop'], fatorH: 1.00, paramExtra: { label: 'VBT (m/s)', val: '0', type: 'number' } },
+ 66 |   'snatch_power': { nome: 'Power Snatch', grupo: 'LPO / Força', categoria: 'lpo_floor_power', usaCarga: true, estilosPermitidos: ['tng', 'drop'], fatorH: 1.00, paramExtra: { label: 'VBT (m/s)', val: '0', type: 'number' } },
+ 67 |   'snatch_hang_squat': { nome: 'Hang Squat Snatch', grupo: 'LPO / Força', categoria: 'lpo_hang_squat', usaCarga: true, estilosPermitidos: ['tng', 'drop'], fatorH: 0.75, paramExtra: { label: 'VBT (m/s)', val: '0', type: 'number' } },
+ 68 |   'snatch_hang_power': { nome: 'Hang Power Snatch', grupo: 'LPO / Força', categoria: 'lpo_hang_power', usaCarga: true, estilosPermitidos: ['tng', 'drop'], fatorH: 0.75, paramExtra: { label: 'VBT (m/s)', val: '0', type: 'number' } },
+ 69 |   'push_jerk': { nome: 'Push/Split Jerk', grupo: 'LPO / Força', categoria: 'lpo_jerk', usaCarga: true, estilosPermitidos: ['tng', 'drop'] },
+ 70 |   
+ 71 |   // === CARGAS IRREGULARES E ASSIMÉTRICAS ===
+ 72 |   'db_snatch': { nome: 'Dumbbell Snatch (Alt)', grupo: 'Cargas Irregulares', categoria: 'lpo_floor_power', usaCarga: true, estilosPermitidos: ['tng', 'drop'], fatorH: 1.00 },
+ 73 |   'db_clean': { nome: 'Dumbbell Clean', grupo: 'Cargas Irregulares', categoria: 'lpo_floor_power', usaCarga: true, estilosPermitidos: ['tng', 'drop'], fatorH: 0.85 },
+ 74 |   'db_hang_clean': { nome: 'Dumbbell Hang Clean', grupo: 'Cargas Irregulares', categoria: 'lpo_hang_power', usaCarga: true, estilosPermitidos: ['tng', 'drop'], fatorH: 0.60 },
+ 75 |   'db_jerk': { nome: 'Dumbbell Push Jerk', grupo: 'Cargas Irregulares', categoria: 'lpo_jerk', usaCarga: true, estilosPermitidos: ['tng', 'drop'] },
+ 76 |   'db_clean_jerk': { nome: 'DB Clean & Jerk', grupo: 'Cargas Irregulares', categoria: 'db_cj', usaCarga: true, estilosPermitidos: ['tng', 'drop'] },
+ 77 |   'db_hang_clean_jerk': { nome: 'DB Hang Clean & Jerk', grupo: 'Cargas Irregulares', categoria: 'db_hang_cj', usaCarga: true, estilosPermitidos: ['tng', 'drop'] },
+ 78 |   'sandbag_clean': { nome: 'Sandbag Clean (Ombro)', grupo: 'LPO Assimétrico', categoria: 'sandbag_clean', usaCarga: true, estilosPermitidos: ['normal', 'drop'] },
+ 79 |   'dball_over_shoulder': { nome: 'D-Ball/Sandbag Over Shoulder', grupo: 'Hyrox / Strongman', categoria: 'dball_shoulder', usaCarga: true, estilosPermitidos: ['normal', 'drop'], paramExtra: { label: 'Diâmetro(m)', val: '0.35', type: 'number'} },
+ 80 |   
+ 81 |   // === HÍBRIDOS COMPLEXOS ===
+ 82 |   'turkish_get_up': { nome: 'TGU', grupo: 'Híbridos Complexos', categoria: 'tgu', usaCarga: true, estilosPermitidos: ['normal'] },
+ 83 |   'thruster': { nome: 'Thruster', grupo: 'Híbridos Complexos', categoria: 'lpo_floor_squat', usaCarga: true, estilosPermitidos: ['tng', 'drop'], fatorH: 1.00 },
+ 84 |   'wall_ball': { nome: 'Wall Ball', grupo: 'Híbridos Complexos', categoria: 'wall_ball', usaCarga: true, estilosPermitidos: ['normal'], paramExtra: { label: 'Alvo (m)', val: '3.0', type: 'number' } }, 
+ 85 |   'devil_press': { nome: 'Devil Press', grupo: 'Híbridos Complexos', categoria: 'devil_press', usaCarga: true, estilosPermitidos: ['normal', 'tng'] },
+ 86 |   
+ 87 |   // === BURPEES ===
+ 88 |   'burpee': { nome: 'Burpee Tradicional', grupo: 'Burpees', categoria: 'vertical_hibrido', usaCarga: false, estilosPermitidos: ['normal'] },
+ 89 |   'burpee_line': { nome: 'Burpee Over Line', grupo: 'Burpees', categoria: 'vertical_hibrido_extra', usaCarga: false, estilosPermitidos: ['normal'] },
+ 90 |   'burpee_broad_jump': { nome: 'Burpee Broad Jump', grupo: 'Burpees', categoria: 'burpee_broad_jump', usaCarga: false, estilosPermitidos: ['normal'], paramExtra: { label: 'Dist (m)', val: '1.5', type: 'number' } },
+ 91 |   'burpee_over_db': { nome: 'Burpee Over DB', grupo: 'Burpees', categoria: 'burpee_over_obj', usaCarga: false, estilosPermitidos: ['normal'], paramExtra: { label: 'Alt DB(m)', val: '0.20', type: 'number' } },
+ 92 |   'burpee_over_kb': { nome: 'Burpee Over KB', grupo: 'Burpees', categoria: 'burpee_over_obj', usaCarga: false, estilosPermitidos: ['normal'], paramExtra: { label: 'Alt KB(m)', val: '0.30', type: 'number' } },
+ 93 |   'burpee_box_jump': { nome: 'Burpee Box Jump', grupo: 'Burpees', categoria: 'burpee_box_jump', usaCarga: false, estilosPermitidos: ['normal'], paramExtra: { label: 'Caixa(m) 0=Auto', val: '0', type: 'number' } },
+ 94 |   'burpee_box_jump_over': { nome: 'Burpee Box Jump Over', grupo: 'Burpees', categoria: 'burpee_box_jump_over', usaCarga: false, estilosPermitidos: ['normal'], paramExtra: { label: 'Caixa(m) 0=Auto', val: '0', type: 'number' } },
+ 95 |   'burpee_pullup': { nome: 'Burpee Pull-up', grupo: 'Burpees', categoria: 'burpee_pullup', usaCarga: false, estilosPermitidos: ['normal'] },
+ 96 |   
+ 97 |   // === CORE BW ===
+ 98 |   'kb_swing_am': { nome: 'KB Swing (Amer.)', grupo: 'Hinge BW', categoria: 'arc_carga', usaCarga: true, estilosPermitidos: ['normal'] },
+ 99 |   'kb_swing_russo': { nome: 'KB Swing (Russo)', grupo: 'Hinge BW', categoria: 'arc_carga_parcial', usaCarga: true, estilosPermitidos: ['normal'] },
+100 |   'situp': { nome: 'Sit-up (Abmat)', grupo: 'Core BW', categoria: 'core_situp', usaCarga: false, estilosPermitidos: ['normal'] }, 
+101 |   'v_ups': { nome: 'V-Ups', grupo: 'Core BW', categoria: 'core_vup', usaCarga: false, estilosPermitidos: ['normal'] }, 
+102 |   'ghd_situp': { nome: 'GHD Sit-up', grupo: 'Core BW', categoria: 'core_ghd', usaCarga: false, estilosPermitidos: ['normal'] }, 
+103 |   'ghd_back_extension': { nome: 'GHD Hip/Back Extension', grupo: 'Core BW', categoria: 'core_ghd', usaCarga: false, estilosPermitidos: ['normal'] },
+104 |   't2b': { nome: 'Toes to Bar (T2B)', grupo: 'Core BW', categoria: 'core_t2b', usaCarga: false, estilosPermitidos: ['kipping', 'strict'] },
+105 |   'k2e': { nome: 'Knees to Elbows (K2E)', grupo: 'Core BW', categoria: 'core_k2e', usaCarga: false, estilosPermitidos: ['kipping', 'strict'] },
+106 |   
+107 |   // === MONOSTRUTURAL E STRONGMAN ===
+108 |   'run': { nome: 'Corrida', grupo: 'Monostrutural', categoria: 'corrida', usaCarga: false, estilosPermitidos: ['normal'], paramExtra: { label: 'Dist (m)', val: '400', type: 'number' } },
+109 |   'air_runner': { nome: 'Curved Treadmill (AirRunner)', grupo: 'Monostrutural', categoria: 'air_runner', usaCarga: false, estilosPermitidos: ['normal'], paramExtra: { label: 'Dist (m)', val: '400', type: 'number' } },
+110 |   'shuttle_run': { nome: 'Shuttle Run', grupo: 'Monostrutural', categoria: 'shuttle_run', usaCarga: false, estilosPermitidos: ['normal'], paramExtra: { label: 'Tiro (m)', val: '7.5', type: 'number' } },
+111 |   'farmers_carry': { 
+112 |     nome: 'Farmer\'s Carry', grupo: 'Monostrutural', categoria: 'corrida_carga', usaCarga: true, estilosPermitidos: ['normal'],
+113 |     paramExtra: { label: 'Trecho (m)', val: '10', type: 'number' },
+114 |     paramExtra2: { label: 'Terreno (η)', val: '1.0', type: 'select', options: [ {label: 'Ginásio', value: '1.0'}, {label: 'Terra/Cascalho', value: '1.1'}, {label: 'Grama', value: '1.2'}, {label: 'Areia Solta', value: '2.1'} ] }
+115 |   }, 
+116 |   'yoke_carry': { 
+117 |     nome: 'Yoke Carry', grupo: 'Hyrox / Strongman', categoria: 'yoke_carry', usaCarga: true, estilosPermitidos: ['normal'],
+118 |     paramExtra: { label: 'Trecho (m)', val: '10', type: 'number' },
+119 |     paramExtra2: { label: 'Terreno (η)', val: '1.0', type: 'select', options: [ {label: 'Ginásio', value: '1.0'}, {label: 'Terra/Cascalho', value: '1.1'}, {label: 'Grama', value: '1.2'}, {label: 'Areia Solta', value: '2.1'} ] }
+120 |   },
+121 |   'sled_push': { 
+122 |     nome: 'Sled Push', grupo: 'Monostrutural', categoria: 'friccao_horizontal_push', usaCarga: true, estilosPermitidos: ['normal'],
+123 |     paramExtra: { label: 'Trecho (m)', val: '10', type: 'number' },
+124 |     paramExtra2: { label: 'Superfície (μ)', val: '0.35', type: 'select', options: [ {label: 'Grama Sintética', value: '0.35'}, {label: 'Grama Natural', value: '0.50'}, {label: 'Asfalto', value: '0.65'}, {label: 'Emborrachado', value: '0.85'} ] } 
+125 |   }, 
+126 |   'sled_pull': { 
+127 |     nome: 'Sled Pull', grupo: 'Monostrutural', categoria: 'friccao_horizontal_pull', usaCarga: true, estilosPermitidos: ['normal'],
+128 |     paramExtra: { label: 'Trecho (m)', val: '10', type: 'number' },
+129 |     paramExtra2: { label: 'Superfície (μ)', val: '0.35', type: 'select', options: [ {label: 'Grama Sintética', value: '0.35'}, {label: 'Grama Natural', value: '0.50'}, {label: 'Asfalto', value: '0.65'}, {label: 'Emborrachado', value: '0.85'} ] } 
+130 |   }, 
+131 |   'heavy_sled_pull': { 
+132 |     nome: 'Heavy Sled Pull', grupo: 'Hyrox / Strongman', categoria: 'friccao_horizontal_pull_heavy', usaCarga: true, estilosPermitidos: ['normal'],
+133 |     paramExtra: { label: 'Trecho (m)', val: '10', type: 'number' },
+134 |     paramExtra2: { label: 'Superfície (μ)', val: '0.35', type: 'select', options: [ {label: 'Grama Sintética', value: '0.35'}, {label: 'Grama Natural', value: '0.50'}, {label: 'Asfalto', value: '0.65'}, {label: 'Emborrachado', value: '0.85'} ] } 
+135 |   },
+136 |   
+137 |   // === ERGÔMETROS ===
+138 |   'row': { nome: 'Remo (Concept2)', grupo: 'Ergômetros', categoria: 'remo', usaCarga: false, estilosPermitidos: ['normal'], paramExtra: { label: 'Pace ou Cal', val: '2:00', type: 'text' } },
+139 |   'skierg': { nome: 'SkiErg (Concept2)', grupo: 'Ergômetros', categoria: 'remo', usaCarga: false, estilosPermitidos: ['normal'], paramExtra: { label: 'Pace ou Cal', val: '2:10', type: 'text' } },
+140 |   'bike_erg': { nome: 'BikeErg (Concept2)', grupo: 'Ergômetros', categoria: 'bike', usaCarga: false, estilosPermitidos: ['normal'], paramExtra: { label: 'RPM', val: '70', type: 'number' } },
+141 |   'echo_bike': { nome: 'Rogue Echo Bike', grupo: 'Ergômetros', categoria: 'echo_bike', usaCarga: false, estilosPermitidos: ['normal'], paramExtra: { label: 'RPM', val: '60', type: 'number' } },
+142 |   'assault_bike': { nome: 'Assault AirBike', grupo: 'Ergômetros', categoria: 'assault_bike', usaCarga: false, estilosPermitidos: ['normal'], paramExtra: { label: 'RPM', val: '60', type: 'number' } },
+143 |   
+144 |   // === CORDA ===
+145 |   'single_under': { nome: 'Single-unders', grupo: 'Corda', categoria: 'vertical_bw_total', usaCarga: false, estilosPermitidos: ['normal'], paramExtra: { label: 'Salto(m)', val: '0.05', type: 'number'} },
+146 |   'su_crossover': { nome: 'SU Crossover', grupo: 'Corda', categoria: 'vertical_bw_total', usaCarga: false, estilosPermitidos: ['normal'], paramExtra: { label: 'Salto(m)', val: '0.08', type: 'number'} },
+147 |   'double_under': { nome: 'Double-unders', grupo: 'Corda', categoria: 'vertical_bw_total', usaCarga: false, estilosPermitidos: ['normal'], paramExtra: { label: 'Salto(m)', val: '0.12', type: 'number'} },
+148 |   'du_crossover': { nome: 'DU Crossover', grupo: 'Corda', categoria: 'vertical_bw_total', usaCarga: false, estilosPermitidos: ['normal'], paramExtra: { label: 'Salto(m)', val: '0.15', type: 'number'} },
+149 |   'heavy_du': { nome: 'Heavy Rope Double-Unders', grupo: 'Corda', categoria: 'heavy_du', usaCarga: false, estilosPermitidos: ['normal'], paramExtra: { label: 'Massa Corda(kg)', val: '1.5', type: 'number'} }
+150 | };
 
 --- FIM DO ARQUIVO: src\data\movements.ts ---
 
@@ -3061,7 +3045,7 @@ CONTEÚDO DOS ARQUIVOS
   1 | export type Modalidade = 'FOR_TIME' | 'AMRAP' | 'EMOM';
   2 | export type Sexo = 'M' | 'F';
   3 | export type NivelTecnico = 'iniciante' | 'intermediario' | 'avancado';
-  4 | export type Tecnica = 'tng' | 'drop';
+  4 | export type Tecnica = 'normal' | 'tng' | 'drop' | 'strict' | 'kipping' | 'butterfly';
   5 | export type Phase = 'buyin' | 'round' | 'cashout';
   6 | 
   7 | export interface ParamExtraOption {
@@ -3081,97 +3065,98 @@ CONTEÚDO DOS ARQUIVOS
  21 |   grupo: string;
  22 |   categoria: string;
  23 |   usaCarga: boolean;
- 24 |   fatorH?: number;
- 25 |   isHighBox?: boolean;
- 26 |   paramExtra?: ParamExtraConfig;
- 27 |   paramExtra2?: ParamExtraConfig;
- 28 |   isUnilateral?: boolean;
- 29 | }
- 30 | 
- 31 | export interface ItemLousa {
- 32 |   originalId: string;
- 33 |   movId: string;
- 34 |   phase: Phase;
- 35 |   reps: number;
- 36 |   carga: number;
- 37 |   tecnica: Tecnica;
- 38 |   extraVal: string;
- 39 |   extraVal2?: string;
- 40 | }
- 41 | 
- 42 | export interface TimelineStateItem {
- 43 |   reps: number;
- 44 |   start: string;
- 45 |   end: string;
- 46 |   carga?: number;
- 47 | }
- 48 | 
- 49 | export interface AtletaPerfil {
- 50 |   estatura: number;
- 51 |   peso: number;
- 52 |   sexo: Sexo;
- 53 |   nivelTecnico: NivelTecnico;
- 54 |   envergadura: number;
- 55 |   perna: number;
- 56 |   bf: number;
- 57 |   // --- NOVAS VARIÁVEIS DE ANTROPOMETRIA AVANÇADA ---
- 58 |   usaAntropometriaAvancada?: boolean;
- 59 |   dataNascimento?: string;
- 60 |   circTorax?: number; // em metros (ex: 1.10)
- 61 |   circCoxa?: number;  // em metros (ex: 0.65)
- 62 |   mobilidade?: number; // ESCALA 0 a 100 (100 = Perfeita, < 100 = Encurtamentos)
- 63 | }
- 64 | 
- 65 | export interface ResultadoProcessamento {
- 66 |   trabalhoReal: number;
- 67 |   gastoMetabolico: number;
- 68 |   potenciaEsp: number;
- 69 |   potenciaReal: number;
- 70 |   logDetalhesHTML: string;
- 71 | }
- 72 | 
- 73 | // 1. A Prescrição (O Treino Clássico / Template)
- 74 | export interface WodTemplateRecord {
- 75 |   id?: string;
- 76 |   created_at?: string;
- 77 |   title: string;
- 78 |   short_code: string;
- 79 |   tipo_treino: string;
- 80 |   tempo_alvo: string;
- 81 |   rounds_prescritos: number;
- 82 |   movimentos: ItemLousa[]; 
- 83 |   creator_id?: string;
- 84 | }
- 85 | 
- 86 | // 2. A Execução (O Resultado do Atleta)
- 87 | export interface WodResultRecord {
- 88 |   id?: string;
- 89 |   created_at?: string;
- 90 |   template_id: string; // Isso liga o resultado ao WOD clássico!
- 91 |   athlete_id?: string;
- 92 |   tempo_real: string;
- 93 |   rounds_real: number;
- 94 |   score_watts: number;
- 95 |   score_kcal: number;
- 96 |   timeline?: any; 
- 97 |   cargas_adaptadas: boolean; // True = Scaled, False = RX
- 98 | }
- 99 | 
-100 | export interface UserProfile {
-101 |   id: string;
-102 |   is_coach: boolean;
-103 |   full_name: string;
-104 |   apelido?: string;
-105 |   coach_id?: string;
-106 |   estatura: number;
-107 |   peso: number;
-108 |   sexo: 'M' | 'F';
-109 |   nivel_tecnico: string;
-110 |   envergadura: number;
-111 |   perna: number;
-112 |   bf: number;
-113 |   data_nascimento?: string;
-114 | }
+ 24 |   estilosPermitidos: Tecnica[];
+ 25 |   fatorH?: number;
+ 26 |   isHighBox?: boolean;
+ 27 |   paramExtra?: ParamExtraConfig;
+ 28 |   paramExtra2?: ParamExtraConfig;
+ 29 |   isUnilateral?: boolean;
+ 30 | }
+ 31 | 
+ 32 | export interface ItemLousa {
+ 33 |   originalId: string;
+ 34 |   movId: string;
+ 35 |   phase: Phase;
+ 36 |   reps: number;
+ 37 |   carga: number;
+ 38 |   tecnica: Tecnica;
+ 39 |   extraVal: string;
+ 40 |   extraVal2?: string;
+ 41 | }
+ 42 | 
+ 43 | export interface TimelineStateItem {
+ 44 |   reps: number;
+ 45 |   start: string;
+ 46 |   end: string;
+ 47 |   carga?: number;
+ 48 | }
+ 49 | 
+ 50 | export interface AtletaPerfil {
+ 51 |   estatura: number;
+ 52 |   peso: number;
+ 53 |   sexo: Sexo;
+ 54 |   nivelTecnico: NivelTecnico;
+ 55 |   envergadura: number;
+ 56 |   perna: number;
+ 57 |   bf: number;
+ 58 |   // --- NOVAS VARIÁVEIS DE ANTROPOMETRIA AVANÇADA ---
+ 59 |   usaAntropometriaAvancada?: boolean;
+ 60 |   dataNascimento?: string;
+ 61 |   circTorax?: number; // em metros (ex: 1.10)
+ 62 |   circCoxa?: number;  // em metros (ex: 0.65)
+ 63 |   mobilidade?: number; // ESCALA 0 a 100 (100 = Perfeita, < 100 = Encurtamentos)
+ 64 | }
+ 65 | 
+ 66 | export interface ResultadoProcessamento {
+ 67 |   trabalhoReal: number;
+ 68 |   gastoMetabolico: number;
+ 69 |   potenciaEsp: number;
+ 70 |   potenciaReal: number;
+ 71 |   logDetalhesHTML: string;
+ 72 | }
+ 73 | 
+ 74 | // 1. A Prescrição (O Treino Clássico / Template)
+ 75 | export interface WodTemplateRecord {
+ 76 |   id?: string;
+ 77 |   created_at?: string;
+ 78 |   title: string;
+ 79 |   short_code: string;
+ 80 |   tipo_treino: string;
+ 81 |   tempo_alvo: string;
+ 82 |   rounds_prescritos: number;
+ 83 |   movimentos: ItemLousa[]; 
+ 84 |   creator_id?: string;
+ 85 | }
+ 86 | 
+ 87 | // 2. A Execução (O Resultado do Atleta)
+ 88 | export interface WodResultRecord {
+ 89 |   id?: string;
+ 90 |   created_at?: string;
+ 91 |   template_id: string; // Isso liga o resultado ao WOD clássico!
+ 92 |   athlete_id?: string;
+ 93 |   tempo_real: string;
+ 94 |   rounds_real: number;
+ 95 |   score_watts: number;
+ 96 |   score_kcal: number;
+ 97 |   timeline?: Record<string, TimelineStateItem>; 
+ 98 |   cargas_adaptadas: boolean; // True = Scaled, False = RX
+ 99 | }
+100 | 
+101 | export interface UserProfile {
+102 |   id: string;
+103 |   is_coach: boolean;
+104 |   full_name: string;
+105 |   apelido?: string;
+106 |   coach_id?: string;
+107 |   estatura: number;
+108 |   peso: number;
+109 |   sexo: 'M' | 'F';
+110 |   nivel_tecnico: string;
+111 |   envergadura: number;
+112 |   perna: number;
+113 |   bf: number;
+114 |   data_nascimento?: string;
+115 | }
 
 --- FIM DO ARQUIVO: src\types.ts ---
 
@@ -3369,7 +3354,7 @@ CONTEÚDO DOS ARQUIVOS
 189 |   }
 190 | 
 191 |   // ==========================================================
-192 |   // DECLARAÇÕES ORIGINAIS E VARIÁVEIS RESTAURADAS (Não apagar)
+192 |   // DECLARAÇÕES ORIGINAIS E VARIÁVEIS RESTAURADAS
 193 |   // ==========================================================
 194 |   let tMech = 0, tMetWork = 0, tMetWorkConcIsom = 0, exL = "", P = 0, sErgo = 0, isErgo = false;
 195 |   let isCalorieErgo = false;
@@ -3380,7 +3365,7 @@ CONTEÚDO DOS ARQUIVOS
 200 |   const des = (cfg.paramExtra && cfg.categoria.includes('vertical_bw_total') && extra > 0) 
 201 |               ? extra : (atleta.estatura * (cfg.fatorH || 0.40));
 202 |   
-203 |   const h_box = extra > 0 ? extra : (cfg.isHighBox ? (isM ? 0.75 : 0.60) : (isM ? 0.60 : 0.50));
+203 |   const h_box = extra > 0 ? extra : (isM ? 0.60 : 0.50);
 204 |   const safeReps = Math.max(1, reps); // Aqui a variável 'reps' volta a ser utilizada
 205 | 
 206 |   switch(cfg.categoria) {
@@ -3476,427 +3461,431 @@ CONTEÚDO DOS ARQUIVOS
 296 |           break;
 297 | 
 298 |       case 'vertical_bw_total': 
-299 |           if (['strict_bmu', 'bar_muscle_up', 'strict_rmu', 'ring_muscle_up'].includes(movId)) {
-300 |               tMech = atleta.peso * G * (2.0 * L_arm + (L_trunk * 0.50));
-301 |           } else if (cfg.grupo === 'Corda') { 
-302 |               tMech = atleta.peso * G * des; 
-303 |               exL = ` (Salto ${des.toFixed(2)}m)`; 
-304 |           } else {
-305 |               tMech = atleta.peso * G * (L_arm + (L_trunk * 0.50)); 
-306 |           }
-307 |           break;
-308 |       case 'pullover': 
-309 |           tMech = atleta.peso * G * (altCoM + 2.0 * L_arm); 
-310 |           break;
-311 | 
-312 |       case 'squat_bw': 
-313 |           tMech = W_squat_body; 
+299 |           // Atualizado para a nova nomenclatura raiz
+300 |           if (['bmu', 'rmu'].includes(movId)) {
+301 |               tMech = atleta.peso * G * (2.0 * L_arm + (L_trunk * 0.50));
+302 |           } else if (cfg.grupo === 'Corda') { 
+303 |               tMech = atleta.peso * G * des; 
+304 |               
+305 |               // NOVO: Adição do custo mecânico e fadiga isométrica dos Crossovers
+306 |               // A massa dos braços precisa ser violentamente deslocada num arco cruzado
+307 |               if (movId.includes('crossover')) {
+308 |                   tMech += (m_arms * G * (L_arm * 1.20));
+309 |               }
+310 |               exL = ` (Salto ${des.toFixed(2)}m)`; 
+311 |           } else {
+312 |               tMech = atleta.peso * G * (L_arm + (L_trunk * 0.50)); 
+313 |           }
 314 |           break;
-315 |       case 'squat_carga': 
-316 |           tMech = W_squat_body + (pCarga * G * L_thigh); 
+315 |       case 'pullover': 
+316 |           tMech = atleta.peso * G * (altCoM + 2.0 * L_arm); 
 317 |           break;
-318 |       case 'lunge_bw': 
-319 |           tMech = atleta.peso * G * (L_thigh * 0.85); 
-320 |           break;
-321 |       case 'lunge_carga': 
-322 |           tMech = (atleta.peso + pCarga) * G * (L_thigh * 0.85); 
-323 |           break;
-324 |       case 'hinge_carga': 
-325 |       case 'arc_carga': 
-326 |           tMech = pCarga * G * (atleta.estatura * 0.55); 
+318 | 
+319 |       case 'squat_bw': 
+320 |           tMech = W_squat_body; 
+321 |           break;
+322 |       case 'squat_carga': 
+323 |           tMech = W_squat_body + (pCarga * G * L_thigh); 
+324 |           break;
+325 |       case 'lunge_bw': 
+326 |           tMech = atleta.peso * G * (L_thigh * 0.85); 
 327 |           break;
-328 |       case 'arc_carga_parcial': 
-329 |           tMech = pCarga * G * (atleta.estatura * 0.35); 
+328 |       case 'lunge_carga': 
+329 |           tMech = (atleta.peso + pCarga) * G * (L_thigh * 0.85); 
 330 |           break;
-331 | 
-332 |       case 'core_situp': 
-333 |           tMech = m_sup * G * (L_trunk * 0.45) * Math.sin(75 * Math.PI / 180); 
+331 |       case 'hinge_carga': 
+332 |       case 'arc_carga': 
+333 |           tMech = pCarga * G * (atleta.estatura * 0.55); 
 334 |           break;
-335 |       case 'core_vup': 
-336 |           tMech = (m_sup * G * (L_trunk * 0.45) * Math.sin(60 * Math.PI / 180)) + 
-337 |                   ((m_thigh + m_shank_foot) * G * (L_perna * 0.45) * Math.sin(60 * Math.PI / 180)); 
-338 |           break;
-339 |       case 'core_ghd': 
-340 |           tMech = m_sup * G * (L_trunk * 0.45) * (Math.sin(75 * Math.PI / 180) - Math.sin(-15 * Math.PI / 180)); 
+335 |       case 'arc_carga_parcial': 
+336 |           tMech = pCarga * G * (atleta.estatura * 0.35); 
+337 |           break;
+338 | 
+339 |       case 'core_situp': 
+340 |           tMech = m_sup * G * (L_trunk * 0.45) * Math.sin(75 * Math.PI / 180); 
 341 |           break;
-342 |       case 'core_t2b': 
-343 |           tMech = (m_thigh + m_shank_foot) * G * (L_perna * 0.45) * 2.0; 
-344 |           break;
-345 |       case 'core_k2e': 
-346 |           tMech = (m_thigh + m_shank_foot) * G * (L_thigh * 0.60) * 2.0; 
-347 |           break;
-348 |       
-349 |       case 'wall_walk': 
-350 |           tMech = ((atleta.peso - m_arms) * G * L_arm) + (atleta.peso * G * (altCoM * 1.20)); 
+342 |       case 'core_vup': 
+343 |           tMech = (m_sup * G * (L_trunk * 0.45) * Math.sin(60 * Math.PI / 180)) + 
+344 |                   ((m_thigh + m_shank_foot) * G * (L_perna * 0.45) * Math.sin(60 * Math.PI / 180)); 
+345 |           break;
+346 |       case 'core_ghd': 
+347 |           tMech = m_sup * G * (L_trunk * 0.45) * (Math.sin(75 * Math.PI / 180) - Math.sin(-15 * Math.PI / 180)); 
+348 |           break;
+349 |       case 'core_t2b': 
+350 |           tMech = (m_thigh + m_shank_foot) * G * (L_perna * 0.45) * 2.0; 
 351 |           break;
-352 |       case 'hs_walk': 
-353 |           tMech = (atleta.peso * G * 0.15) * extraSafe; 
-354 |           exL = ` (${extraSafe.toFixed(1)}m)`; 
-355 |           break;
-356 |       case 'rope_climb': 
-357 |       case 'pegboard': 
-358 |           tMech = atleta.peso * G * extraSafe; 
-359 |           exL = ` (${extraSafe.toFixed(1)}m)`; 
-360 |           break;
-361 |       case 'rope_ascend_floor': 
-362 |           tMech = atleta.peso * G * (atleta.estatura * 0.65); 
-363 |           break;
-364 |       
-365 |       case 'hs_incline_up': {
-366 |           const [d_up, h_up] = (extraV || "5;1").toString().split(';').map(v => Number(v.replace(',','.')) || 0);
-367 |           tMech = (atleta.peso * G * 0.15 * Math.max(1, d_up)) + (atleta.peso * G * Math.max(0, h_up)); 
-368 |           exL = ` (${d_up}m ↗ ${h_up}m)`; 
-369 |           break;
-370 |       }
-371 |       case 'hs_incline_down': {
-372 |           const [d_dn, h_dn] = (extraV || "5;1").toString().split(';').map(v => Number(v.replace(',','.')) || 0);
-373 |           tMech = (atleta.peso * G * 0.15 * Math.max(1, d_dn)) + (atleta.peso * G * Math.max(0, h_dn) * 0.50); 
-374 |           exL = ` (${d_dn}m ↘ ${h_dn}m)`; 
-375 |           break;
-376 |       }
-377 | 
-378 |       case 'box_step_up': 
-379 |       case 'box_jump': 
-380 |           tMech = atleta.peso * G * h_box; 
-381 |           exL = ` (${h_box.toFixed(2)}m)`; 
+352 |       case 'core_k2e': 
+353 |           tMech = (m_thigh + m_shank_foot) * G * (L_thigh * 0.60) * 2.0; 
+354 |           break;
+355 |       
+356 |       case 'wall_walk': 
+357 |           tMech = ((atleta.peso - m_arms) * G * L_arm) + (atleta.peso * G * (altCoM * 1.20)); 
+358 |           break;
+359 |       case 'hs_walk': 
+360 |           tMech = (atleta.peso * G * 0.15) * extraSafe; 
+361 |           exL = ` (${extraSafe.toFixed(1)}m)`; 
+362 |           break;
+363 |       case 'rope_climb': 
+364 |       case 'pegboard': 
+365 |           tMech = atleta.peso * G * extraSafe; 
+366 |           exL = ` (${extraSafe.toFixed(1)}m)`; 
+367 |           break;
+368 |       case 'rope_ascend_floor': 
+369 |           tMech = atleta.peso * G * (atleta.estatura * 0.65); 
+370 |           break;
+371 |       
+372 |       case 'hs_incline_up': {
+373 |           const [d_up, h_up] = (extraV || "5;1").toString().split(';').map(v => Number(v.replace(',','.')) || 0);
+374 |           tMech = (atleta.peso * G * 0.15 * Math.max(1, d_up)) + (atleta.peso * G * Math.max(0, h_up)); 
+375 |           exL = ` (${d_up}m ↗ ${h_up}m)`; 
+376 |           break;
+377 |       }
+378 |       case 'hs_incline_down': {
+379 |           const [d_dn, h_dn] = (extraV || "5;1").toString().split(';').map(v => Number(v.replace(',','.')) || 0);
+380 |           tMech = (atleta.peso * G * 0.15 * Math.max(1, d_dn)) + (atleta.peso * G * Math.max(0, h_dn) * 0.50); 
+381 |           exL = ` (${d_dn}m ↘ ${h_dn}m)`; 
 382 |           break;
-383 |       case 'box_jump_over': 
-384 |           tMech = atleta.peso * G * (h_box * 0.85); 
-385 |           exL = ` (${h_box.toFixed(2)}m)`; 
-386 |           break;
-387 | 
-388 |       case 'vertical_hibrido': 
-389 |           tMech = ((atleta.peso - m_arms) * G * L_arm) + (atleta.peso * G * altCoM); 
-390 |           break;
-391 |       case 'vertical_hibrido_extra': 
-392 |           tMech = ((atleta.peso - m_arms) * G * L_arm) + (atleta.peso * G * altCoM) + (atleta.peso * G * 0.10); 
+383 |       }
+384 | 
+385 |       case 'box_step_up': 
+386 |       case 'box_jump': 
+387 |           tMech = atleta.peso * G * h_box; 
+388 |           exL = ` (${h_box.toFixed(2)}m)`; 
+389 |           break;
+390 |       case 'box_jump_over': 
+391 |           tMech = atleta.peso * G * (h_box * 0.85); 
+392 |           exL = ` (${h_box.toFixed(2)}m)`; 
 393 |           break;
-394 |       case 'burpee_broad_jump': 
-395 |           tMech = ((atleta.peso - m_arms) * G * L_arm) + (atleta.peso * G * altCoM) + 
-396 |                   (0.50 * atleta.peso * (extraSafe * G / Math.sin(80 * Math.PI / 180))); 
-397 |           exL = ` (${extraSafe.toFixed(1)}m)`; 
-398 |           break;
-399 |       
-400 |       case 'burpee_over_obj': {
-401 |           const h_obj = extra > 0 ? extra : (movId === 'burpee_over_db' ? 0.20 : 0.30);
-402 |           tMech = ((atleta.peso - m_arms) * G * L_arm) + (atleta.peso * G * (h_obj * 0.85)); 
-403 |           exL = ` (${h_obj.toFixed(2)}m)`; 
-404 |           break;
-405 |       }
-406 |       case 'burpee_box_jump': 
-407 |           tMech = ((atleta.peso - m_arms) * G * L_arm) + (atleta.peso * G * h_box); 
-408 |           exL = ` (${h_box.toFixed(2)}m)`; 
-409 |           break;
-410 |       case 'burpee_box_jump_over': 
-411 |           tMech = ((atleta.peso - m_arms) * G * L_arm) + (atleta.peso * G * (h_box * 0.85)); 
-412 |           exL = ` (${h_box.toFixed(2)}m)`; 
-413 |           break;
-414 |       case 'burpee_pullup': 
-415 |           tMech = ((atleta.peso - m_arms) * G * L_arm) + (atleta.peso * G * altCoM) + ((atleta.peso - m_arms) * G * L_arm); 
+394 | 
+395 |       case 'vertical_hibrido': 
+396 |           tMech = ((atleta.peso - m_arms) * G * L_arm) + (atleta.peso * G * altCoM); 
+397 |           break;
+398 |       case 'vertical_hibrido_extra': 
+399 |           tMech = ((atleta.peso - m_arms) * G * L_arm) + (atleta.peso * G * altCoM) + (atleta.peso * G * 0.10); 
+400 |           break;
+401 |       case 'burpee_broad_jump': 
+402 |           tMech = ((atleta.peso - m_arms) * G * L_arm) + (atleta.peso * G * altCoM) + 
+403 |                   (0.50 * atleta.peso * (extraSafe * G / Math.sin(80 * Math.PI / 180))); 
+404 |           exL = ` (${extraSafe.toFixed(1)}m)`; 
+405 |           break;
+406 |       
+407 |       case 'burpee_over_obj': {
+408 |           const h_obj = extra > 0 ? extra : (movId === 'burpee_over_db' ? 0.20 : 0.30);
+409 |           tMech = ((atleta.peso - m_arms) * G * L_arm) + (atleta.peso * G * (h_obj * 0.85)); 
+410 |           exL = ` (${h_obj.toFixed(2)}m)`; 
+411 |           break;
+412 |       }
+413 |       case 'burpee_box_jump': 
+414 |           tMech = ((atleta.peso - m_arms) * G * L_arm) + (atleta.peso * G * h_box); 
+415 |           exL = ` (${h_box.toFixed(2)}m)`; 
 416 |           break;
-417 | 
-418 |       case 'friccao_horizontal_push': {
-419 |           const trecho = Number(extraV) || 10;
-420 |           const mu_push = Number(extraV2) || 0.35; 
-421 | 
-422 |           const loadRatio = pCarga / Math.max(1, atleta.peso);
-423 |           const anguloDinamico = Math.max(10, 30 - (loadRatio * 5)); 
-424 |           const radDinamico = anguloDinamico * Math.PI / 180;
-425 |           
-426 |           const F_push = (mu_push * (pCarga + MASSA_SLED) * G) / (Math.cos(radDinamico) - mu_push * Math.sin(radDinamico));
-427 |           const W_sled_push = F_push * Math.cos(radDinamico) * trecho;
-428 |           
-429 |           tMech = W_sled_push + (atleta.peso * G * 0.15 * trecho); 
-430 |           exL = ` (${safeReps}x ${trecho}m | μ:${mu_push})`; 
-431 |           break;
-432 |       }
-433 |       case 'friccao_horizontal_pull': {
-434 |           const trecho = Number(extraV) || 10;
-435 |           const mu_pull = Number(extraV2) || 0.35; 
-436 | 
-437 |           const rad20 = 20 * Math.PI / 180;
-438 |           const F_pull = (mu_pull * (pCarga + MASSA_SLED) * G) / (Math.cos(rad20) + mu_pull * Math.sin(rad20));
-439 |           const W_sled_pull = F_pull * Math.cos(rad20) * trecho;
-440 |           
-441 |           tMech = W_sled_pull + (atleta.peso * G * 0.15 * trecho); 
-442 |           exL = ` (${safeReps}x ${trecho}m | μ:${mu_pull})`; 
-443 |           break;
-444 |       }
-445 |       case 'friccao_horizontal_pull_heavy': {
-446 |           const trecho = Number(extraV) || 10;
-447 |           const mu_pullH = Number(extraV2) || 0.35; 
-448 | 
-449 |           const F_pull_h = mu_pullH * pCarga * G; 
-450 |           tMech = (F_pull_h * trecho) + (atleta.peso * G * 0.15 * trecho); 
-451 |           exL = ` (${safeReps}x ${trecho}m | μ:${mu_pullH})`; 
-452 |           break;
-453 |       }
-454 | 
-455 |       case 'corrida_carga': 
-456 |       case 'yoke_carry': {
-457 |           const racioSobrecarga = pCarga / Math.max(1, atleta.peso);
-458 |           const oscilacaoDinamica = 0.05 + (0.02 * racioSobrecarga); 
-459 |           // O cálculo aqui é feito para 1 metro. No final do motor, ele multiplica pelo safeReps (que agora é a distância total).
-460 |           tMech = (atleta.peso + pCarga) * G * oscilacaoDinamica; 
-461 |           
-462 |           let nomeTerreno = "Ginásio";
-463 |           if (extraV === '1.1') nomeTerreno = "Terra";
-464 |           if (extraV === '1.2') nomeTerreno = "Turf";
-465 |           if (extraV === '2.1') nomeTerreno = "Areia";
-466 |           if (extraV === '4.1') nomeTerreno = "Neve";
-467 |           exL = ` (${safeReps}m em ${nomeTerreno})`; 
-468 |           break;
-469 |       }
-470 |       case 'shuttle_run': 
-471 |           tMech = (atleta.peso * G * (0.07 * 0.75 * extraSafe)) + (0.50 * atleta.peso * Math.pow(3.0, 2)); 
-472 |           exL = ` (${extraSafe.toFixed(1)}m)`; 
-473 |           break;
-474 |       case 'corrida': 
-475 |           tMech = atleta.peso * G * (0.07 * 0.75 * extraSafe); 
-476 |           exL = ` (${extraSafe.toFixed(1)}m)`; 
-477 |           break;
-478 |       case 'air_runner': 
-479 |           tMech = atleta.peso * G * 0.09 * extraSafe; 
-480 |           exL = ` (${extraSafe.toFixed(1)}m)`; 
-481 |           break;
-482 |       
-483 |       case 'remo': {
-484 |           const extraStr = (extraV !== undefined && extraV !== null) ? extraV.toString().toLowerCase() : "";
-485 |           let tempoTrabalho = 0;
-486 | 
-487 |           if (extraStr.includes('cal')) {
-488 |               const calVal = Math.max(0.1, parseFloat(extraStr) || 0);
-489 |               const tempoUso = deltaT > 0 ? deltaT : Math.max(1.0, calVal * 6.0);
-490 |               tempoTrabalho = tempoUso;
-491 |               P = Math.max(1.0, ((calVal * (3600.0 / tempoUso)) - 300.0) / (4.0 * 0.8604));
-492 |               sErgo = Math.pow(2.80 / P, 1.0 / 3.0); 
-493 |               tMech = (P * tempoUso) / safeReps; 
-494 |               isErgo = true;
-495 |               isCalorieErgo = true;
-496 |               exL = ` (${calVal.toFixed(1)} Cal)`;
-497 |           } else {
-498 |               const parsedTime = parseClockTime(extraV);
-499 |               const t_split = parsedTime > 0 ? parsedTime : 120.0;
-500 |               sErgo = Math.max(0.02, t_split / 500.0); 
-501 |               tempoTrabalho = sErgo; 
-502 |               P = Math.max(1.0, 2.80 / Math.pow(sErgo, 3)); 
-503 |               tMech = P * sErgo; 
-504 |               isErgo = true; 
-505 |               exL = ` (Pace ${extraV || '2:00'})`; 
-506 |           }
-507 | 
-508 |           // --- NOVA REFATORAÇÃO 5: Penalidade Cinética Translatória (Concept2) ---
-509 |           // O ecrã da máquina omite o esforço invisível para deslocar a própria massa.
-510 |           // O Remo exige translação total no monotrilho (fator 0.35), SkiErg exige oscilação de tronco (fator 0.15).
-511 |           const fatorTranslacao = movId === 'row' ? 0.35 : 0.15;
-512 |           const penalidadeTranslacao = atleta.peso * fatorTranslacao * tempoTrabalho;
-513 |           
-514 |           tMech += (penalidadeTranslacao / safeReps);
-515 | 
-516 |           break;
-517 |       }
-518 |       case 'bike': {
-519 |           const rpmBike = extra > 0 ? extra : 70.0;
-520 |           P = Math.max(1.0, 0.000474 * Math.pow(rpmBike, 3)); 
-521 |           sErgo = 4184.0 / P; 
-522 |           tMech = P * sErgo; 
-523 |           isErgo = true; 
-524 |           exL = ` (${rpmBike.toFixed(0)} RPM)`; 
-525 |           break;
-526 |       }
-527 |       case 'echo_bike': {
-528 |           const echoRpm = Math.max(20.0, extra > 0 ? extra : 60.0);
-529 |           P = 1e-5 * Math.pow(echoRpm, 4) - 0.0011 * Math.pow(echoRpm, 3) + 0.1455 * Math.pow(echoRpm, 2) - 3.3264 * echoRpm + 29.355;
-530 |           P = Math.max(1.0, P);
-531 |           sErgo = 4184.0 / P; 
-532 |           tMech = P * sErgo; 
-533 |           isErgo = true; 
-534 |           exL = ` (${echoRpm.toFixed(0)} RPM)`; 
-535 |           break;
-536 |       }
-537 |       case 'assault_bike': {
-538 |           const abRpm = extra > 0 ? extra : 60.0;
-539 |           P = Math.max(1.0, 0.00342 * Math.pow(abRpm, 3)); 
-540 |           sErgo = 4184.0 / P; 
-541 |           tMech = P * sErgo; 
-542 |           isErgo = true; 
-543 |           exL = ` (${abRpm.toFixed(0)} RPM)`; 
-544 |           break;
-545 |       }
-546 |       case 'heavy_du': {
-547 |           const mC = extra > 0 ? extra : 1.5; 
-548 |           tMech = (atleta.peso * G * 0.10) + (0.50 * (mC * 0.10) * Math.pow(15.0, 2)); 
-549 |           break;
-550 |       }
-551 |       default:
-552 |           tMech = (pCarga > 0 ? pCarga : atleta.peso) * G * 0.5;
-553 |   }
-554 | 
-555 |   // Aplicar a poupança energética da fáscia (SSC) no trabalho mecânico total
-556 |   tMech = tMech * fatorSSC;
-557 | 
-558 |   if (cfg.categoria === 'shuttle_run') { 
-559 |       tMetWork = atleta.peso * (extraSafe / 1000.0) * (1.0 + (12.5 / extraSafe)); 
-560 |       tMetWorkConcIsom = tMetWork; 
-561 |   } else if (cfg.categoria === 'corrida') { 
-562 |       tMetWork = 0.90 * atleta.peso * (extraSafe / 1000.0); 
-563 |       tMetWorkConcIsom = tMetWork; 
-564 |   } else if (cfg.categoria === 'air_runner') { 
-565 |       tMetWork = 1.32 * (0.90 * atleta.peso * (extraSafe / 1000.0)); 
-566 |       tMetWorkConcIsom = tMetWork; 
-567 |   } else if (cfg.categoria === 'corrida_carga' || cfg.categoria === 'yoke_carry') { 
-568 | 
-569 |       const distanciaDinamica = safeReps; // O usuário digitou a distância no campo Reps/Mts
-570 |       const eta = Number(extraV) || 1.0;  // O valor selecionado no dropdown
-571 | 
-572 |       // 1. Definição estrita das grandezas do modelo de Pandolf
-573 |       const W = atleta.peso; // Peso corporal basal do atleta (kg)
-574 |       const L = pCarga;      // Massa da carga transportada (kg)
-575 |       const V = deltaT > 0 ? (extraSafe / deltaT) : 1.2; // Velocidade de translação (m/s)
-576 |       
-577 |       // 2. Fatores exógenos (Terreno e Topografia)
-578 |       const G_grade = 0; // Gradiente de elevação em %. (0 = plano). Expansível futuramente.
-579 | 
-580 |       // 3. Fator de assimetria e tensão miofascial
-581 |       // Compensa a dispersão de força necessária para estabilizar o Farmer's Carry ou Yoke
-582 |       const kAssimetria = cfg.categoria === 'yoke_carry' ? 1.30 : 1.20; 
-583 | 
-584 |       // 4. Decomposição da Equação de Pandolf (1977) Modificada
-585 |       // Componente A: Custo metabólico basal para sustentação bípede
-586 |       const custoBasal = 1.5 * W;
-587 | 
-588 |       // Componente B: A crucial Penalidade Quadrática da Carga
-589 |       const penalidadeCarga = 2.0 * (W + L) * Math.pow(L / Math.max(1, W), 2);
+417 |       case 'burpee_box_jump_over': 
+418 |           tMech = ((atleta.peso - m_arms) * G * L_arm) + (atleta.peso * G * (h_box * 0.85)); 
+419 |           exL = ` (${h_box.toFixed(2)}m)`; 
+420 |           break;
+421 |       case 'burpee_pullup': 
+422 |           tMech = ((atleta.peso - m_arms) * G * L_arm) + (atleta.peso * G * altCoM) + ((atleta.peso - m_arms) * G * L_arm); 
+423 |           break;
+424 | 
+425 |       case 'friccao_horizontal_push': {
+426 |           const trecho = Number(extraV) || 10;
+427 |           const mu_push = Number(extraV2) || 0.35; 
+428 | 
+429 |           const loadRatio = pCarga / Math.max(1, atleta.peso);
+430 |           const anguloDinamico = Math.max(10, 30 - (loadRatio * 5)); 
+431 |           const radDinamico = anguloDinamico * Math.PI / 180;
+432 |           
+433 |           const F_push = (mu_push * (pCarga + MASSA_SLED) * G) / (Math.cos(radDinamico) - mu_push * Math.sin(radDinamico));
+434 |           const W_sled_push = F_push * Math.cos(radDinamico) * trecho;
+435 |           
+436 |           tMech = W_sled_push + (atleta.peso * G * 0.15 * trecho); 
+437 |           exL = ` (${safeReps}x ${trecho}m | μ:${mu_push})`; 
+438 |           break;
+439 |       }
+440 |       case 'friccao_horizontal_pull': {
+441 |           const trecho = Number(extraV) || 10;
+442 |           const mu_pull = Number(extraV2) || 0.35; 
+443 | 
+444 |           const rad20 = 20 * Math.PI / 180;
+445 |           const F_pull = (mu_pull * (pCarga + MASSA_SLED) * G) / (Math.cos(rad20) + mu_pull * Math.sin(rad20));
+446 |           const W_sled_pull = F_pull * Math.cos(rad20) * trecho;
+447 |           
+448 |           tMech = W_sled_pull + (atleta.peso * G * 0.15 * trecho); 
+449 |           exL = ` (${safeReps}x ${trecho}m | μ:${mu_pull})`; 
+450 |           break;
+451 |       }
+452 |       case 'friccao_horizontal_pull_heavy': {
+453 |           const trecho = Number(extraV) || 10;
+454 |           const mu_pullH = Number(extraV2) || 0.35; 
+455 | 
+456 |           const F_pull_h = mu_pullH * pCarga * G; 
+457 |           tMech = (F_pull_h * trecho) + (atleta.peso * G * 0.15 * trecho); 
+458 |           exL = ` (${safeReps}x ${trecho}m | μ:${mu_pullH})`; 
+459 |           break;
+460 |       }
+461 | 
+462 |       case 'corrida_carga': 
+463 |       case 'yoke_carry': {
+464 |           const racioSobrecarga = pCarga / Math.max(1, atleta.peso);
+465 |           const oscilacaoDinamica = 0.05 + (0.02 * racioSobrecarga); 
+466 |           // O cálculo aqui é feito para 1 metro. No final do motor, ele multiplica pelo safeReps (que agora é a distância total).
+467 |           tMech = (atleta.peso + pCarga) * G * oscilacaoDinamica; 
+468 |           
+469 |           let nomeTerreno = "Ginásio";
+470 |           if (extraV === '1.1') nomeTerreno = "Terra";
+471 |           if (extraV === '1.2') nomeTerreno = "Turf";
+472 |           if (extraV === '2.1') nomeTerreno = "Areia";
+473 |           if (extraV === '4.1') nomeTerreno = "Neve";
+474 |           exL = ` (${safeReps}m em ${nomeTerreno})`; 
+475 |           break;
+476 |       }
+477 |       case 'shuttle_run': 
+478 |           tMech = (atleta.peso * G * (0.07 * 0.75 * extraSafe)) + (0.50 * atleta.peso * Math.pow(3.0, 2)); 
+479 |           exL = ` (${extraSafe.toFixed(1)}m)`; 
+480 |           break;
+481 |       case 'corrida': 
+482 |           tMech = atleta.peso * G * (0.07 * 0.75 * extraSafe); 
+483 |           exL = ` (${extraSafe.toFixed(1)}m)`; 
+484 |           break;
+485 |       case 'air_runner': 
+486 |           tMech = atleta.peso * G * 0.09 * extraSafe; 
+487 |           exL = ` (${extraSafe.toFixed(1)}m)`; 
+488 |           break;
+489 |       
+490 |       case 'remo': {
+491 |           const extraStr = (extraV !== undefined && extraV !== null) ? extraV.toString().toLowerCase() : "";
+492 |           let tempoTrabalho = 0;
+493 | 
+494 |           if (extraStr.includes('cal')) {
+495 |               const calVal = Math.max(0.1, parseFloat(extraStr) || 0);
+496 |               const tempoUso = deltaT > 0 ? deltaT : Math.max(1.0, calVal * 6.0);
+497 |               tempoTrabalho = tempoUso;
+498 |               P = Math.max(1.0, ((calVal * (3600.0 / tempoUso)) - 300.0) / (4.0 * 0.8604));
+499 |               sErgo = Math.pow(2.80 / P, 1.0 / 3.0); 
+500 |               tMech = (P * tempoUso) / safeReps; 
+501 |               isErgo = true;
+502 |               isCalorieErgo = true;
+503 |               exL = ` (${calVal.toFixed(1)} Cal)`;
+504 |           } else {
+505 |               const parsedTime = parseClockTime(extraV);
+506 |               const t_split = parsedTime > 0 ? parsedTime : 120.0;
+507 |               sErgo = Math.max(0.02, t_split / 500.0); 
+508 |               tempoTrabalho = sErgo; 
+509 |               P = Math.max(1.0, 2.80 / Math.pow(sErgo, 3)); 
+510 |               tMech = P * sErgo; 
+511 |               isErgo = true; 
+512 |               exL = ` (Pace ${extraV || '2:00'})`; 
+513 |           }
+514 | 
+515 |           // --- NOVA REFATORAÇÃO 5: Penalidade Cinética Translatória (Concept2) ---
+516 |           // O ecrã da máquina omite o esforço invisível para deslocar a própria massa.
+517 |           // O Remo exige translação total no monotrilho (fator 0.35), SkiErg exige oscilação de tronco (fator 0.15).
+518 |           const fatorTranslacao = movId === 'row' ? 0.35 : 0.15;
+519 |           const penalidadeTranslacao = atleta.peso * fatorTranslacao * tempoTrabalho;
+520 |           
+521 |           tMech += (penalidadeTranslacao / safeReps);
+522 | 
+523 |           break;
+524 |       }
+525 |       case 'bike': {
+526 |           const rpmBike = extra > 0 ? extra : 70.0;
+527 |           P = Math.max(1.0, 0.000474 * Math.pow(rpmBike, 3)); 
+528 |           sErgo = 4184.0 / P; 
+529 |           tMech = P * sErgo; 
+530 |           isErgo = true; 
+531 |           exL = ` (${rpmBike.toFixed(0)} RPM)`; 
+532 |           break;
+533 |       }
+534 |       case 'echo_bike': {
+535 |           const echoRpm = Math.max(20.0, extra > 0 ? extra : 60.0);
+536 |           P = 1e-5 * Math.pow(echoRpm, 4) - 0.0011 * Math.pow(echoRpm, 3) + 0.1455 * Math.pow(echoRpm, 2) - 3.3264 * echoRpm + 29.355;
+537 |           P = Math.max(1.0, P);
+538 |           sErgo = 4184.0 / P; 
+539 |           tMech = P * sErgo; 
+540 |           isErgo = true; 
+541 |           exL = ` (${echoRpm.toFixed(0)} RPM)`; 
+542 |           break;
+543 |       }
+544 |       case 'assault_bike': {
+545 |           const abRpm = extra > 0 ? extra : 60.0;
+546 |           P = Math.max(1.0, 0.00342 * Math.pow(abRpm, 3)); 
+547 |           sErgo = 4184.0 / P; 
+548 |           tMech = P * sErgo; 
+549 |           isErgo = true; 
+550 |           exL = ` (${abRpm.toFixed(0)} RPM)`; 
+551 |           break;
+552 |       }
+553 |       case 'heavy_du': {
+554 |           const mC = extra > 0 ? extra : 1.5; 
+555 |           tMech = (atleta.peso * G * 0.10) + (0.50 * (mC * 0.10) * Math.pow(15.0, 2)); 
+556 |           break;
+557 |       }
+558 |       default:
+559 |           tMech = (pCarga > 0 ? pCarga : atleta.peso) * G * 0.5;
+560 |   }
+561 | 
+562 |   // Aplicar a poupança energética da fáscia (SSC) no trabalho mecânico total
+563 |   tMech = tMech * fatorSSC;
+564 | 
+565 |   if (cfg.categoria === 'shuttle_run') { 
+566 |       tMetWork = atleta.peso * (extraSafe / 1000.0) * (1.0 + (12.5 / extraSafe)); 
+567 |       tMetWorkConcIsom = tMetWork; 
+568 |   } else if (cfg.categoria === 'corrida') { 
+569 |       tMetWork = 0.90 * atleta.peso * (extraSafe / 1000.0); 
+570 |       tMetWorkConcIsom = tMetWork; 
+571 |   } else if (cfg.categoria === 'air_runner') { 
+572 |       tMetWork = 1.32 * (0.90 * atleta.peso * (extraSafe / 1000.0)); 
+573 |       tMetWorkConcIsom = tMetWork; 
+574 |   } else if (cfg.categoria === 'corrida_carga' || cfg.categoria === 'yoke_carry') { 
+575 | 
+576 |       const distanciaDinamica = safeReps; // O usuário digitou a distância no campo Reps/Mts
+577 |       const eta = Number(extraV) || 1.0;  // O valor selecionado no dropdown
+578 | 
+579 |       // 1. Definição estrita das grandezas do modelo de Pandolf
+580 |       const W = atleta.peso; // Peso corporal basal do atleta (kg)
+581 |       const L = pCarga;      // Massa da carga transportada (kg)
+582 |       const V = deltaT > 0 ? (extraSafe / deltaT) : 1.2; // Velocidade de translação (m/s)
+583 |       
+584 |       // 2. Fatores exógenos (Terreno e Topografia)
+585 |       const G_grade = 0; // Gradiente de elevação em %. (0 = plano). Expansível futuramente.
+586 | 
+587 |       // 3. Fator de assimetria e tensão miofascial
+588 |       // Compensa a dispersão de força necessária para estabilizar o Farmer's Carry ou Yoke
+589 |       const kAssimetria = cfg.categoria === 'yoke_carry' ? 1.30 : 1.20; 
 590 | 
-591 |       // Componente C: Custo de translação espacial perante o coeficiente de terreno
-592 |       const custoTranslacao = eta * (W + L) * (1.5 * Math.pow(V, 2) + 0.35 * V * G_grade);
-593 | 
-594 |       // Componente D: Correção de Santee (aplicável exclusivamente em declives para abater a tensão)
-595 |       let correcaoSantee = 0;
-596 |       if (G_grade < 0) {
-597 |           correcaoSantee = eta * (W + L) * ((V * G_grade * 0.35) - (Math.pow(V * G_grade, 2) / W));
-598 |       }
-599 | 
-600 |       // 5. Agregação Termodinâmica (M_W) expressa em Watts Metabólicos
-601 |       const M_watts = kAssimetria * (custoBasal + penalidadeCarga + custoTranslacao + correcaoSantee);
-602 |       const tempoExecucao = deltaT > 0 ? deltaT : (distanciaDinamica / V);
-603 | 
-604 |       // 6. Conversão do dispêndio absoluto (Joules térmicos) para kCal (1 kCal = 4184 Joules)
-605 |       // Como o return final da função multiplica tMetWork por safeReps,
-606 |       // precisamos dividir o total pelo safeReps aqui para que o resultado não seja duplicado.
-607 |       const trabalhoMetabolicoTotal = (M_watts * tempoExecucao) / 4184.0;
-608 |       tMetWork = trabalhoMetabolicoTotal / safeReps; 
-609 |       tMetWorkConcIsom = tMetWork;
-610 |   } else if (['remo', 'bike'].includes(cfg.categoria)) { 
-611 |       if (isCalorieErgo) { 
-612 |           tMetWork = parseFloat(extraV) / safeReps; 
-613 |           tMetWorkConcIsom = tMetWork; 
-614 |       } else { 
-615 |           tMetWork = ((4.0 * P * 0.8604) / 3600.0) * sErgo; 
-616 |           tMetWorkConcIsom = tMetWork; 
-617 |       }
-618 |   } else if (['echo_bike', 'assault_bike'].includes(cfg.categoria)) { 
-619 |       // Refatoração 4: Multiplicador biológico 4.0 (Aproximadamente 25% de eficiência)
-620 |       tMetWork = (4.0 * P * sErgo) / 4184.0; 
-621 |       tMetWorkConcIsom = tMetWork; 
-622 |   } else {
-623 |       let eta_conc = 0.22 * fTec; 
-624 |       let eta_exc = 1.10; 
-625 |       // Refatoração 5: Variável abstrata de SSC foi suprimida daqui
-626 |       let W_exc_ratio = 0.0; 
-627 |       let E_isom = 0.0;      
-628 |       
-629 |       const cA = ['burpee_broad_jump','burpee_box_jump','burpee_box_jump_over','burpee_over_obj',
-630 |                   'burpee_pullup','vertical_hibrido','vertical_hibrido_extra','wall_ball',
-631 |                   'squat_bw','box_step_up', 'box_jump', 'box_jump_over','lunge_bw',
-632 |                   'lunge_carga', 'alavanca_parcial', 'alavanca_horizontal', 'core_situp', 
-633 |                   'core_vup', 'core_ghd', 'core_t2b', 'core_k2e'];
-634 | 
-635 |       if (cfg.grupo === 'Corda') eta_conc = 0.45 * fTec;
-636 |       else if (cfg.categoria === 'pegboard') eta_conc = 0.06 * fTec;
-637 |       else if (movId === 'strict_rmu') eta_conc = 0.07 * fTec;
-638 |       else if (cfg.categoria === 'wf_hspu') eta_conc = 0.08 * fTec;
-639 |       else if (['handstand_walk','wall_walk', 'hs_incline_up', 'hs_incline_down'].includes(cfg.categoria)) eta_conc = 0.08 * fTec;
-640 |       else if (movId === 'strict_bmu' || movId === 'ring_dip_strict') eta_conc = 0.08 * fTec;
-641 |       else if (cfg.categoria === 'pullover') eta_conc = 0.09 * fTec;
-642 |       else if (cfg.nome.includes('Strict') && (cfg.categoria === 'vertical_bw' || cfg.categoria === 'core_t2b' || cfg.categoria === 'core_k2e' || cfg.categoria === 'alavanca_inferior')) eta_conc = 0.10 * fTec;
-643 |       else if (cfg.nome.includes('Butterfly')) eta_conc = 0.22 * fTec;
-644 |       else if (cfg.nome.includes('Kipping') && cfg.categoria === 'vertical_bw') eta_conc = 0.14 * fTec;
-645 |       else if (cfg.nome.includes('Kipping') && (cfg.categoria === 'core_t2b' || cfg.categoria === 'core_k2e' || cfg.categoria === 'alavanca_inferior')) eta_conc = 0.12 * fTec;
-646 |       else if (cfg.categoria === 'devil_press' || movId === 'overhead_squat' || cfg.categoria === 'core_ghd' || cfg.categoria === 'sandbag_clean') eta_conc = 0.12 * fTec;
-647 |       else if (cfg.categoria === 'dball_shoulder') eta_conc = 0.11 * fTec;
-648 |       else if (cfg.categoria === 'rope_climb' || cfg.categoria === 'rope_ascend_floor') eta_conc = 0.15 * fTec;
-649 |       else if (cfg.categoria.includes('lpo_') || cfg.categoria.includes('db_') || cA.includes(cfg.categoria)) eta_conc = 0.16 * fTec;
-650 |       else if (cfg.categoria.includes('friccao_horizontal')) eta_conc = 0.15 * fTec;
-651 | 
-652 |       if (cfg.nome.includes('Strict') && (cfg.categoria === 'vertical_bw' || cfg.categoria === 'core_t2b' || cfg.categoria === 'core_k2e' || cfg.categoria === 'alavanca_inferior')) { 
-653 |           W_exc_ratio = 0.40; 
-654 |       } else if (cfg.nome.includes('Butterfly')) { 
-655 |           W_exc_ratio = 0.05; 
-656 |       } else if (cfg.nome.includes('Kipping') && (cfg.categoria === 'vertical_bw' || cfg.categoria === 'core_t2b' || cfg.categoria === 'core_k2e' || cfg.categoria === 'alavanca_inferior')) { 
-657 |           W_exc_ratio = 0.20; 
-658 |       } else if (cA.includes(cfg.categoria) || cfg.categoria === 'wall_ball' || ['overhead_squat','sandbag_clean','devil_press'].includes(movId)) { 
-659 |           W_exc_ratio = 0.35; 
-660 |       } else if (cfg.categoria === 'burpee_broad_jump') { 
-661 |           W_exc_ratio = 0.60; 
-662 |       } else if (['turkish_get_up','strict_rmu', 'free_hspu'].includes(movId) || cfg.categoria === 'core_ghd' || cfg.nome.includes('Ring')) { 
-663 |           W_exc_ratio = 0.45; 
-664 |       } else if (cfg.categoria.includes('lpo_hang') || cfg.categoria.includes('lpo_floor') || cfg.categoria.includes('lpo_cj') || cfg.categoria.includes('db_') || movId === 'deadlift') { 
-665 |           W_exc_ratio = (tecnica === 'drop') ? 0.00 : 0.40; 
-666 |       }
-667 | 
-668 |       const tut_default = deltaT > 0 ? deltaT : 3.0; 
-669 |       if (['pegboard', 'hs_walk', 'wall_walk', 'hs_incline_up', 'hs_incline_down'].includes(cfg.categoria)) { 
-670 |           E_isom = (tMech > 0 ? tMech : atleta.peso * G * 0.50) * tut_default * 0.80; 
-671 |       } else if (['ring_muscle_up', 'strict_rmu'].includes(movId)) { 
-672 |           E_isom = tMech * tut_default * 0.40; 
-673 |       } else if (['overhead_squat', 'turkish_get_up'].includes(movId) || cfg.categoria === 'core_t2b' || cfg.categoria === 'core_ghd') { 
-674 |           E_isom = tMech * tut_default * 0.30; 
-675 |       } else if (cfg.categoria.includes('friccao_horizontal')) { 
-676 |           E_isom = tMech * tut_default * 0.40; 
-677 |       }
-678 | 
-679 |       // Refatoração 5 (Cont.): Respeito absoluto à termodinâmica gravitacional
-680 |       const W_conc = tMech; 
-681 |       const W_exc = tMech * W_exc_ratio;
-682 |       
-683 |       const E_met_conc = W_conc / (Math.max(0.01, eta_conc) * 4184.0);
-684 |       
-685 |       // Integra a dissipação GRF no custo excêntrico (se for um movimento de LPO)
-686 |       const custoExtraGRF = (cfg.categoria.includes('lpo_') || cfg.categoria.includes('db_') || cfg.categoria === 'deadlift') ? dissipacaoExcentricaGRF : 0;
-687 |       const E_met_exc = (W_exc + custoExtraGRF) / (eta_exc * 4184.0);
-688 |       
-689 |       const E_met_isom = E_isom / 4184.0;
-690 | 
-691 |       // --- NOVA REFATORAÇÃO 4: Balanço W' (W-prime) e Potência Crítica (CP) ---
-692 |       // A lógica e os parâmetros iniciais são validados.
-693 |       const CP = atleta.peso * (atleta.nivelTecnico === 'avancado' ? 4.5 : atleta.nivelTecnico === 'intermediario' ? 3.0 : 2.0);
-694 |       
-695 |       // Processamento padrão aplicado para transição direta ao balanço térmico.
-696 |       const tut_metabolico = deltaT > 0 ? deltaT : 3.0;
-697 |       const potencia_execucao = (W_conc + W_exc + E_isom) / tut_metabolico;
-698 |       
-699 |       let W_prime_expenditure = 0;
-700 |       if (potencia_execucao > CP) {
-701 |           W_prime_expenditure = (potencia_execucao - CP) * tut_metabolico;
-702 |       }
-703 |       
-704 |       const custoExtraMetabolicoWPrime = W_prime_expenditure / 4184.0;
-705 | 
-706 |       tMetWork = E_met_conc + E_met_exc + E_met_isom + (custoExtraMetabolicoWPrime * 1.25);
-707 |       tMetWorkConcIsom = E_met_conc + E_met_isom + (custoExtraMetabolicoWPrime * 1.25);
-708 |   }
+591 |       // 4. Decomposição da Equação de Pandolf (1977) Modificada
+592 |       // Componente A: Custo metabólico basal para sustentação bípede
+593 |       const custoBasal = 1.5 * W;
+594 | 
+595 |       // Componente B: A crucial Penalidade Quadrática da Carga
+596 |       const penalidadeCarga = 2.0 * (W + L) * Math.pow(L / Math.max(1, W), 2);
+597 | 
+598 |       // Componente C: Custo de translação espacial perante o coeficiente de terreno
+599 |       const custoTranslacao = eta * (W + L) * (1.5 * Math.pow(V, 2) + 0.35 * V * G_grade);
+600 | 
+601 |       // Componente D: Correção de Santee (aplicável exclusivamente em declives para abater a tensão)
+602 |       let correcaoSantee = 0;
+603 |       if (G_grade < 0) {
+604 |           correcaoSantee = eta * (W + L) * ((V * G_grade * 0.35) - (Math.pow(V * G_grade, 2) / W));
+605 |       }
+606 | 
+607 |       // 5. Agregação Termodinâmica (M_W) expressa em Watts Metabólicos
+608 |       const M_watts = kAssimetria * (custoBasal + penalidadeCarga + custoTranslacao + correcaoSantee);
+609 |       const tempoExecucao = deltaT > 0 ? deltaT : (distanciaDinamica / V);
+610 | 
+611 |       // 6. Conversão do dispêndio absoluto (Joules térmicos) para kCal (1 kCal = 4184 Joules)
+612 |       // Como o return final da função multiplica tMetWork por safeReps,
+613 |       // precisamos dividir o total pelo safeReps aqui para que o resultado não seja duplicado.
+614 |       const trabalhoMetabolicoTotal = (M_watts * tempoExecucao) / 4184.0;
+615 |       tMetWork = trabalhoMetabolicoTotal / safeReps; 
+616 |       tMetWorkConcIsom = tMetWork;
+617 |   } else if (['remo', 'bike'].includes(cfg.categoria)) { 
+618 |       if (isCalorieErgo) { 
+619 |           tMetWork = parseFloat(extraV) / safeReps; 
+620 |           tMetWorkConcIsom = tMetWork; 
+621 |       } else { 
+622 |           tMetWork = ((4.0 * P * 0.8604) / 3600.0) * sErgo; 
+623 |           tMetWorkConcIsom = tMetWork; 
+624 |       }
+625 |   } else if (['echo_bike', 'assault_bike'].includes(cfg.categoria)) { 
+626 |       // Refatoração 4: Multiplicador biológico 4.0 (Aproximadamente 25% de eficiência)
+627 |       tMetWork = (4.0 * P * sErgo) / 4184.0; 
+628 |       tMetWorkConcIsom = tMetWork; 
+629 |   } else {
+630 |       let eta_conc = 0.22 * fTec; 
+631 |       let eta_exc = 1.10; 
+632 |       let W_exc_ratio = 0.0; 
+633 |       let E_isom = 0.0;      
+634 |       
+635 |       const cA = ['burpee_broad_jump','burpee_box_jump','burpee_box_jump_over','burpee_over_obj',
+636 |                   'burpee_pullup','vertical_hibrido','vertical_hibrido_extra','wall_ball',
+637 |                   'squat_bw','box_step_up', 'box_jump', 'box_jump_over','lunge_bw',
+638 |                   'lunge_carga', 'alavanca_parcial', 'alavanca_horizontal', 'core_situp', 
+639 |                   'core_vup', 'core_ghd', 'core_t2b', 'core_k2e', 'box_step_over']; // Incluído box step-over
+640 | 
+641 |       if (cfg.grupo === 'Corda') eta_conc = 0.45 * fTec;
+642 |       else if (cfg.categoria === 'pegboard') eta_conc = 0.06 * fTec;
+643 |       // Leitura da Técnica diretamente da variável, não mais do nome do movimento
+644 |       else if (movId === 'rmu' && tecnica === 'strict') eta_conc = 0.07 * fTec;
+645 |       else if (cfg.categoria === 'wf_hspu') eta_conc = 0.08 * fTec;
+646 |       else if (['handstand_walk','wall_walk', 'hs_incline_up', 'hs_incline_down'].includes(cfg.categoria)) eta_conc = 0.08 * fTec;
+647 |       else if ((movId === 'bmu' || movId === 'ring_dip') && tecnica === 'strict') eta_conc = 0.08 * fTec;
+648 |       else if (cfg.categoria === 'pullover') eta_conc = 0.09 * fTec;
+649 |       else if (tecnica === 'strict' && (cfg.categoria === 'vertical_bw' || cfg.categoria === 'core_t2b' || cfg.categoria === 'core_k2e' || cfg.categoria === 'alavanca_inferior')) eta_conc = 0.10 * fTec;
+650 |       else if (tecnica === 'butterfly') eta_conc = 0.22 * fTec;
+651 |       else if (tecnica === 'kipping' && cfg.categoria === 'vertical_bw') eta_conc = 0.14 * fTec;
+652 |       else if (tecnica === 'kipping' && (cfg.categoria === 'core_t2b' || cfg.categoria === 'core_k2e' || cfg.categoria === 'alavanca_inferior')) eta_conc = 0.12 * fTec;
+653 |       else if (cfg.categoria === 'devil_press' || movId === 'overhead_squat' || cfg.categoria === 'core_ghd' || cfg.categoria === 'sandbag_clean') eta_conc = 0.12 * fTec;
+654 |       else if (cfg.categoria === 'dball_shoulder') eta_conc = 0.11 * fTec;
+655 |       else if (cfg.categoria === 'rope_climb' || cfg.categoria === 'rope_ascend_floor') eta_conc = 0.15 * fTec;
+656 |       else if (cfg.categoria.includes('lpo_') || cfg.categoria.includes('db_') || cA.includes(cfg.categoria)) eta_conc = 0.16 * fTec;
+657 |       else if (cfg.categoria.includes('friccao_horizontal')) eta_conc = 0.15 * fTec;
+658 | 
+659 |       // Fase Excêntrica controlada pela Técnica
+660 |       if (tecnica === 'strict' && (cfg.categoria === 'vertical_bw' || cfg.categoria === 'core_t2b' || cfg.categoria === 'core_k2e' || cfg.categoria === 'alavanca_inferior')) { 
+661 |           W_exc_ratio = 0.40; 
+662 |       } else if (tecnica === 'butterfly') { 
+663 |           W_exc_ratio = 0.05; 
+664 |       } else if (tecnica === 'kipping' && (cfg.categoria === 'vertical_bw' || cfg.categoria === 'core_t2b' || cfg.categoria === 'core_k2e' || cfg.categoria === 'alavanca_inferior')) { 
+665 |           W_exc_ratio = 0.20; 
+666 |       } else if (cA.includes(cfg.categoria) || cfg.categoria === 'wall_ball' || ['overhead_squat','sandbag_clean','devil_press'].includes(movId)) { 
+667 |           W_exc_ratio = 0.35; 
+668 |       } else if (cfg.categoria === 'burpee_broad_jump') { 
+669 |           W_exc_ratio = 0.60; 
+670 |       } else if (['turkish_get_up', 'free_hspu', 'rmu'].includes(movId) || cfg.categoria === 'core_ghd' || movId.includes('ring_')) { 
+671 |           W_exc_ratio = 0.45; 
+672 |       } else if (cfg.categoria.includes('lpo_hang') || cfg.categoria.includes('lpo_floor') || cfg.categoria.includes('lpo_cj') || cfg.categoria.includes('db_') || movId === 'deadlift') { 
+673 |           W_exc_ratio = (tecnica === 'drop') ? 0.00 : 0.40; 
+674 |       }
+675 | 
+676 |       const tut_default = deltaT > 0 ? deltaT : 3.0; 
+677 |       if (['pegboard', 'hs_walk', 'wall_walk', 'hs_incline_up', 'hs_incline_down'].includes(cfg.categoria)) { 
+678 |           E_isom = (tMech > 0 ? tMech : atleta.peso * G * 0.50) * tut_default * 0.80; 
+679 |       } else if (movId === 'rmu') { 
+680 |           // Atualizado de ring_muscle_up e strict_rmu para a base rmu
+681 |           E_isom = tMech * tut_default * 0.40; 
+682 |       } else if (['overhead_squat', 'turkish_get_up'].includes(movId) || cfg.categoria === 'core_t2b' || cfg.categoria === 'core_ghd') { 
+683 |           E_isom = tMech * tut_default * 0.30; 
+684 |       } else if (cfg.categoria.includes('friccao_horizontal')) { 
+685 |           E_isom = tMech * tut_default * 0.40; 
+686 |       }
+687 | 
+688 |       const W_conc = tMech; 
+689 |       const W_exc = tMech * W_exc_ratio;
+690 |       
+691 |       const E_met_conc = W_conc / (Math.max(0.01, eta_conc) * 4184.0);
+692 |       
+693 |       const custoExtraGRF = (cfg.categoria.includes('lpo_') || cfg.categoria.includes('db_') || cfg.categoria === 'deadlift') ? dissipacaoExcentricaGRF : 0;
+694 |       const E_met_exc = (W_exc + custoExtraGRF) / (eta_exc * 4184.0);
+695 |       
+696 |       const E_met_isom = E_isom / 4184.0;
+697 | 
+698 |       const CP = atleta.peso * (atleta.nivelTecnico === 'avancado' ? 4.5 : atleta.nivelTecnico === 'intermediario' ? 3.0 : 2.0);
+699 |       
+700 |       const tut_metabolico = deltaT > 0 ? deltaT : 3.0;
+701 |       const potencia_execucao = (W_conc + W_exc + E_isom) / tut_metabolico;
+702 |       
+703 |       let W_prime_expenditure = 0;
+704 |       if (potencia_execucao > CP) {
+705 |           W_prime_expenditure = (potencia_execucao - CP) * tut_metabolico;
+706 |       }
+707 |       
+708 |       const custoExtraMetabolicoWPrime = W_prime_expenditure / 4184.0;
 709 | 
-710 |   return { 
-711 |       trabMech: tMech * safeReps, 
-712 |       trabMetabolicoWork: tMetWork * safeReps, 
-713 |       trabMetabolicoConcIsom: tMetWorkConcIsom * safeReps, 
-714 |       infoExtraLog: exL, 
-715 |       isErgo: isErgo, 
-716 |       isCalorieErgo: isCalorieErgo,
-717 |       ergTime: sErgo * safeReps
-718 |   };
-719 | }
+710 |       tMetWork = E_met_conc + E_met_exc + E_met_isom + (custoExtraMetabolicoWPrime * 1.25);
+711 |       tMetWorkConcIsom = E_met_conc + E_met_isom + (custoExtraMetabolicoWPrime * 1.25);
+712 |   }
+713 | 
+714 |   return { 
+715 |       trabMech: tMech * safeReps, 
+716 |       trabMetabolicoWork: tMetWork * safeReps, 
+717 |       trabMetabolicoConcIsom: tMetWorkConcIsom * safeReps, 
+718 |       infoExtraLog: exL, 
+719 |       isErgo: isErgo, 
+720 |       isCalorieErgo: isCalorieErgo,
+721 |       ergTime: sErgo * safeReps
+722 |   };
+723 | }
 
 --- FIM DO ARQUIVO: src\utils\physicsEngine.ts ---
 

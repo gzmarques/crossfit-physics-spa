@@ -1,7 +1,7 @@
 export type Modalidade = 'FOR_TIME' | 'AMRAP' | 'EMOM';
 export type Sexo = 'M' | 'F';
 export type NivelTecnico = 'iniciante' | 'intermediario' | 'avancado';
-export type Tecnica = 'tng' | 'drop';
+export type Tecnica = 'normal' | 'tng' | 'drop' | 'strict' | 'kipping' | 'butterfly';
 export type Phase = 'buyin' | 'round' | 'cashout';
 
 export interface ParamExtraOption {
@@ -21,6 +21,7 @@ export interface MovimentoConfig {
   grupo: string;
   categoria: string;
   usaCarga: boolean;
+  estilosPermitidos: Tecnica[];
   fatorH?: number;
   isHighBox?: boolean;
   paramExtra?: ParamExtraConfig;
@@ -93,7 +94,7 @@ export interface WodResultRecord {
   rounds_real: number;
   score_watts: number;
   score_kcal: number;
-  timeline?: any; 
+  timeline?: Record<string, TimelineStateItem>; 
   cargas_adaptadas: boolean; // True = Scaled, False = RX
 }
 
