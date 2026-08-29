@@ -1,25 +1,11 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { Copy, X, Download, Share2, Save } from 'lucide-react';
 import { SearchableMovementSelect } from '../shared/SearchableMovementSelect';
 import { movimentosDB } from '../../data/movements';
-import type { ItemLousa, Modalidade } from '../../types';
+import { useWodStore } from '../../store/useWodStore';
+import type { Modalidade } from '../../types';
 
 interface PrescricaoTabProps {
-  nomeTreino: string;
-  setNomeTreino: (val: string) => void;
-  tipoTreino: Modalidade;
-  setTipoTreino: (val: Modalidade) => void;
-  tempoAlvo: string;
-  setTempoAlvo: (val: string) => void;
-  roundsPrescritos: number;
-  setRoundsPrescritos: (val: number) => void;
-  lousa: ItemLousa[];
-  addMovimento: (baseId?: string | null) => void;
-  removeMovimento: (id: string) => void;
-  updateMovimento: (id: string, field: keyof ItemLousa, val: any) => void;
-  handleDragStart: (index: number) => void;
-  handleDragEnter: (index: number) => void;
-  handleDragEnd: (e: React.DragEvent<HTMLDivElement>) => void;
   currentShortCode: string | null;
   currentTemplateId: string | null;
   importarWod: () => void;
@@ -29,12 +15,30 @@ interface PrescricaoTabProps {
 }
 
 export function PrescricaoTab({
-  nomeTreino, setNomeTreino, tipoTreino, setTipoTreino, tempoAlvo, setTempoAlvo,
-  roundsPrescritos, setRoundsPrescritos, lousa, addMovimento, removeMovimento,
-  updateMovimento, handleDragStart, handleDragEnter, handleDragEnd,
   currentShortCode, currentTemplateId, importarWod, compartilharWod, clonarWod, salvarNoSupabase
 }: PrescricaoTabProps) {
   
+  const { 
+    nomeTreino, setNomeTreino, tipoTreino, setTipoTreino, tempoAlvo, setTempoAlvo,
+    roundsPrescritos, setRoundsPrescritos, lousa, addMovimento, removeMovimento, 
+    updateMovimento, reorderMovimento
+  } = useWodStore();
+
+  const dragItem = useRef<number | null>(null);
+  const dragOverItem = useRef<number | null>(null);
+
+  const handleDragStart = (index: number) => { dragItem.current = index; };
+  const handleDragEnter = (index: number) => { dragOverItem.current = index; };
+  
+  const handleDragEnd = (e: React.DragEvent<HTMLDivElement>) => {
+    e.currentTarget.style.opacity = '1';
+    if (dragItem.current !== null && dragOverItem.current !== null && dragItem.current !== dragOverItem.current) {
+      reorderMovimento(dragItem.current, dragOverItem.current);
+    }
+    dragItem.current = null;
+    dragOverItem.current = null;
+  };
+
   return (
     <div className="panel">
       <h2>Estrutura do Treino</h2>

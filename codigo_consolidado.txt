@@ -23,12 +23,12 @@ ESTRUTURA COMPLETA DO PROJETO E CÓDIGOS-FONTE
 [ARQUIVO] src\data\movements.ts
 [ARQUIVO] src\hooks\useAuth.ts
 [ARQUIVO] src\hooks\usePhysics.ts
-[ARQUIVO] src\hooks\useWodBuilder.ts
 [ARQUIVO] src\index.css
 [ARQUIVO] src\lib\supabase.ts
 [ARQUIVO] src\main.tsx
 [ARQUIVO] src\services\authService.ts
 [ARQUIVO] src\services\wodService.ts
+[ARQUIVO] src\store\useWodStore.ts
 [ARQUIVO] src\types.ts
 [ARQUIVO] src\utils\physicsEngine.ts
 [ARQUIVO] tsconfig.app.json
@@ -227,25 +227,26 @@ CONTEÚDO DOS ARQUIVOS
  15 |     "lucide-react": "^1.33.0",
  16 |     "react": "^19.2.8",
  17 |     "react-dom": "^19.2.8",
- 18 |     "recharts": "^3.10.1"
- 19 |   },
- 20 |   "devDependencies": {
- 21 |     "@eslint/js": "^10.0.1",
- 22 |     "@types/node": "^24.13.3",
- 23 |     "@types/react": "^19.2.17",
- 24 |     "@types/react-dom": "^19.2.3",
- 25 |     "@vitejs/plugin-react": "^6.0.4",
- 26 |     "eslint": "^10.8.0",
- 27 |     "eslint-plugin-react-hooks": "^7.1.1",
- 28 |     "eslint-plugin-react-refresh": "^0.5.3",
- 29 |     "globals": "^17.7.0",
- 30 |     "typescript": "~6.0.2",
- 31 |     "typescript-eslint": "^8.65.0",
- 32 |     "vite": "^8.2.0",
- 33 |     "vite-plugin-pwa": "^1.3.0"
- 34 |   }
- 35 | }
- 36 | 
+ 18 |     "recharts": "^3.10.1",
+ 19 |     "zustand": "^5.0.15"
+ 20 |   },
+ 21 |   "devDependencies": {
+ 22 |     "@eslint/js": "^10.0.1",
+ 23 |     "@types/node": "^24.13.3",
+ 24 |     "@types/react": "^19.2.17",
+ 25 |     "@types/react-dom": "^19.2.3",
+ 26 |     "@vitejs/plugin-react": "^6.0.4",
+ 27 |     "eslint": "^10.8.0",
+ 28 |     "eslint-plugin-react-hooks": "^7.1.1",
+ 29 |     "eslint-plugin-react-refresh": "^0.5.3",
+ 30 |     "globals": "^17.7.0",
+ 31 |     "typescript": "~6.0.2",
+ 32 |     "typescript-eslint": "^8.65.0",
+ 33 |     "vite": "^8.2.0",
+ 34 |     "vite-plugin-pwa": "^1.3.0"
+ 35 |   }
+ 36 | }
+ 37 | 
 
 --- FIM DO ARQUIVO: package.json ---
 
@@ -336,7 +337,7 @@ CONTEÚDO DOS ARQUIVOS
 --- INÍCIO DO ARQUIVO: src\App.tsx ---
   1 | import { useState, useEffect } from 'react';
   2 | import { wodService } from './services/wodService';
-  3 | import type { Modalidade, WodTemplateRecord } from './types';
+  3 | import type { WodTemplateRecord } from './types';
   4 | import html2canvas from 'html2canvas';
   5 | 
   6 | import { LoginScreen } from './components/auth/LoginScreen';
@@ -350,8 +351,8 @@ CONTEÚDO DOS ARQUIVOS
  14 | import { InstagramCard } from './components/export/InstagramCard';
  15 | 
  16 | import { useAuth } from './hooks/useAuth';
- 17 | import { useWodBuilder } from './hooks/useWodBuilder';
- 18 | import { usePhysics } from './hooks/usePhysics';
+ 17 | import { usePhysics } from './hooks/usePhysics';
+ 18 | import { useWodStore } from './store/useWodStore';
  19 | 
  20 | export default function App() {
  21 |   const { 
@@ -361,316 +362,294 @@ CONTEÚDO DOS ARQUIVOS
  25 |     salvarPerfilAtleta, handleAthleteChange 
  26 |   } = useAuth();
  27 | 
- 28 |   const { 
- 29 |     lousa, setLousa, addMovimento, removeMovimento, updateMovimento, 
- 30 |     handleDragStart, handleDragEnter, handleDragEnd 
- 31 |   } = useWodBuilder();
- 32 | 
- 33 |   // === ESTADOS DO MOTOR (Mantidos) ===
- 34 |   const [activeTab, setActiveTab] = useState<'prescricao' | 'analise' | 'atleta' | 'historico'>('prescricao');
- 35 |   const [tipoTreino, setTipoTreino] = useState<Modalidade>('FOR_TIME');
- 36 |   const [tempoAlvo, setTempoAlvo] = useState('05:00');
- 37 |   const [roundsPrescritos, setRoundsPrescritos] = useState(3);
- 38 |   const [roundsReal, setRoundsReal] = useState(0);
- 39 |   const [tempoReal, setTempoReal] = useState('');
- 40 |   const [nomeTreino, setNomeTreino] = useState('');
- 41 | 
- 42 |   // === RASTREAMENTO DO WOD ATUAL (Mantidos) ===
- 43 |   const [currentTemplateId, setCurrentTemplateId] = useState<string | null>(null);
- 44 |   const [currentResultId, setCurrentResultId] = useState<string | null>(null);
- 45 |   const [isScaled, setIsScaled] = useState<boolean>(false);
- 46 |   const [currentShortCode, setCurrentShortCode] = useState<string | null>(null);
- 47 | 
- 48 |   const [savedWods, setSavedWods] = useState<WodTemplateRecord[]>([]);
+ 28 |   // Assina apenas os estados necessários para o salvarNoSupabase e AnaliseTab
+ 29 |   const { nomeTreino, tipoTreino, tempoAlvo, roundsPrescritos, lousa, setTipoTreino, setTempoAlvo, setRoundsPrescritos, setLousa, setNomeTreino } = useWodStore();
+ 30 | 
+ 31 |   const [activeTab, setActiveTab] = useState<'prescricao' | 'analise' | 'atleta' | 'historico'>('prescricao');
+ 32 |   const [roundsReal, setRoundsReal] = useState(0);
+ 33 |   const [tempoReal, setTempoReal] = useState('');
+ 34 | 
+ 35 |   // === RASTREAMENTO DO WOD ATUAL (Mantidos) ===
+ 36 |   const [currentTemplateId, setCurrentTemplateId] = useState<string | null>(null);
+ 37 |   const [currentResultId, setCurrentResultId] = useState<string | null>(null);
+ 38 |   const [isScaled, setIsScaled] = useState<boolean>(false);
+ 39 |   const [currentShortCode, setCurrentShortCode] = useState<string | null>(null);
+ 40 | 
+ 41 |   const [savedWods, setSavedWods] = useState<WodTemplateRecord[]>([]);
+ 42 | 
+ 43 |   const {
+ 44 |     timelineState, setTimelineState, handleTimelineChange,
+ 45 |     resultado, processarWOD
+ 46 |   } = usePhysics({
+ 47 |     tipoTreino, tempoAlvo, tempoReal, roundsPrescritos, roundsReal, lousa, atleta
+ 48 |   });
  49 | 
- 50 |   const {
- 51 |     timelineState, setTimelineState, handleTimelineChange,
- 52 |     resultado, processarWOD
- 53 |   } = usePhysics({
- 54 |     tipoTreino, tempoAlvo, tempoReal, roundsPrescritos, roundsReal, lousa, atleta
- 55 |   });
- 56 | 
- 57 |   const gerarCardInstagram = async () => {
- 58 |     const cardElement = document.getElementById('instagram-card-export');
- 59 |     
- 60 |     if (!cardElement) {
- 61 |       alert('Erro: Card não encontrado na tela.');
- 62 |       return;
- 63 |     }
+ 50 |   const gerarCardInstagram = async () => {
+ 51 |     const cardElement = document.getElementById('instagram-card-export');
+ 52 |     
+ 53 |     if (!cardElement) {
+ 54 |       alert('Erro: Card não encontrado na tela.');
+ 55 |       return;
+ 56 |     }
+ 57 | 
+ 58 |     try {
+ 59 |       const canvas = await html2canvas(cardElement, {
+ 60 |         backgroundColor: '#111315', 
+ 61 |         scale: 2, 
+ 62 |         useCORS: true 
+ 63 |       });
  64 | 
- 65 |     try {
- 66 |       const canvas = await html2canvas(cardElement, {
- 67 |         backgroundColor: '#111315', 
- 68 |         scale: 2, 
- 69 |         useCORS: true 
- 70 |       });
- 71 | 
- 72 |       const image = canvas.toDataURL('image/jpeg', 0.9);
- 73 |       const link = document.createElement('a');
- 74 |       link.href = image;
- 75 |       link.download = `DynaWOD-${currentShortCode || 'Resultado'}.jpg`;
- 76 |       link.click();
- 77 |       
- 78 |     } catch (error) {
- 79 |       console.error('Erro ao gerar imagem:', error);
- 80 |       alert('Ops! Não foi possível gerar a imagem.');
- 81 |     }
- 82 |   };
+ 65 |       const image = canvas.toDataURL('image/jpeg', 0.9);
+ 66 |       const link = document.createElement('a');
+ 67 |       link.href = image;
+ 68 |       link.download = `DynaWOD-${currentShortCode || 'Resultado'}.jpg`;
+ 69 |       link.click();
+ 70 |       
+ 71 |     } catch (error) {
+ 72 |       console.error('Erro ao gerar imagem:', error);
+ 73 |       alert('Ops! Não foi possível gerar a imagem.');
+ 74 |     }
+ 75 |   };
+ 76 | 
+ 77 |   useEffect(() => {
+ 78 |     if (session && userProfile && !isNewUser) fetchWodsFromSupabase();
+ 79 |   }, [session, userProfile, isNewUser, selectedAthleteId]);
+ 80 | 
+ 81 |   const fetchWodsFromSupabase = async () => {
+ 82 |     const queryId = selectedAthleteId === 'me' ? session?.user.id : selectedAthleteId;
  83 | 
- 84 |   useEffect(() => {
- 85 |     if (session && userProfile && !isNewUser) fetchWodsFromSupabase();
- 86 |   }, [session, userProfile, isNewUser, selectedAthleteId]);
- 87 | 
- 88 |   const fetchWodsFromSupabase = async () => {
- 89 |     const queryId = selectedAthleteId === 'me' ? session?.user.id : selectedAthleteId;
- 90 | 
- 91 |     if (!queryId) return;
- 92 |     
- 93 |     try {
- 94 |       const data = await wodService.getWodsByAthlete(queryId);
- 95 |       setSavedWods(data);
- 96 |     } catch (error) {
- 97 |       console.error('Erro ao buscar histórico de WODs:', error);
- 98 |     }
- 99 |   };
-100 | 
-101 |   const generateShortCode = () => Math.random().toString(36).substring(2, 8).toUpperCase();
-102 | 
-103 |   const salvarNoSupabase = async (isExporting = false) => {
-104 |     if (!session || !userProfile) return null;
-105 |     
-106 |     const targetAthleteId = selectedAthleteId === 'me' ? session.user.id : selectedAthleteId;
-107 |     const newShortCode = currentShortCode || generateShortCode();
-108 | 
-109 |     const templatePayload = {
-110 |       title: nomeTreino.trim() !== '' ? nomeTreino : `Treino ${tipoTreino} - ${new Date().toLocaleDateString('pt-BR')}`,
-111 |       short_code: newShortCode,
-112 |       tipo_treino: tipoTreino,
-113 |       tempo_alvo: tempoAlvo,
-114 |       rounds_prescritos: roundsPrescritos,
-115 |       movimentos: lousa,
-116 |       creator_id: session.user.id
-117 |     };
-118 | 
-119 |     let activeTemplateId = currentTemplateId;
-120 | 
-121 |     try {
-122 |       if (activeTemplateId) {
-123 |         if (!isExporting && !window.confirm('Deseja sobrescrever as alterações na prescrição deste WOD?')) return null;
-124 |         await wodService.updateTemplate(activeTemplateId, templatePayload);
-125 |       } else {
-126 |         const data = await wodService.createTemplate(templatePayload);
-127 |         activeTemplateId = data.id;
-128 |         setCurrentTemplateId(data.id);
-129 |         setCurrentShortCode(data.short_code);
-130 |       }
-131 | 
-132 |       const hasResult = tempoReal || roundsReal > 0 || (resultado && resultado.potenciaReal > 0);
-133 | 
-134 |       if (hasResult) {
-135 |         const resultPayload = {
-136 |           template_id: activeTemplateId, 
-137 |           athlete_id: targetAthleteId,
-138 |           tempo_real: tempoReal,
-139 |           rounds_real: roundsReal,
-140 |           score_watts: resultado ? resultado.potenciaReal : 0,
-141 |           score_kcal: resultado ? resultado.gastoMetabolico : 0,
-142 |           timeline: timelineState,
-143 |           cargas_adaptadas: isScaled
-144 |         };
-145 | 
-146 |         if (currentResultId) {
-147 |           await wodService.updateResult(currentResultId, resultPayload);
-148 |         } else {
-149 |           const data = await wodService.createResult(resultPayload);
-150 |           setCurrentResultId(data.id);
-151 |         }
-152 |       }
-153 | 
-154 |       if (!isExporting) alert('Dados salvos com sucesso no DynaWOD!');
-155 |       return newShortCode;
+ 84 |     if (!queryId) return;
+ 85 |     
+ 86 |     try {
+ 87 |       const data = await wodService.getWodsByAthlete(queryId);
+ 88 |       setSavedWods(data);
+ 89 |     } catch (error) {
+ 90 |       console.error('Erro ao buscar histórico de WODs:', error);
+ 91 |     }
+ 92 |   };
+ 93 | 
+ 94 |   const generateShortCode = () => Math.random().toString(36).substring(2, 8).toUpperCase();
+ 95 | 
+ 96 |   const salvarNoSupabase = async (isExporting = false) => {
+ 97 |     if (!session || !userProfile) return null;
+ 98 |     
+ 99 |     const targetAthleteId = selectedAthleteId === 'me' ? session.user.id : selectedAthleteId;
+100 |     const newShortCode = currentShortCode || generateShortCode();
+101 | 
+102 |     const templatePayload = {
+103 |       title: nomeTreino.trim() !== '' ? nomeTreino : `Treino ${tipoTreino} - ${new Date().toLocaleDateString('pt-BR')}`,
+104 |       short_code: newShortCode,
+105 |       tipo_treino: tipoTreino,
+106 |       tempo_alvo: tempoAlvo,
+107 |       rounds_prescritos: roundsPrescritos,
+108 |       movimentos: lousa,
+109 |       creator_id: session.user.id
+110 |     };
+111 | 
+112 |     let activeTemplateId = currentTemplateId;
+113 | 
+114 |     try {
+115 |       if (activeTemplateId) {
+116 |         if (!isExporting && !window.confirm('Deseja sobrescrever as alterações na prescrição deste WOD?')) return null;
+117 |         await wodService.updateTemplate(activeTemplateId, templatePayload);
+118 |       } else {
+119 |         const data = await wodService.createTemplate(templatePayload);
+120 |         activeTemplateId = data.id;
+121 |         setCurrentTemplateId(data.id);
+122 |         setCurrentShortCode(data.short_code);
+123 |       }
+124 | 
+125 |       const hasResult = tempoReal || roundsReal > 0 || (resultado && resultado.potenciaReal > 0);
+126 | 
+127 |       if (hasResult) {
+128 |         const resultPayload = {
+129 |           template_id: activeTemplateId, 
+130 |           athlete_id: targetAthleteId,
+131 |           tempo_real: tempoReal,
+132 |           rounds_real: roundsReal,
+133 |           score_watts: resultado ? resultado.potenciaReal : 0,
+134 |           score_kcal: resultado ? resultado.gastoMetabolico : 0,
+135 |           timeline: timelineState,
+136 |           cargas_adaptadas: isScaled
+137 |         };
+138 | 
+139 |         if (currentResultId) {
+140 |           await wodService.updateResult(currentResultId, resultPayload);
+141 |         } else {
+142 |           const data = await wodService.createResult(resultPayload);
+143 |           setCurrentResultId(data.id);
+144 |         }
+145 |       }
+146 | 
+147 |       if (!isExporting) alert('Dados salvos com sucesso no DynaWOD!');
+148 |       return newShortCode;
+149 | 
+150 |     } catch (error: any) {
+151 |       console.error('Erro ao salvar no banco:', error);
+152 |       alert('Ops! Erro ao comunicar com o banco de dados: ' + error.message);
+153 |       return null;
+154 |     }
+155 |   };
 156 | 
-157 |     } catch (error: any) {
-158 |       console.error('Erro ao salvar no banco:', error);
-159 |       alert('Ops! Erro ao comunicar com o banco de dados: ' + error.message);
-160 |       return null;
-161 |     }
-162 |   };
-163 | 
-164 |   const compartilharWod = async () => {
-165 |     const code = await salvarNoSupabase(true); 
-166 |     if (code) {
-167 |       navigator.clipboard.writeText(code);
-168 |       alert(`Código do WOD (${code}) copiado para a área de transferência! Envie para seus alunos.`);
-169 |     }
-170 |   };
-171 | 
-172 |   const importarWod = async () => {
-173 |     const codeToFind = window.prompt('Digite o código de 6 dígitos do WOD:');
-174 |     if (!codeToFind) return;
-175 | 
-176 |     try {
-177 |       const data = await wodService.getWodByShortCode(codeToFind.toUpperCase());
-178 |       carregarDoSupabase(data);
-179 |     } catch (error) {
-180 |       alert('WOD não encontrado. Verifique o código.');
-181 |     }
-182 |   };
-183 | 
-184 |   const clonarWod = () => {
-185 |     if (!window.confirm('Deseja usar este treino como base para criar um NOVO WOD seu? O vínculo com o original será quebrado.')) return;
-186 |     
-187 |     setCurrentTemplateId(null);
-188 |     setCurrentShortCode(null);
-189 |     setCurrentResultId(null);
-190 |     
-191 |     alert('Pronto! O WOD foi desvinculado. Faça suas alterações e clique em "Salvar WOD".');
-192 |   };
-193 | 
-194 |   const carregarDoSupabase = (rec: any) => {
-195 |     setTipoTreino(rec.tipo_treino); 
-196 |     setTempoAlvo(rec.tempo_alvo); 
-197 |     setRoundsPrescritos(rec.rounds_prescritos);
-198 |     
-199 |     if (rec.rounds_real !== undefined) setRoundsReal(rec.rounds_real);
-200 |     if (rec.tempo_real) setTempoReal(rec.tempo_real);
-201 |     if (rec.atleta) setAtleta(rec.atleta);
-202 |     if (rec.movimentos) setLousa(rec.movimentos);
-203 |     if (rec.timeline) setTimelineState(rec.timeline);
-204 |     
-205 |     setCurrentTemplateId(rec.id);
-206 |     setCurrentShortCode(rec.short_code);
-207 |     
-208 |     setActiveTab('prescricao');
-209 | 
-210 |     if (rec.title && !rec.title.startsWith('Treino')) setNomeTreino(rec.title);
-211 |     else setNomeTreino('');
-212 |   };
-213 | 
-214 |   if (loadingAuth) {
-215 |     return (
-216 |       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', backgroundColor: 'var(--bg-dark)' }}>
-217 |         <img 
-218 |           src="/loading.gif" 
-219 |           alt="Esquentando o motor biomecânico..." 
-220 |           style={{ width: '100%', maxWidth: '160px', height: 'auto', objectFit: 'contain' }} 
-221 |         />
-222 |       </div>
-223 |     );
-224 |   }
-225 | 
-226 |   if (!session) {
-227 |     return <LoginScreen onSignIn={signInWithGoogle} />;
-228 |   }
-229 | 
-230 |   if (isNewUser) {
-231 |     return (
-232 |       <OnboardingScreen 
-233 |         form={onboardForm} 
-234 |         setForm={setOnboardForm} 
-235 |         onSave={saveOnboardingProfile} 
-236 |         onSignOut={signOut} 
-237 |       />
-238 |     );
-239 |   }
-240 | 
-241 |   return (
-242 |     <div className="container" style={{ padding: 0, maxWidth: '1200px', margin: '0 auto' }}> 
-243 |       
-244 |       <Header 
-245 |         userProfile={userProfile}
-246 |         selectedAthleteId={selectedAthleteId}
-247 |         myAthletes={myAthletes}
-248 |         onAthleteChange={handleAthleteChange}
-249 |         onSignOut={signOut}
-250 |       />
-251 | 
-252 |       <div style={{ padding: '0 24px' }}>
-253 |         
-254 |         <Tabs activeTab={activeTab} setActiveTab={setActiveTab} />
-255 | 
-256 |         {activeTab === 'prescricao' && (
-257 |           <PrescricaoTab 
-258 |             nomeTreino={nomeTreino}
-259 |             setNomeTreino={setNomeTreino}
-260 |             tipoTreino={tipoTreino}
-261 |             setTipoTreino={setTipoTreino}
-262 |             tempoAlvo={tempoAlvo}
-263 |             setTempoAlvo={setTempoAlvo}
-264 |             roundsPrescritos={roundsPrescritos}
-265 |             setRoundsPrescritos={setRoundsPrescritos}
-266 |             lousa={lousa}
-267 |             addMovimento={addMovimento}
-268 |             removeMovimento={removeMovimento}
-269 |             updateMovimento={updateMovimento}
-270 |             handleDragStart={handleDragStart}
-271 |             handleDragEnter={handleDragEnter}
-272 |             handleDragEnd={handleDragEnd}
-273 |             currentShortCode={currentShortCode}
-274 |             currentTemplateId={currentTemplateId}
-275 |             importarWod={importarWod}
-276 |             compartilharWod={compartilharWod}
-277 |             clonarWod={clonarWod}
-278 |             salvarNoSupabase={salvarNoSupabase}
-279 |           />
-280 |         )}
-281 | 
-282 |         {activeTab === 'analise' && (
-283 |           <AnaliseTab
-284 |             tipoTreino={tipoTreino}
-285 |             tempoReal={tempoReal}
-286 |             setTempoReal={setTempoReal}
-287 |             roundsReal={roundsReal}
-288 |             setRoundsReal={setRoundsReal}
-289 |             isScaled={isScaled}
-290 |             setIsScaled={setIsScaled}
-291 |             lousa={lousa}
-292 |             timelineState={timelineState}
-293 |             handleTimelineChange={handleTimelineChange}
-294 |             processarWOD={processarWOD}
-295 |             resultado={resultado}
-296 |             gerarCardInstagram={gerarCardInstagram}
-297 |             roundsPrescritos={roundsPrescritos}
+157 |   const compartilharWod = async () => {
+158 |     const code = await salvarNoSupabase(true); 
+159 |     if (code) {
+160 |       navigator.clipboard.writeText(code);
+161 |       alert(`Código do WOD (${code}) copiado para a área de transferência! Envie para seus alunos.`);
+162 |     }
+163 |   };
+164 | 
+165 |   const importarWod = async () => {
+166 |     const codeToFind = window.prompt('Digite o código de 6 dígitos do WOD:');
+167 |     if (!codeToFind) return;
+168 | 
+169 |     try {
+170 |       const data = await wodService.getWodByShortCode(codeToFind.toUpperCase());
+171 |       carregarDoSupabase(data);
+172 |     } catch (error) {
+173 |       alert('WOD não encontrado. Verifique o código.');
+174 |     }
+175 |   };
+176 | 
+177 |   const clonarWod = () => {
+178 |     if (!window.confirm('Deseja usar este treino como base para criar um NOVO WOD seu? O vínculo com o original será quebrado.')) return;
+179 |     
+180 |     setCurrentTemplateId(null);
+181 |     setCurrentShortCode(null);
+182 |     setCurrentResultId(null);
+183 |     
+184 |     alert('Pronto! O WOD foi desvinculado. Faça suas alterações e clique em "Salvar WOD".');
+185 |   };
+186 | 
+187 |   const carregarDoSupabase = (rec: any) => {
+188 |     setTipoTreino(rec.tipo_treino); 
+189 |     setTempoAlvo(rec.tempo_alvo); 
+190 |     setRoundsPrescritos(rec.rounds_prescritos);
+191 |     
+192 |     if (rec.rounds_real !== undefined) setRoundsReal(rec.rounds_real);
+193 |     if (rec.tempo_real) setTempoReal(rec.tempo_real);
+194 |     if (rec.atleta) setAtleta(rec.atleta);
+195 |     if (rec.movimentos) setLousa(rec.movimentos);
+196 |     if (rec.timeline) setTimelineState(rec.timeline);
+197 |     
+198 |     setCurrentTemplateId(rec.id);
+199 |     setCurrentShortCode(rec.short_code);
+200 |     
+201 |     setActiveTab('prescricao');
+202 | 
+203 |     if (rec.title && !rec.title.startsWith('Treino')) setNomeTreino(rec.title);
+204 |     else setNomeTreino('');
+205 |   };
+206 | 
+207 |   if (loadingAuth) {
+208 |     return (
+209 |       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', backgroundColor: 'var(--bg-dark)' }}>
+210 |         <img 
+211 |           src="/loading.gif" 
+212 |           alt="Esquentando o motor biomecânico..." 
+213 |           style={{ width: '100%', maxWidth: '160px', height: 'auto', objectFit: 'contain' }} 
+214 |         />
+215 |       </div>
+216 |     );
+217 |   }
+218 | 
+219 |   if (!session) {
+220 |     return <LoginScreen onSignIn={signInWithGoogle} />;
+221 |   }
+222 | 
+223 |   if (isNewUser) {
+224 |     return (
+225 |       <OnboardingScreen 
+226 |         form={onboardForm} 
+227 |         setForm={setOnboardForm} 
+228 |         onSave={saveOnboardingProfile} 
+229 |         onSignOut={signOut} 
+230 |       />
+231 |     );
+232 |   }
+233 | 
+234 |   return (
+235 |     <div className="container" style={{ padding: 0, maxWidth: '1200px', margin: '0 auto' }}> 
+236 |       
+237 |       <Header 
+238 |         userProfile={userProfile}
+239 |         selectedAthleteId={selectedAthleteId}
+240 |         myAthletes={myAthletes}
+241 |         onAthleteChange={handleAthleteChange}
+242 |         onSignOut={signOut}
+243 |       />
+244 | 
+245 |       <div style={{ padding: '0 24px' }}>
+246 |         
+247 |         <Tabs activeTab={activeTab} setActiveTab={setActiveTab} />
+248 | 
+249 |         {activeTab === 'prescricao' && (
+250 |           <PrescricaoTab 
+251 |             currentShortCode={currentShortCode}
+252 |             currentTemplateId={currentTemplateId}
+253 |             importarWod={importarWod}
+254 |             compartilharWod={compartilharWod}
+255 |             clonarWod={clonarWod}
+256 |             salvarNoSupabase={salvarNoSupabase}
+257 |           />
+258 |         )}
+259 | 
+260 |         {activeTab === 'analise' && (
+261 |           <AnaliseTab
+262 |             tipoTreino={tipoTreino}
+263 |             tempoReal={tempoReal}
+264 |             setTempoReal={setTempoReal}
+265 |             roundsReal={roundsReal}
+266 |             setRoundsReal={setRoundsReal}
+267 |             isScaled={isScaled}
+268 |             setIsScaled={setIsScaled}
+269 |             lousa={lousa}
+270 |             timelineState={timelineState}
+271 |             handleTimelineChange={handleTimelineChange}
+272 |             processarWOD={processarWOD}
+273 |             resultado={resultado}
+274 |             gerarCardInstagram={gerarCardInstagram}
+275 |             roundsPrescritos={roundsPrescritos}
+276 |           />
+277 |         )}
+278 | 
+279 |         {activeTab === 'atleta' && (
+280 |           <AtletaTab
+281 |             selectedAthleteId={selectedAthleteId}
+282 |             atleta={atleta}
+283 |             setAtleta={setAtleta}
+284 |             salvarPerfilAtleta={salvarPerfilAtleta}
+285 |           />
+286 |         )}
+287 | 
+288 |         {activeTab === 'historico' && (
+289 |           <HistoricoTab
+290 |             selectedAthleteId={selectedAthleteId}
+291 |             userProfile={userProfile}
+292 |             sessionId={session?.user?.id}
+293 |             coachIdInput={coachIdInput}
+294 |             setCoachIdInput={setCoachIdInput}
+295 |             linkToCoach={linkToCoach}
+296 |             savedWods={savedWods}
+297 |             carregarDoSupabase={carregarDoSupabase}
 298 |           />
 299 |         )}
-300 | 
-301 |         {activeTab === 'atleta' && (
-302 |           <AtletaTab
-303 |             selectedAthleteId={selectedAthleteId}
-304 |             atleta={atleta}
-305 |             setAtleta={setAtleta}
-306 |             salvarPerfilAtleta={salvarPerfilAtleta}
-307 |           />
-308 |         )}
-309 | 
-310 |         {activeTab === 'historico' && (
-311 |           <HistoricoTab
-312 |             selectedAthleteId={selectedAthleteId}
-313 |             userProfile={userProfile}
-314 |             sessionId={session?.user?.id}
-315 |             coachIdInput={coachIdInput}
-316 |             setCoachIdInput={setCoachIdInput}
-317 |             linkToCoach={linkToCoach}
-318 |             savedWods={savedWods}
-319 |             carregarDoSupabase={carregarDoSupabase}
-320 |           />
-321 |         )}
-322 |       
-323 |       </div> 
-324 | 
-325 |       <InstagramCard 
-326 |         tipoTreino={tipoTreino}
-327 |         tempoAlvo={tempoAlvo}
-328 |         roundsPrescritos={roundsPrescritos}
-329 |         lousaCount={lousa.length}
-330 |         tempoReal={tempoReal}
-331 |         isScaled={isScaled}
-332 |         resultado={resultado}
-333 |       />
-334 |       
-335 |     </div>
-336 |   );
-337 | }
+300 |       
+301 |       </div> 
+302 | 
+303 |       <InstagramCard 
+304 |         tipoTreino={tipoTreino}
+305 |         tempoAlvo={tempoAlvo}
+306 |         roundsPrescritos={roundsPrescritos}
+307 |         lousaCount={lousa.length}
+308 |         tempoReal={tempoReal}
+309 |         isScaled={isScaled}
+310 |         resultado={resultado}
+311 |       />
+312 |       
+313 |     </div>
+314 |   );
+315 | }
 
 --- FIM DO ARQUIVO: src\App.tsx ---
 
@@ -1519,192 +1498,196 @@ CONTEÚDO DOS ARQUIVOS
 ========================================
 
 --- INÍCIO DO ARQUIVO: src\components\tabs\PrescricaoTab.tsx ---
-  1 | import React from 'react';
+  1 | import React, { useRef } from 'react';
   2 | import { Copy, X, Download, Share2, Save } from 'lucide-react';
   3 | import { SearchableMovementSelect } from '../shared/SearchableMovementSelect';
   4 | import { movimentosDB } from '../../data/movements';
-  5 | import type { ItemLousa, Modalidade } from '../../types';
-  6 | 
-  7 | interface PrescricaoTabProps {
-  8 |   nomeTreino: string;
-  9 |   setNomeTreino: (val: string) => void;
- 10 |   tipoTreino: Modalidade;
- 11 |   setTipoTreino: (val: Modalidade) => void;
- 12 |   tempoAlvo: string;
- 13 |   setTempoAlvo: (val: string) => void;
- 14 |   roundsPrescritos: number;
- 15 |   setRoundsPrescritos: (val: number) => void;
- 16 |   lousa: ItemLousa[];
- 17 |   addMovimento: (baseId?: string | null) => void;
- 18 |   removeMovimento: (id: string) => void;
- 19 |   updateMovimento: (id: string, field: keyof ItemLousa, val: any) => void;
- 20 |   handleDragStart: (index: number) => void;
- 21 |   handleDragEnter: (index: number) => void;
- 22 |   handleDragEnd: (e: React.DragEvent<HTMLDivElement>) => void;
- 23 |   currentShortCode: string | null;
- 24 |   currentTemplateId: string | null;
- 25 |   importarWod: () => void;
- 26 |   compartilharWod: () => void;
- 27 |   clonarWod: () => void;
- 28 |   salvarNoSupabase: (isExporting: boolean) => void;
- 29 | }
- 30 | 
- 31 | export function PrescricaoTab({
- 32 |   nomeTreino, setNomeTreino, tipoTreino, setTipoTreino, tempoAlvo, setTempoAlvo,
- 33 |   roundsPrescritos, setRoundsPrescritos, lousa, addMovimento, removeMovimento,
- 34 |   updateMovimento, handleDragStart, handleDragEnter, handleDragEnd,
- 35 |   currentShortCode, currentTemplateId, importarWod, compartilharWod, clonarWod, salvarNoSupabase
- 36 | }: PrescricaoTabProps) {
- 37 |   
- 38 |   return (
- 39 |     <div className="panel">
- 40 |       <h2>Estrutura do Treino</h2>
- 41 |       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', marginBottom: '15px' }}>
- 42 |         <div className="form-group" style={{ marginBottom: 0 }}>
- 43 |           <label>Nome do Treino (Opcional)</label>
- 44 |           <input type="text" value={nomeTreino} onChange={e => setNomeTreino(e.target.value)} placeholder="Ex: Murph, Fran, Open 24.1..." />
- 45 |         </div>
+  5 | import { useWodStore } from '../../store/useWodStore';
+  6 | import type { Modalidade } from '../../types';
+  7 | 
+  8 | interface PrescricaoTabProps {
+  9 |   currentShortCode: string | null;
+ 10 |   currentTemplateId: string | null;
+ 11 |   importarWod: () => void;
+ 12 |   compartilharWod: () => void;
+ 13 |   clonarWod: () => void;
+ 14 |   salvarNoSupabase: (isExporting: boolean) => void;
+ 15 | }
+ 16 | 
+ 17 | export function PrescricaoTab({
+ 18 |   currentShortCode, currentTemplateId, importarWod, compartilharWod, clonarWod, salvarNoSupabase
+ 19 | }: PrescricaoTabProps) {
+ 20 |   
+ 21 |   const { 
+ 22 |     nomeTreino, setNomeTreino, tipoTreino, setTipoTreino, tempoAlvo, setTempoAlvo,
+ 23 |     roundsPrescritos, setRoundsPrescritos, lousa, addMovimento, removeMovimento, 
+ 24 |     updateMovimento, reorderMovimento
+ 25 |   } = useWodStore();
+ 26 | 
+ 27 |   const dragItem = useRef<number | null>(null);
+ 28 |   const dragOverItem = useRef<number | null>(null);
+ 29 | 
+ 30 |   const handleDragStart = (index: number) => { dragItem.current = index; };
+ 31 |   const handleDragEnter = (index: number) => { dragOverItem.current = index; };
+ 32 |   
+ 33 |   const handleDragEnd = (e: React.DragEvent<HTMLDivElement>) => {
+ 34 |     e.currentTarget.style.opacity = '1';
+ 35 |     if (dragItem.current !== null && dragOverItem.current !== null && dragItem.current !== dragOverItem.current) {
+ 36 |       reorderMovimento(dragItem.current, dragOverItem.current);
+ 37 |     }
+ 38 |     dragItem.current = null;
+ 39 |     dragOverItem.current = null;
+ 40 |   };
+ 41 | 
+ 42 |   return (
+ 43 |     <div className="panel">
+ 44 |       <h2>Estrutura do Treino</h2>
+ 45 |       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', marginBottom: '15px' }}>
  46 |         <div className="form-group" style={{ marginBottom: 0 }}>
- 47 |           <label>Modalidade</label>
- 48 |           <select value={tipoTreino} onChange={e => setTipoTreino(e.target.value as Modalidade)}>
- 49 |             <option value="FOR_TIME">For Time</option>
- 50 |             <option value="AMRAP">AMRAP</option>
- 51 |             <option value="EMOM">EMOM</option>
- 52 |           </select>
- 53 |         </div>
- 54 |         <div className="form-group" style={{ marginBottom: 0 }}>
- 55 |           <label>{tipoTreino === 'FOR_TIME' ? 'Time Cap (mm:ss)' : 'Tempo Total'}</label>
- 56 |           <input type="text" value={tempoAlvo} onChange={e => setTempoAlvo(e.target.value)} placeholder="Ex: 10:00" />
+ 47 |           <label>Nome do Treino (Opcional)</label>
+ 48 |           <input type="text" value={nomeTreino} onChange={e => setNomeTreino(e.target.value)} placeholder="Ex: Murph, Fran, Open 24.1..." />
+ 49 |         </div>
+ 50 |         <div className="form-group" style={{ marginBottom: 0 }}>
+ 51 |           <label>Modalidade</label>
+ 52 |           <select value={tipoTreino} onChange={e => setTipoTreino(e.target.value as Modalidade)}>
+ 53 |             <option value="FOR_TIME">For Time</option>
+ 54 |             <option value="AMRAP">AMRAP</option>
+ 55 |             <option value="EMOM">EMOM</option>
+ 56 |           </select>
  57 |         </div>
  58 |         <div className="form-group" style={{ marginBottom: 0 }}>
- 59 |           <label>Rounds Prescritos</label>
- 60 |           <input type="number" value={roundsPrescritos} onChange={e => setRoundsPrescritos(Number(e.target.value))} />
+ 59 |           <label>{tipoTreino === 'FOR_TIME' ? 'Time Cap (mm:ss)' : 'Tempo Total'}</label>
+ 60 |           <input type="text" value={tempoAlvo} onChange={e => setTempoAlvo(e.target.value)} placeholder="Ex: 10:00" />
  61 |         </div>
- 62 |       </div>
- 63 | 
- 64 |       <hr style={{ borderColor: 'var(--line-silver, #26272b)', margin: '25px 0' }} />
- 65 | 
- 66 |       <h2>Quadro de Movimentos</h2>
- 67 |       <button className="btn-add" onClick={() => addMovimento(null)} style={{ backgroundColor: 'transparent', color: 'var(--dyna-red, #FF2B3D)', border: '1px dashed var(--dyna-red, #FF2B3D)', padding: '10px 15px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', width: '100%', marginBottom: '15px' }}>+ Adicionar Exercício</button>
- 68 |       
- 69 |       <div className="wod-list">
- 70 |         {lousa.map((item, index) => {
- 71 |           const cfg = movimentosDB[item.movId] || movimentosDB['pushup'];
- 72 |           return (
- 73 |             <div 
- 74 |               key={item.originalId} 
- 75 |               className="wod-item"
- 76 |               draggable
- 77 |               onDragStart={(e) => {
- 78 |                 handleDragStart(index);
- 79 |                 e.currentTarget.style.opacity = '0.5';
- 80 |               }}
- 81 |               onDragEnter={() => handleDragEnter(index)}
- 82 |               onDragEnd={handleDragEnd}
- 83 |               onDragOver={(e) => e.preventDefault()}
- 84 |             >
- 85 |               <div className="drag-handle">
- 86 |                 <svg width="10" height="20" viewBox="0 0 8 20" fill="currentColor">
- 87 |                   <circle cx="2" cy="2" r="1.5"/><circle cx="6" cy="2" r="1.5"/>
- 88 |                   <circle cx="2" cy="10" r="1.5"/><circle cx="6" cy="10" r="1.5"/>
- 89 |                   <circle cx="2" cy="18" r="1.5"/><circle cx="6" cy="18" r="1.5"/>
- 90 |                 </svg>
- 91 |               </div>
- 92 | 
- 93 |               <div>
- 94 |                 <label>Fase</label>
- 95 |                 <select value={item.phase} onChange={e => updateMovimento(item.originalId, 'phase', e.target.value)}>
- 96 |                   <option value="buyin">Buy-in</option>
- 97 |                   <option value="round">WOD</option>
- 98 |                   <option value="cashout">Cash-out</option>
- 99 |                 </select>
-100 |                 <div style={{ marginTop: '5px' }}>
-101 |                   <SearchableMovementSelect 
-102 |                     value={item.movId} 
-103 |                     onChange={(newId) => updateMovimento(item.originalId, 'movId', newId)} 
-104 |                     movimentosDB={movimentosDB} 
-105 |                   />
-106 |                 </div>
-107 |               </div>
-108 |               
-109 |               <div>
-110 |                 <label>Reps/Mts</label>
-111 |                 <input type="number" value={item.reps} onChange={e => updateMovimento(item.originalId, 'reps', Number(e.target.value))} />
-112 |               </div>
-113 |               
-114 |               <div>
-115 |                 <label>Carga/Téc.</label>
-116 |                 <div style={{ display: 'flex', gap: '5px' }}>
-117 |                   <input type="number" disabled={!cfg.usaCarga} value={item.carga} onChange={e => updateMovimento(item.originalId, 'carga', Number(e.target.value))} />
-118 |                   <select value={item.tecnica} onChange={e => updateMovimento(item.originalId, 'tecnica', e.target.value)}>
-119 |                     <option value="tng">T&G</option>
-120 |                     <option value="drop">Drop</option>
-121 |                   </select>
-122 |                 </div>
-123 |               </div>
-124 |               
-125 |               <div>
-126 |                 <div style={{ display: 'flex', gap: '5px' }}>
-127 |                   <div style={{ flex: 1 }}>
-128 |                     <label>{cfg.paramExtra ? cfg.paramExtra.label : 'Param.'}</label>
-129 |                     <input type="text" disabled={!cfg.paramExtra} value={item.extraVal || ''} onChange={e => updateMovimento(item.originalId, 'extraVal', e.target.value)} />
-130 |                   </div>
-131 |                   {cfg.paramExtra2 && (
-132 |                     <div style={{ flex: 1 }}>
-133 |                       <label>{cfg.paramExtra2.label}</label>
-134 |                       <select value={item.extraVal2 || cfg.paramExtra2.val} onChange={e => updateMovimento(item.originalId, 'extraVal2', e.target.value)}>
-135 |                         {cfg.paramExtra2.options?.map(opt => (
-136 |                           <option key={opt.value} value={opt.value}>{opt.label}</option>
-137 |                         ))}
-138 |                       </select>
-139 |                     </div>
-140 |                   )}
-141 |                 </div>
-142 |               </div>
-143 |               
-144 |               <div className="actions-col">
-145 |                 <button className="btn-action" onClick={() => addMovimento(item.originalId)} title="Duplicar">
-146 |                   <Copy size={"1.2em"} color="var(--line-silver)" />
-147 |                 </button>
-148 |                 <button className="btn-remove" onClick={() => removeMovimento(item.originalId)}><X size={"1.2em"} /></button>
-149 |               </div>
-150 |             </div>
-151 |           );
-152 |         })}
-153 |       </div>
-154 | 
-155 |       <hr style={{ borderColor: 'var(--line-silver, #26272b)', margin: '25px 0' }} />
-156 |       
-157 |       <h2>Gerenciar WOD</h2>
-158 |       {currentShortCode && (
-159 |         <p style={{ color: 'var(--text-muted, #8a8d94)', fontSize: '0.9rem', marginBottom: '15px' }}>
-160 |           Código deste treino: <strong style={{ color: '#fff', letterSpacing: '2px' }}>{currentShortCode}</strong>
-161 |         </p>
-162 |       )}
-163 |       
-164 |       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
-165 |         <button onClick={importarWod} style={{ flex: '1 1 140px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '1rem', backgroundColor: 'var(--bg-card, #181a1e)', color: '#fff', border: '1px solid var(--line-silver, #26272b)' }}>
-166 |           <Download size={22} style={{ flexShrink: 0 }} /> 
-167 |           <span>Importar</span>
-168 |         </button>
-169 |         <button onClick={compartilharWod} style={{ flex: '1 1 140px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '1rem', backgroundColor: 'var(--dyna-burgundy, #7A0F1B)', color: '#fff', border: 'none', fontWeight: '600' }}>
-170 |           <Share2 size={22} style={{ flexShrink: 0 }} /> 
-171 |           <span>Copiar</span>
+ 62 |         <div className="form-group" style={{ marginBottom: 0 }}>
+ 63 |           <label>Rounds Prescritos</label>
+ 64 |           <input type="number" value={roundsPrescritos} onChange={e => setRoundsPrescritos(Number(e.target.value))} />
+ 65 |         </div>
+ 66 |       </div>
+ 67 | 
+ 68 |       <hr style={{ borderColor: 'var(--line-silver, #26272b)', margin: '25px 0' }} />
+ 69 | 
+ 70 |       <h2>Quadro de Movimentos</h2>
+ 71 |       <button className="btn-add" onClick={() => addMovimento(null)} style={{ backgroundColor: 'transparent', color: 'var(--dyna-red, #FF2B3D)', border: '1px dashed var(--dyna-red, #FF2B3D)', padding: '10px 15px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', width: '100%', marginBottom: '15px' }}>+ Adicionar Exercício</button>
+ 72 |       
+ 73 |       <div className="wod-list">
+ 74 |         {lousa.map((item, index) => {
+ 75 |           const cfg = movimentosDB[item.movId] || movimentosDB['pushup'];
+ 76 |           return (
+ 77 |             <div 
+ 78 |               key={item.originalId} 
+ 79 |               className="wod-item"
+ 80 |               draggable
+ 81 |               onDragStart={(e) => {
+ 82 |                 handleDragStart(index);
+ 83 |                 e.currentTarget.style.opacity = '0.5';
+ 84 |               }}
+ 85 |               onDragEnter={() => handleDragEnter(index)}
+ 86 |               onDragEnd={handleDragEnd}
+ 87 |               onDragOver={(e) => e.preventDefault()}
+ 88 |             >
+ 89 |               <div className="drag-handle">
+ 90 |                 <svg width="10" height="20" viewBox="0 0 8 20" fill="currentColor">
+ 91 |                   <circle cx="2" cy="2" r="1.5"/><circle cx="6" cy="2" r="1.5"/>
+ 92 |                   <circle cx="2" cy="10" r="1.5"/><circle cx="6" cy="10" r="1.5"/>
+ 93 |                   <circle cx="2" cy="18" r="1.5"/><circle cx="6" cy="18" r="1.5"/>
+ 94 |                 </svg>
+ 95 |               </div>
+ 96 | 
+ 97 |               <div>
+ 98 |                 <label>Fase</label>
+ 99 |                 <select value={item.phase} onChange={e => updateMovimento(item.originalId, 'phase', e.target.value)}>
+100 |                   <option value="buyin">Buy-in</option>
+101 |                   <option value="round">WOD</option>
+102 |                   <option value="cashout">Cash-out</option>
+103 |                 </select>
+104 |                 <div style={{ marginTop: '5px' }}>
+105 |                   <SearchableMovementSelect 
+106 |                     value={item.movId} 
+107 |                     onChange={(newId) => updateMovimento(item.originalId, 'movId', newId)} 
+108 |                     movimentosDB={movimentosDB} 
+109 |                   />
+110 |                 </div>
+111 |               </div>
+112 |               
+113 |               <div>
+114 |                 <label>Reps/Mts</label>
+115 |                 <input type="number" value={item.reps} onChange={e => updateMovimento(item.originalId, 'reps', Number(e.target.value))} />
+116 |               </div>
+117 |               
+118 |               <div>
+119 |                 <label>Carga/Téc.</label>
+120 |                 <div style={{ display: 'flex', gap: '5px' }}>
+121 |                   <input type="number" disabled={!cfg.usaCarga} value={item.carga} onChange={e => updateMovimento(item.originalId, 'carga', Number(e.target.value))} />
+122 |                   <select value={item.tecnica} onChange={e => updateMovimento(item.originalId, 'tecnica', e.target.value)}>
+123 |                     <option value="tng">T&G</option>
+124 |                     <option value="drop">Drop</option>
+125 |                   </select>
+126 |                 </div>
+127 |               </div>
+128 |               
+129 |               <div>
+130 |                 <div style={{ display: 'flex', gap: '5px' }}>
+131 |                   <div style={{ flex: 1 }}>
+132 |                     <label>{cfg.paramExtra ? cfg.paramExtra.label : 'Param.'}</label>
+133 |                     <input type="text" disabled={!cfg.paramExtra} value={item.extraVal || ''} onChange={e => updateMovimento(item.originalId, 'extraVal', e.target.value)} />
+134 |                   </div>
+135 |                   {cfg.paramExtra2 && (
+136 |                     <div style={{ flex: 1 }}>
+137 |                       <label>{cfg.paramExtra2.label}</label>
+138 |                       <select value={item.extraVal2 || cfg.paramExtra2.val} onChange={e => updateMovimento(item.originalId, 'extraVal2', e.target.value)}>
+139 |                         {cfg.paramExtra2.options?.map(opt => (
+140 |                           <option key={opt.value} value={opt.value}>{opt.label}</option>
+141 |                         ))}
+142 |                       </select>
+143 |                     </div>
+144 |                   )}
+145 |                 </div>
+146 |               </div>
+147 |               
+148 |               <div className="actions-col">
+149 |                 <button className="btn-action" onClick={() => addMovimento(item.originalId)} title="Duplicar">
+150 |                   <Copy size={"1.2em"} color="var(--line-silver)" />
+151 |                 </button>
+152 |                 <button className="btn-remove" onClick={() => removeMovimento(item.originalId)}><X size={"1.2em"} /></button>
+153 |               </div>
+154 |             </div>
+155 |           );
+156 |         })}
+157 |       </div>
+158 | 
+159 |       <hr style={{ borderColor: 'var(--line-silver, #26272b)', margin: '25px 0' }} />
+160 |       
+161 |       <h2>Gerenciar WOD</h2>
+162 |       {currentShortCode && (
+163 |         <p style={{ color: 'var(--text-muted, #8a8d94)', fontSize: '0.9rem', marginBottom: '15px' }}>
+164 |           Código deste treino: <strong style={{ color: '#fff', letterSpacing: '2px' }}>{currentShortCode}</strong>
+165 |         </p>
+166 |       )}
+167 |       
+168 |       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+169 |         <button onClick={importarWod} style={{ flex: '1 1 140px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '1rem', backgroundColor: 'var(--bg-card, #181a1e)', color: '#fff', border: '1px solid var(--line-silver, #26272b)' }}>
+170 |           <Download size={22} style={{ flexShrink: 0 }} /> 
+171 |           <span>Importar</span>
 172 |         </button>
-173 |         {currentTemplateId && (
-174 |           <button onClick={clonarWod} style={{ flex: '1 1 140px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '1rem', backgroundColor: '#3b82f6', color: '#fff', border: 'none', fontWeight: 'bold' }}>
-175 |             <Copy size={22} style={{ flexShrink: 0 }} /> 
-176 |             <span>Duplicar</span>
-177 |           </button>
-178 |         )}
-179 |         <button onClick={() => salvarNoSupabase(false)} style={{ flex: '1 1 140px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '1rem', backgroundColor: 'var(--dyna-red, #FF2B3D)', color: '#fff', border: 'none', fontWeight: 'bold' }}>
-180 |           <Save size={22} style={{ flexShrink: 0 }} /> 
-181 |           <span>{currentTemplateId ? 'Atualizar WOD' : 'Salvar WOD'}</span>
-182 |         </button>
-183 |       </div>
-184 |     </div>
-185 |   );
-186 | }
+173 |         <button onClick={compartilharWod} style={{ flex: '1 1 140px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '1rem', backgroundColor: 'var(--dyna-burgundy, #7A0F1B)', color: '#fff', border: 'none', fontWeight: '600' }}>
+174 |           <Share2 size={22} style={{ flexShrink: 0 }} /> 
+175 |           <span>Copiar</span>
+176 |         </button>
+177 |         {currentTemplateId && (
+178 |           <button onClick={clonarWod} style={{ flex: '1 1 140px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '1rem', backgroundColor: '#3b82f6', color: '#fff', border: 'none', fontWeight: 'bold' }}>
+179 |             <Copy size={22} style={{ flexShrink: 0 }} /> 
+180 |             <span>Duplicar</span>
+181 |           </button>
+182 |         )}
+183 |         <button onClick={() => salvarNoSupabase(false)} style={{ flex: '1 1 140px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '1rem', backgroundColor: 'var(--dyna-red, #FF2B3D)', color: '#fff', border: 'none', fontWeight: 'bold' }}>
+184 |           <Save size={22} style={{ flexShrink: 0 }} /> 
+185 |           <span>{currentTemplateId ? 'Atualizar WOD' : 'Salvar WOD'}</span>
+186 |         </button>
+187 |       </div>
+188 |     </div>
+189 |   );
+190 | }
 
 --- FIM DO ARQUIVO: src\components\tabs\PrescricaoTab.tsx ---
 
@@ -2236,72 +2219,6 @@ CONTEÚDO DOS ARQUIVOS
 
 ========================================
 
---- INÍCIO DO ARQUIVO: src\hooks\useWodBuilder.ts ---
-  1 | import { useState, useRef } from 'react';
-  2 | import type { ItemLousa } from '../types';
-  3 | 
-  4 | export function useWodBuilder() {
-  5 |   const [lousa, setLousa] = useState<ItemLousa[]>([
-  6 |     { originalId: crypto.randomUUID(), movId: 'thruster', phase: 'round', reps: 21, carga: 43, tecnica: 'tng', extraVal: '' }
-  7 |   ]);
-  8 | 
-  9 |   // === REFERÊNCIAS DO DRAG AND DROP ===
- 10 |   const dragItem = useRef<number | null>(null);
- 11 |   const dragOverItem = useRef<number | null>(null);
- 12 | 
- 13 |   const handleDragStart = (index: number) => { dragItem.current = index; };
- 14 |   const handleDragEnter = (index: number) => { dragOverItem.current = index; };
- 15 |   
- 16 |   const handleDragEnd = (e: React.DragEvent<HTMLDivElement>) => {
- 17 |     e.currentTarget.style.opacity = '1';
- 18 |     if (dragItem.current !== null && dragOverItem.current !== null && dragItem.current !== dragOverItem.current) {
- 19 |       const newLousa = [...lousa];
- 20 |       const draggedItemContent = newLousa[dragItem.current];
- 21 |       newLousa.splice(dragItem.current, 1);
- 22 |       newLousa.splice(dragOverItem.current, 0, draggedItemContent);
- 23 |       setLousa(newLousa);
- 24 |     }
- 25 |     dragItem.current = null;
- 26 |     dragOverItem.current = null;
- 27 |   };
- 28 | 
- 29 |   // === CONTROLE DE MOVIMENTOS ===
- 30 |   const addMovimento = (baseId: string | null = null) => {
- 31 |     const newId = crypto.randomUUID();
- 32 |     let newItem: ItemLousa = { originalId: newId, movId: 'air_squat', phase: 'round', reps: 10, carga: 0, tecnica: 'tng', extraVal: '', extraVal2: '' };
- 33 |     
- 34 |     if (baseId) {
- 35 |       const idx = lousa.findIndex(m => m.originalId === baseId);
- 36 |       if (idx !== -1) {
- 37 |         newItem = { ...lousa[idx], originalId: newId };
- 38 |         const updated = [...lousa];
- 39 |         updated.splice(idx + 1, 0, newItem);
- 40 |         setLousa(updated);
- 41 |         return;
- 42 |       }
- 43 |     }
- 44 |     setLousa([...lousa, newItem]);
- 45 |   };
- 46 | 
- 47 |   const removeMovimento = (id: string) => {
- 48 |     setLousa(prev => prev.filter(m => m.originalId !== id));
- 49 |   };
- 50 | 
- 51 |   const updateMovimento = (id: string, field: keyof ItemLousa, val: any) => {
- 52 |     setLousa(prev => prev.map(item => item.originalId === id ? { ...item, [field]: val } : item));
- 53 |   };
- 54 | 
- 55 |   return {
- 56 |     lousa, setLousa,
- 57 |     addMovimento, removeMovimento, updateMovimento,
- 58 |     handleDragStart, handleDragEnter, handleDragEnd
- 59 |   };
- 60 | }
-
---- FIM DO ARQUIVO: src\hooks\useWodBuilder.ts ---
-
-========================================
-
 --- INÍCIO DO ARQUIVO: src\index.css ---
   1 | :root {
   2 |   --bg-dark: #121212;
@@ -2783,6 +2700,82 @@ CONTEÚDO DOS ARQUIVOS
  58 | };
 
 --- FIM DO ARQUIVO: src\services\wodService.ts ---
+
+========================================
+
+--- INÍCIO DO ARQUIVO: src\store\useWodStore.ts ---
+  1 | import { create } from 'zustand';
+  2 | import type { ItemLousa, Modalidade } from '../types';
+  3 | 
+  4 | interface WodState {
+  5 |   // Estados
+  6 |   nomeTreino: string;
+  7 |   tipoTreino: Modalidade;
+  8 |   tempoAlvo: string;
+  9 |   roundsPrescritos: number;
+ 10 |   lousa: ItemLousa[];
+ 11 | 
+ 12 |   // Ações
+ 13 |   setNomeTreino: (nome: string) => void;
+ 14 |   setTipoTreino: (tipo: Modalidade) => void;
+ 15 |   setTempoAlvo: (tempo: string) => void;
+ 16 |   setRoundsPrescritos: (rounds: number) => void;
+ 17 |   setLousa: (lousa: ItemLousa[]) => void;
+ 18 |   addMovimento: (baseId?: string | null) => void;
+ 19 |   removeMovimento: (id: string) => void;
+ 20 |   updateMovimento: (id: string, field: keyof ItemLousa, val: any) => void;
+ 21 |   reorderMovimento: (fromIndex: number, toIndex: number) => void;
+ 22 | }
+ 23 | 
+ 24 | export const useWodStore = create<WodState>((set, get) => ({
+ 25 |   nomeTreino: '',
+ 26 |   tipoTreino: 'FOR_TIME',
+ 27 |   tempoAlvo: '05:00',
+ 28 |   roundsPrescritos: 3,
+ 29 |   lousa: [{ originalId: crypto.randomUUID(), movId: 'thruster', phase: 'round', reps: 21, carga: 43, tecnica: 'tng', extraVal: '' }],
+ 30 | 
+ 31 |   setNomeTreino: (nome) => set({ nomeTreino: nome }),
+ 32 |   setTipoTreino: (tipo) => set({ tipoTreino: tipo }),
+ 33 |   setTempoAlvo: (tempo) => set({ tempoAlvo: tempo }),
+ 34 |   setRoundsPrescritos: (rounds) => set({ roundsPrescritos: rounds }),
+ 35 |   setLousa: (lousa) => set({ lousa }),
+ 36 | 
+ 37 |   addMovimento: (baseId = null) => {
+ 38 |     const { lousa } = get();
+ 39 |     const newId = crypto.randomUUID();
+ 40 |     let newItem: ItemLousa = { originalId: newId, movId: 'air_squat', phase: 'round', reps: 10, carga: 0, tecnica: 'tng', extraVal: '' };
+ 41 |     
+ 42 |     if (baseId) {
+ 43 |       const idx = lousa.findIndex(m => m.originalId === baseId);
+ 44 |       if (idx !== -1) {
+ 45 |         newItem = { ...lousa[idx], originalId: newId };
+ 46 |         const updated = [...lousa];
+ 47 |         updated.splice(idx + 1, 0, newItem);
+ 48 |         set({ lousa: updated });
+ 49 |         return;
+ 50 |       }
+ 51 |     }
+ 52 |     set({ lousa: [...lousa, newItem] });
+ 53 |   },
+ 54 | 
+ 55 |   removeMovimento: (id) => set((state) => ({
+ 56 |     lousa: state.lousa.filter(m => m.originalId !== id)
+ 57 |   })),
+ 58 | 
+ 59 |   updateMovimento: (id, field, val) => set((state) => ({
+ 60 |     lousa: state.lousa.map(item => item.originalId === id ? { ...item, [field]: val } : item)
+ 61 |   })),
+ 62 | 
+ 63 |   reorderMovimento: (fromIndex, toIndex) => set((state) => {
+ 64 |     const newLousa = [...state.lousa];
+ 65 |     const draggedItem = newLousa[fromIndex];
+ 66 |     newLousa.splice(fromIndex, 1);
+ 67 |     newLousa.splice(toIndex, 0, draggedItem);
+ 68 |     return { lousa: newLousa };
+ 69 |   })
+ 70 | }));
+
+--- FIM DO ARQUIVO: src\store\useWodStore.ts ---
 
 ========================================
 

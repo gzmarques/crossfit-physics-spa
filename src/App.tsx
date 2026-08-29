@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { wodService } from './services/wodService';
-import type { Modalidade, WodTemplateRecord } from './types';
+import type { WodTemplateRecord } from './types';
 import html2canvas from 'html2canvas';
 
 import { LoginScreen } from './components/auth/LoginScreen';
@@ -14,8 +14,8 @@ import { HistoricoTab } from './components/tabs/HistoricoTab';
 import { InstagramCard } from './components/export/InstagramCard';
 
 import { useAuth } from './hooks/useAuth';
-import { useWodBuilder } from './hooks/useWodBuilder';
 import { usePhysics } from './hooks/usePhysics';
+import { useWodStore } from './store/useWodStore';
 
 export default function App() {
   const { 
@@ -25,19 +25,12 @@ export default function App() {
     salvarPerfilAtleta, handleAthleteChange 
   } = useAuth();
 
-  const { 
-    lousa, setLousa, addMovimento, removeMovimento, updateMovimento, 
-    handleDragStart, handleDragEnter, handleDragEnd 
-  } = useWodBuilder();
+  // Assina apenas os estados necessários para o salvarNoSupabase e AnaliseTab
+  const { nomeTreino, tipoTreino, tempoAlvo, roundsPrescritos, lousa, setTipoTreino, setTempoAlvo, setRoundsPrescritos, setLousa, setNomeTreino } = useWodStore();
 
-  // === ESTADOS DO MOTOR (Mantidos) ===
   const [activeTab, setActiveTab] = useState<'prescricao' | 'analise' | 'atleta' | 'historico'>('prescricao');
-  const [tipoTreino, setTipoTreino] = useState<Modalidade>('FOR_TIME');
-  const [tempoAlvo, setTempoAlvo] = useState('05:00');
-  const [roundsPrescritos, setRoundsPrescritos] = useState(3);
   const [roundsReal, setRoundsReal] = useState(0);
   const [tempoReal, setTempoReal] = useState('');
-  const [nomeTreino, setNomeTreino] = useState('');
 
   // === RASTREAMENTO DO WOD ATUAL (Mantidos) ===
   const [currentTemplateId, setCurrentTemplateId] = useState<string | null>(null);
@@ -255,21 +248,6 @@ export default function App() {
 
         {activeTab === 'prescricao' && (
           <PrescricaoTab 
-            nomeTreino={nomeTreino}
-            setNomeTreino={setNomeTreino}
-            tipoTreino={tipoTreino}
-            setTipoTreino={setTipoTreino}
-            tempoAlvo={tempoAlvo}
-            setTempoAlvo={setTempoAlvo}
-            roundsPrescritos={roundsPrescritos}
-            setRoundsPrescritos={setRoundsPrescritos}
-            lousa={lousa}
-            addMovimento={addMovimento}
-            removeMovimento={removeMovimento}
-            updateMovimento={updateMovimento}
-            handleDragStart={handleDragStart}
-            handleDragEnter={handleDragEnter}
-            handleDragEnd={handleDragEnd}
             currentShortCode={currentShortCode}
             currentTemplateId={currentTemplateId}
             importarWod={importarWod}
