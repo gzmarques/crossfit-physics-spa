@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
+import type { MovimentoConfig } from '../../types';
 
 interface SearchableMovementSelectProps {
   value: string;
   onChange: (val: string) => void;
-  movimentosDB: any;
+  movimentosDB: Record<string, MovimentoConfig>;
 }
 
 export function SearchableMovementSelect({ value, onChange, movimentosDB }: SearchableMovementSelectProps) {
@@ -22,7 +23,7 @@ export function SearchableMovementSelect({ value, onChange, movimentosDB }: Sear
   }, []);
 
   const groups: Record<string, any[]> = {};
-  Object.entries(movimentosDB).forEach(([key, config]: [string, any]) => {
+  Object.entries(movimentosDB).forEach(([key, config]) => {
     if (!groups[config.grupo]) groups[config.grupo] = [];
     groups[config.grupo].push({ key, nome: config.nome });
   });

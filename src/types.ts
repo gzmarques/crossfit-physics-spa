@@ -79,7 +79,7 @@ export interface WodTemplateRecord {
   tipo_treino: string;
   tempo_alvo: string;
   rounds_prescritos: number;
-  movimentos: any[]; // Se você tiver a interface separada, pode usar Movimento[]
+  movimentos: ItemLousa[]; 
   creator_id?: string;
 }
 

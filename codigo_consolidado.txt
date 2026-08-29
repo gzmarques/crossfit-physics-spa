@@ -1083,86 +1083,87 @@ CONTEÚDO DOS ARQUIVOS
 
 --- INÍCIO DO ARQUIVO: src\components\shared\SearchableMovementSelect.tsx ---
   1 | import { useState, useEffect, useRef } from 'react';
-  2 | 
-  3 | interface SearchableMovementSelectProps {
-  4 |   value: string;
-  5 |   onChange: (val: string) => void;
-  6 |   movimentosDB: any;
-  7 | }
-  8 | 
-  9 | export function SearchableMovementSelect({ value, onChange, movimentosDB }: SearchableMovementSelectProps) {
- 10 |   const [isOpen, setIsOpen] = useState(false);
- 11 |   const [searchTerm, setSearchTerm] = useState("");
- 12 |   const wrapperRef = useRef<HTMLDivElement>(null);
- 13 | 
- 14 |   useEffect(() => {
- 15 |     function handleClickOutside(event: MouseEvent) {
- 16 |       if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
- 17 |         setIsOpen(false);
- 18 |       }
- 19 |     }
- 20 |     document.addEventListener("mousedown", handleClickOutside);
- 21 |     return () => document.removeEventListener("mousedown", handleClickOutside);
- 22 |   }, []);
- 23 | 
- 24 |   const groups: Record<string, any[]> = {};
- 25 |   Object.entries(movimentosDB).forEach(([key, config]: [string, any]) => {
- 26 |     if (!groups[config.grupo]) groups[config.grupo] = [];
- 27 |     groups[config.grupo].push({ key, nome: config.nome });
- 28 |   });
- 29 | 
- 30 |   const filteredGroups: Record<string, any[]> = {};
- 31 |   Object.entries(groups).forEach(([groupName, items]) => {
- 32 |     const filteredItems = items.filter(item => 
- 33 |       item.nome.toLowerCase().includes(searchTerm.toLowerCase())
- 34 |     );
- 35 |     if (filteredItems.length > 0) {
- 36 |       filteredGroups[groupName] = filteredItems;
- 37 |     }
- 38 |   });
- 39 | 
- 40 |   const selectedName = movimentosDB[value]?.nome || "Selecione...";
- 41 | 
- 42 |   return (
- 43 |     <div className="searchable-select" ref={wrapperRef}>
- 44 |       <input
- 45 |         type="text"
- 46 |         className="search-input"
- 47 |         placeholder="Buscar exercício..."
- 48 |         value={isOpen ? searchTerm : selectedName}
- 49 |         onChange={(e) => setSearchTerm(e.target.value)}
- 50 |         onClick={() => { setIsOpen(true); setSearchTerm(""); }}
- 51 |       />
- 52 |       {isOpen && (
- 53 |         <div className="dropdown-list">
- 54 |           {Object.entries(filteredGroups).map(([groupName, items]) => (
- 55 |             <div key={groupName}>
- 56 |               <div className="dropdown-group">{groupName}</div>
- 57 |               {items.map(item => (
- 58 |                 <div
- 59 |                   key={item.key}
- 60 |                   className="dropdown-item"
- 61 |                   onClick={() => {
- 62 |                     onChange(item.key);
- 63 |                     setIsOpen(false);
- 64 |                     setSearchTerm("");
- 65 |                   }}
- 66 |                 >
- 67 |                   {item.nome}
- 68 |                 </div>
- 69 |               ))}
- 70 |             </div>
- 71 |           ))}
- 72 |           {Object.keys(filteredGroups).length === 0 && (
- 73 |             <div style={{ padding: '10px', color: '#888', fontSize: '0.9rem', textAlign: 'center' }}>
- 74 |               Nenhum movimento encontrado.
- 75 |             </div>
- 76 |           )}
- 77 |         </div>
- 78 |       )}
- 79 |     </div>
- 80 |   );
- 81 | }
+  2 | import type { MovimentoConfig } from '../../types';
+  3 | 
+  4 | interface SearchableMovementSelectProps {
+  5 |   value: string;
+  6 |   onChange: (val: string) => void;
+  7 |   movimentosDB: Record<string, MovimentoConfig>;
+  8 | }
+  9 | 
+ 10 | export function SearchableMovementSelect({ value, onChange, movimentosDB }: SearchableMovementSelectProps) {
+ 11 |   const [isOpen, setIsOpen] = useState(false);
+ 12 |   const [searchTerm, setSearchTerm] = useState("");
+ 13 |   const wrapperRef = useRef<HTMLDivElement>(null);
+ 14 | 
+ 15 |   useEffect(() => {
+ 16 |     function handleClickOutside(event: MouseEvent) {
+ 17 |       if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+ 18 |         setIsOpen(false);
+ 19 |       }
+ 20 |     }
+ 21 |     document.addEventListener("mousedown", handleClickOutside);
+ 22 |     return () => document.removeEventListener("mousedown", handleClickOutside);
+ 23 |   }, []);
+ 24 | 
+ 25 |   const groups: Record<string, any[]> = {};
+ 26 |   Object.entries(movimentosDB).forEach(([key, config]) => {
+ 27 |     if (!groups[config.grupo]) groups[config.grupo] = [];
+ 28 |     groups[config.grupo].push({ key, nome: config.nome });
+ 29 |   });
+ 30 | 
+ 31 |   const filteredGroups: Record<string, any[]> = {};
+ 32 |   Object.entries(groups).forEach(([groupName, items]) => {
+ 33 |     const filteredItems = items.filter(item => 
+ 34 |       item.nome.toLowerCase().includes(searchTerm.toLowerCase())
+ 35 |     );
+ 36 |     if (filteredItems.length > 0) {
+ 37 |       filteredGroups[groupName] = filteredItems;
+ 38 |     }
+ 39 |   });
+ 40 | 
+ 41 |   const selectedName = movimentosDB[value]?.nome || "Selecione...";
+ 42 | 
+ 43 |   return (
+ 44 |     <div className="searchable-select" ref={wrapperRef}>
+ 45 |       <input
+ 46 |         type="text"
+ 47 |         className="search-input"
+ 48 |         placeholder="Buscar exercício..."
+ 49 |         value={isOpen ? searchTerm : selectedName}
+ 50 |         onChange={(e) => setSearchTerm(e.target.value)}
+ 51 |         onClick={() => { setIsOpen(true); setSearchTerm(""); }}
+ 52 |       />
+ 53 |       {isOpen && (
+ 54 |         <div className="dropdown-list">
+ 55 |           {Object.entries(filteredGroups).map(([groupName, items]) => (
+ 56 |             <div key={groupName}>
+ 57 |               <div className="dropdown-group">{groupName}</div>
+ 58 |               {items.map(item => (
+ 59 |                 <div
+ 60 |                   key={item.key}
+ 61 |                   className="dropdown-item"
+ 62 |                   onClick={() => {
+ 63 |                     onChange(item.key);
+ 64 |                     setIsOpen(false);
+ 65 |                     setSearchTerm("");
+ 66 |                   }}
+ 67 |                 >
+ 68 |                   {item.nome}
+ 69 |                 </div>
+ 70 |               ))}
+ 71 |             </div>
+ 72 |           ))}
+ 73 |           {Object.keys(filteredGroups).length === 0 && (
+ 74 |             <div style={{ padding: '10px', color: '#888', fontSize: '0.9rem', textAlign: 'center' }}>
+ 75 |               Nenhum movimento encontrado.
+ 76 |             </div>
+ 77 |           )}
+ 78 |         </div>
+ 79 |       )}
+ 80 |     </div>
+ 81 |   );
+ 82 | }
 
 --- FIM DO ARQUIVO: src\components\shared\SearchableMovementSelect.tsx ---
 
@@ -2538,6 +2539,188 @@ CONTEÚDO DOS ARQUIVOS
 316 |     text-transform: uppercase;
 317 |     border-bottom: 1px solid #333;
 318 |   }
+319 | 
+320 |   /* --- INSTAGRAM EXPORT CARD --- */
+321 | .insta-export-wrapper {
+322 |   position: absolute;
+323 |   left: -9999px;
+324 |   top: 0;
+325 | }
+326 | 
+327 | .insta-card {
+328 |   width: 420px;
+329 |   background-color: #111315;
+330 |   color: #fff;
+331 |   font-family: sans-serif;
+332 |   padding: 40px 20px;
+333 |   box-sizing: border-box;
+334 |   display: flex;
+335 |   flex-direction: column;
+336 |   gap: 20px;
+337 |   background-image: linear-gradient(to bottom, #111315, #1a1a1a);
+338 | }
+339 | 
+340 | .insta-header {
+341 |   text-align: center;
+342 | }
+343 | 
+344 | .insta-title {
+345 |   margin: 0;
+346 |   font-size: 32px;
+347 |   font-style: italic;
+348 |   font-weight: 900;
+349 |   letter-spacing: 1px;
+350 | }
+351 | 
+352 | .insta-subtitle {
+353 |   margin: 5px 0 0 0;
+354 |   color: #8a8d94;
+355 |   font-size: 13px;
+356 |   font-weight: bold;
+357 | }
+358 | 
+359 | .insta-date {
+360 |   margin: 2px 0 0 0;
+361 |   color: #8a8d94;
+362 |   font-size: 12px;
+363 | }
+364 | 
+365 | .insta-section {
+366 |   border: 2px solid #26272b;
+367 |   border-radius: 12px;
+368 |   padding: 20px;
+369 |   background-color: #181a1e;
+370 | }
+371 | 
+372 | .insta-section-title {
+373 |   margin: 0 0 12px 0;
+374 |   font-size: 20px;
+375 |   display: flex;
+376 |   align-items: baseline;
+377 |   gap: 8px;
+378 | }
+379 | 
+380 | .insta-section-subtitle {
+381 |   font-size: 11px;
+382 |   color: #8a8d94;
+383 |   font-weight: normal;
+384 | }
+385 | 
+386 | .insta-prescription-content {
+387 |   color: #d1d5db;
+388 |   font-size: 16px;
+389 |   line-height: 1.6;
+390 | }
+391 | 
+392 | .insta-highlight {
+393 |   color: #fff;
+394 | }
+395 | 
+396 | .insta-highlight-large {
+397 |   color: #fff;
+398 |   font-size: 18px;
+399 | }
+400 | 
+401 | .insta-text-muted {
+402 |   color: #8a8d94;
+403 |   font-size: 14px;
+404 | }
+405 | 
+406 | .insta-result-section {
+407 |   border: 2px solid var(--dyna-red, #FF2B3D);
+408 |   border-radius: 12px;
+409 |   padding: 25px 15px;
+410 |   background-color: #181a1e;
+411 |   box-shadow: 0 0 25px rgba(255, 43, 61, 0.15);
+412 |   position: relative;
+413 |   margin-top: 10px;
+414 | }
+415 | 
+416 | .insta-result-title {
+417 |   margin: 0;
+418 |   font-size: 24px;
+419 |   position: absolute;
+420 |   top: -15px;
+421 |   background-color: #181a1e;
+422 |   padding: 0 10px;
+423 |   color: var(--dyna-red, #FF2B3D);
+424 | }
+425 | 
+426 | .insta-time-container {
+427 |   text-align: center;
+428 |   margin-bottom: 25px;
+429 |   margin-top: 15px;
+430 | }
+431 | 
+432 | .insta-time-label {
+433 |   font-size: 16px;
+434 |   color: #8a8d94;
+435 |   font-weight: bold;
+436 | }
+437 | 
+438 | .insta-time-value {
+439 |   font-size: 54px;
+440 |   font-weight: 900;
+441 |   margin: 5px 0;
+442 |   text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+443 | }
+444 | 
+445 | .insta-status {
+446 |   color: #fff;
+447 |   padding: 6px 16px;
+448 |   border-radius: 20px;
+449 |   font-size: 16px;
+450 |   font-weight: 900;
+451 |   letter-spacing: 1px;
+452 | }
+453 | 
+454 | .insta-status-scaled {
+455 |   background-color: #FF2B3D;
+456 | }
+457 | 
+458 | .insta-status-rx {
+459 |   background-color: #22c55e;
+460 | }
+461 | 
+462 | .insta-metrics-row {
+463 |   display: flex;
+464 |   gap: 10px;
+465 |   justify-content: space-between;
+466 | }
+467 | 
+468 | .insta-metric-box {
+469 |   flex: 1;
+470 |   background-color: #111315;
+471 |   padding: 15px 5px;
+472 |   border-radius: 10px;
+473 |   text-align: center;
+474 |   border: 1px solid #26272b;
+475 | }
+476 | 
+477 | .insta-metric-title {
+478 |   font-size: 11px;
+479 |   color: #8a8d94;
+480 |   margin-bottom: 10px;
+481 |   font-weight: bold;
+482 | }
+483 | 
+484 | .insta-metric-value {
+485 |   font-size: 22px;
+486 |   font-weight: 900;
+487 | }
+488 | 
+489 | .insta-metric-unit {
+490 |   font-size: 12px;
+491 |   font-weight: normal;
+492 |   color: #8a8d94;
+493 | }
+494 | 
+495 | .insta-footer {
+496 |   text-align: center;
+497 |   color: #52525b;
+498 |   font-size: 12px;
+499 |   margin-top: 10px;
+500 | }
 
 --- FIM DO ARQUIVO: src\index.css ---
 
@@ -2861,7 +3044,7 @@ CONTEÚDO DOS ARQUIVOS
  79 |   tipo_treino: string;
  80 |   tempo_alvo: string;
  81 |   rounds_prescritos: number;
- 82 |   movimentos: any[]; // Se você tiver a interface separada, pode usar Movimento[]
+ 82 |   movimentos: ItemLousa[]; 
  83 |   creator_id?: string;
  84 | }
  85 | 
