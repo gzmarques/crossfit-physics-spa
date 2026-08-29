@@ -21,6 +21,9 @@ ESTRUTURA COMPLETA DO PROJETO E CÓDIGOS-FONTE
 [ARQUIVO] src\components\tabs\HistoricoTab.tsx
 [ARQUIVO] src\components\tabs\PrescricaoTab.tsx
 [ARQUIVO] src\data\movements.ts
+[ARQUIVO] src\hooks\useAuth.ts
+[ARQUIVO] src\hooks\usePhysics.ts
+[ARQUIVO] src\hooks\useWodBuilder.ts
 [ARQUIVO] src\index.css
 [ARQUIVO] src\lib\supabase.ts
 [ARQUIVO] src\main.tsx
@@ -329,689 +332,342 @@ CONTEÚDO DOS ARQUIVOS
 ========================================
 
 --- INÍCIO DO ARQUIVO: src\App.tsx ---
-  1 | import { useState, useEffect, useRef } from 'react';
-  2 | import { movimentosDB } from './data/movements';
-  3 | import { supabase } from './lib/supabase';
-  4 | import type { Session } from '@supabase/supabase-js'; 
-  5 | import type { 
-  6 |   AtletaPerfil, ItemLousa, Modalidade, 
-  7 |   ResultadoProcessamento, TimelineStateItem, UserProfile,
-  8 |   WodTemplateRecord 
-  9 | } from './types';
- 10 | import { calcularFisica, parseClockTime } from './utils/physicsEngine';
- 11 | import html2canvas from 'html2canvas';
- 12 | 
- 13 | import { LoginScreen } from './components/auth/LoginScreen';
- 14 | import { OnboardingScreen } from './components/auth/OnboardingScreen';
- 15 | import { Header } from './components/layout/Header';
- 16 | import { Tabs } from './components/layout/Tabs';
- 17 | import { PrescricaoTab } from './components/tabs/PrescricaoTab';
- 18 | import { AnaliseTab } from './components/tabs/AnaliseTab';
- 19 | import { AtletaTab } from './components/tabs/AtletaTab';
- 20 | import { HistoricoTab } from './components/tabs/HistoricoTab';
- 21 | import { InstagramCard } from './components/export/InstagramCard';
- 22 | 
- 23 | export default function App() {
- 24 |   // === AUTENTICAÇÃO E PERFIL ===
- 25 |   const [session, setSession] = useState<Session | null>(null);
- 26 |   const [loadingAuth, setLoadingAuth] = useState(true);
- 27 |   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
- 28 |   const [isNewUser, setIsNewUser] = useState(false);
- 29 |   
- 30 |   // === GESTÃO DE COACH E ATLETAS ===
- 31 |   const [myAthletes, setMyAthletes] = useState<UserProfile[]>([]);
- 32 |   const [selectedAthleteId, setSelectedAthleteId] = useState<string>('me');
- 33 |   const [coachIdInput, setCoachIdInput] = useState('');
- 34 | 
- 35 |   // === ESTADOS DO MOTOR ===
- 36 |   const [activeTab, setActiveTab] = useState<'prescricao' | 'analise' | 'atleta' | 'historico'>('prescricao');
- 37 |   const [tipoTreino, setTipoTreino] = useState<Modalidade>('FOR_TIME');
- 38 |   const [tempoAlvo, setTempoAlvo] = useState('05:00');
- 39 |   const [roundsPrescritos, setRoundsPrescritos] = useState(3);
- 40 |   const [roundsReal, setRoundsReal] = useState(0);
- 41 |   const [tempoReal, setTempoReal] = useState('');
- 42 |   const [nomeTreino, setNomeTreino] = useState('');
- 43 | 
- 44 |   // === RASTREAMENTO DO WOD ATUAL ===
- 45 |   const [currentTemplateId, setCurrentTemplateId] = useState<string | null>(null);
- 46 |   const [currentResultId, setCurrentResultId] = useState<string | null>(null);
- 47 |   const [isScaled, setIsScaled] = useState<boolean>(false);
- 48 |   const [currentShortCode, setCurrentShortCode] = useState<string | null>(null);
+  1 | import { useState, useEffect } from 'react';
+  2 | import { supabase } from './lib/supabase';
+  3 | import type { Modalidade, WodTemplateRecord } from './types';
+  4 | import html2canvas from 'html2canvas';
+  5 | 
+  6 | import { LoginScreen } from './components/auth/LoginScreen';
+  7 | import { OnboardingScreen } from './components/auth/OnboardingScreen';
+  8 | import { Header } from './components/layout/Header';
+  9 | import { Tabs } from './components/layout/Tabs';
+ 10 | import { PrescricaoTab } from './components/tabs/PrescricaoTab';
+ 11 | import { AnaliseTab } from './components/tabs/AnaliseTab';
+ 12 | import { AtletaTab } from './components/tabs/AtletaTab';
+ 13 | import { HistoricoTab } from './components/tabs/HistoricoTab';
+ 14 | import { InstagramCard } from './components/export/InstagramCard';
+ 15 | 
+ 16 | import { useAuth } from './hooks/useAuth';
+ 17 | import { useWodBuilder } from './hooks/useWodBuilder';
+ 18 | import { usePhysics } from './hooks/usePhysics';
+ 19 | 
+ 20 | export default function App() {
+ 21 |   const { 
+ 22 |     session, loadingAuth, userProfile, isNewUser, myAthletes, selectedAthleteId, 
+ 23 |     coachIdInput, setCoachIdInput, atleta, setAtleta, onboardForm, setOnboardForm, 
+ 24 |     signInWithGoogle, signOut, saveOnboardingProfile, linkToCoach, 
+ 25 |     salvarPerfilAtleta, handleAthleteChange 
+ 26 |   } = useAuth();
+ 27 | 
+ 28 |   const { 
+ 29 |     lousa, setLousa, addMovimento, removeMovimento, updateMovimento, 
+ 30 |     handleDragStart, handleDragEnter, handleDragEnd 
+ 31 |   } = useWodBuilder();
+ 32 | 
+ 33 |   // === ESTADOS DO MOTOR (Mantidos) ===
+ 34 |   const [activeTab, setActiveTab] = useState<'prescricao' | 'analise' | 'atleta' | 'historico'>('prescricao');
+ 35 |   const [tipoTreino, setTipoTreino] = useState<Modalidade>('FOR_TIME');
+ 36 |   const [tempoAlvo, setTempoAlvo] = useState('05:00');
+ 37 |   const [roundsPrescritos, setRoundsPrescritos] = useState(3);
+ 38 |   const [roundsReal, setRoundsReal] = useState(0);
+ 39 |   const [tempoReal, setTempoReal] = useState('');
+ 40 |   const [nomeTreino, setNomeTreino] = useState('');
+ 41 | 
+ 42 |   // === RASTREAMENTO DO WOD ATUAL (Mantidos) ===
+ 43 |   const [currentTemplateId, setCurrentTemplateId] = useState<string | null>(null);
+ 44 |   const [currentResultId, setCurrentResultId] = useState<string | null>(null);
+ 45 |   const [isScaled, setIsScaled] = useState<boolean>(false);
+ 46 |   const [currentShortCode, setCurrentShortCode] = useState<string | null>(null);
+ 47 | 
+ 48 |   const [savedWods, setSavedWods] = useState<WodTemplateRecord[]>([]);
  49 | 
- 50 |   const [atleta, setAtleta] = useState<AtletaPerfil>({
- 51 |     estatura: 1.75, peso: 80, sexo: 'M', nivelTecnico: 'intermediario', envergadura: 1.75, perna: 0.85, bf: 15
- 52 |   });
- 53 | 
- 54 |   const [lousa, setLousa] = useState<ItemLousa[]>([
- 55 |     { originalId: crypto.randomUUID(), movId: 'thruster', phase: 'round', reps: 21, carga: 43, tecnica: 'tng', extraVal: '' }
- 56 |   ]);
- 57 |   const [timelineState, setTimelineState] = useState<Record<string, TimelineStateItem>>({});
- 58 |   
- 59 |   const [resultado, setResultado] = useState<ResultadoProcessamento | null>(null);
- 60 |   const [savedWods, setSavedWods] = useState<WodTemplateRecord[]>([]);
- 61 | 
- 62 |   const [onboardForm, setOnboardForm] = useState({
- 63 |     full_name: '', apelido: '', is_coach: false, estatura: 1.75, peso: 80, sexo: 'M', 
- 64 |     nivel_tecnico: 'intermediario', envergadura: 1.75, perna: 0.85, bf: 15, data_nascimento: ''
- 65 |   });
- 66 | 
- 67 |   // === REFERÊNCIAS E FUNÇÕES DO DRAG AND DROP ===
- 68 |   const dragItem = useRef<number | null>(null);
- 69 |   const dragOverItem = useRef<number | null>(null);
- 70 | 
- 71 |   const handleDragStart = (index: number) => {
- 72 |     dragItem.current = index;
- 73 |   };
- 74 | 
- 75 |   const handleDragEnter = (index: number) => {
- 76 |     dragOverItem.current = index;
- 77 |   };
- 78 | 
- 79 |   const handleDragEnd = (e: React.DragEvent<HTMLDivElement>) => {
- 80 |     e.currentTarget.style.opacity = '1';
- 81 |     
- 82 |     if (dragItem.current !== null && dragOverItem.current !== null && dragItem.current !== dragOverItem.current) {
- 83 |       const newLousa = [...lousa];
- 84 |       const draggedItemContent = newLousa[dragItem.current];
- 85 |       // Remove o item da posição original
- 86 |       newLousa.splice(dragItem.current, 1);
- 87 |       // Insere o item na nova posição
- 88 |       newLousa.splice(dragOverItem.current, 0, draggedItemContent);
- 89 |       setLousa(newLousa);
- 90 |     }
- 91 |     dragItem.current = null;
- 92 |     dragOverItem.current = null;
+ 50 |   const {
+ 51 |     timelineState, setTimelineState, handleTimelineChange,
+ 52 |     resultado, processarWOD
+ 53 |   } = usePhysics({
+ 54 |     tipoTreino, tempoAlvo, tempoReal, roundsPrescritos, roundsReal, lousa, atleta
+ 55 |   });
+ 56 | 
+ 57 |   const gerarCardInstagram = async () => {
+ 58 |     const cardElement = document.getElementById('instagram-card-export');
+ 59 |     
+ 60 |     if (!cardElement) {
+ 61 |       alert('Erro: Card não encontrado na tela.');
+ 62 |       return;
+ 63 |     }
+ 64 | 
+ 65 |     try {
+ 66 |       const canvas = await html2canvas(cardElement, {
+ 67 |         backgroundColor: '#111315', 
+ 68 |         scale: 2, 
+ 69 |         useCORS: true 
+ 70 |       });
+ 71 | 
+ 72 |       const image = canvas.toDataURL('image/jpeg', 0.9);
+ 73 |       const link = document.createElement('a');
+ 74 |       link.href = image;
+ 75 |       link.download = `DynaWOD-${currentShortCode || 'Resultado'}.jpg`;
+ 76 |       link.click();
+ 77 |       
+ 78 |     } catch (error) {
+ 79 |       console.error('Erro ao gerar imagem:', error);
+ 80 |       alert('Ops! Não foi possível gerar a imagem.');
+ 81 |     }
+ 82 |   };
+ 83 | 
+ 84 |   useEffect(() => {
+ 85 |     if (session && userProfile && !isNewUser) fetchWodsFromSupabase();
+ 86 |   }, [session, userProfile, isNewUser, selectedAthleteId]);
+ 87 | 
+ 88 |   const fetchWodsFromSupabase = async () => {
+ 89 |     const queryId = selectedAthleteId === 'me' ? session?.user.id : selectedAthleteId;
+ 90 |     
+ 91 |     const { data, error } = await supabase.from('wods').select('*').eq('athlete_id', queryId).order('created_at', { ascending: false });
+ 92 |     if (!error && data) setSavedWods(data as WodTemplateRecord[]);
  93 |   };
  94 | 
- 95 |   const gerarCardInstagram = async () => {
- 96 |     const cardElement = document.getElementById('instagram-card-export');
- 97 |     
- 98 |     if (!cardElement) {
- 99 |       alert('Erro: Card não encontrado na tela.');
-100 |       return;
-101 |     }
+ 95 |   const generateShortCode = () => Math.random().toString(36).substring(2, 8).toUpperCase();
+ 96 | 
+ 97 |   const salvarNoSupabase = async (isExporting = false) => {
+ 98 |     if (!session || !userProfile) return null;
+ 99 |     
+100 |     const targetAthleteId = selectedAthleteId === 'me' ? session.user.id : selectedAthleteId;
+101 |     const newShortCode = currentShortCode || generateShortCode();
 102 | 
-103 |     try {
-104 |       const canvas = await html2canvas(cardElement, {
-105 |         backgroundColor: '#111315', 
-106 |         scale: 2, 
-107 |         useCORS: true 
-108 |       });
-109 | 
-110 |       const image = canvas.toDataURL('image/jpeg', 0.9);
-111 |       const link = document.createElement('a');
-112 |       link.href = image;
-113 |       link.download = `DynaWOD-${currentShortCode || 'Resultado'}.jpg`;
-114 |       link.click();
-115 |       
-116 |     } catch (error) {
-117 |       console.error('Erro ao gerar imagem:', error);
-118 |       alert('Ops! Não foi possível gerar a imagem.');
-119 |     }
-120 |   };
-121 | 
-122 |   useEffect(() => {
-123 |     supabase.auth.getSession().then(({ data: { session } }) => {
-124 |       setSession(session);
-125 |       // Aqui passamos o session.user inteiro em vez de session.user.id
-126 |       if (session) loadProfile(session.user);
-127 |       else setLoadingAuth(false);
-128 |     });
-129 | 
-130 |     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-131 |       setSession(session);
-132 |       // Aqui passamos o session.user inteiro
-133 |       if (session) loadProfile(session.user);
-134 |     });
-135 | 
-136 |     return () => subscription.unsubscribe();
-137 |   }, []);
-138 | 
-139 |   useEffect(() => {
-140 |     if (session && userProfile && !isNewUser) fetchWodsFromSupabase();
-141 |   }, [session, userProfile, isNewUser, selectedAthleteId]);
+103 |     const templatePayload = {
+104 |       title: nomeTreino.trim() !== '' ? nomeTreino : `Treino ${tipoTreino} - ${new Date().toLocaleDateString('pt-BR')}`,
+105 |       short_code: newShortCode,
+106 |       tipo_treino: tipoTreino,
+107 |       tempo_alvo: tempoAlvo,
+108 |       rounds_prescritos: roundsPrescritos,
+109 |       movimentos: lousa,
+110 |       creator_id: session.user.id
+111 |     };
+112 | 
+113 |     let activeTemplateId = currentTemplateId;
+114 | 
+115 |     if (activeTemplateId) {
+116 |       if (!isExporting && !window.confirm('Deseja sobrescrever as alterações na prescrição deste WOD?')) return null;
+117 |       
+118 |       const { error } = await supabase.from('wod_templates').update(templatePayload).eq('id', activeTemplateId);
+119 |       if (error) { alert('Erro ao atualizar Template: ' + error.message); return null; }
+120 |     } else {
+121 |       const { data, error } = await supabase.from('wod_templates').insert([templatePayload]).select('id, short_code').single();
+122 |       if (error) { alert('Erro ao criar Template: ' + error.message); return null; }
+123 |       
+124 |       activeTemplateId = data.id;
+125 |       setCurrentTemplateId(data.id);
+126 |       setCurrentShortCode(data.short_code);
+127 |     }
+128 | 
+129 |     const hasResult = tempoReal || roundsReal > 0 || (resultado && resultado.potenciaReal > 0);
+130 | 
+131 |     if (hasResult) {
+132 |       const resultPayload = {
+133 |         template_id: activeTemplateId, 
+134 |         athlete_id: targetAthleteId,
+135 |         tempo_real: tempoReal,
+136 |         rounds_real: roundsReal,
+137 |         score_watts: resultado ? resultado.potenciaReal : 0,
+138 |         score_kcal: resultado ? resultado.gastoMetabolico : 0,
+139 |         timeline: timelineState,
+140 |         cargas_adaptadas: isScaled
+141 |       };
 142 | 
-143 |   const signInWithGoogle = async () => {
-144 |     await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
-145 |   };
-146 | 
-147 |   const signOut = async () => {
-148 |     await supabase.auth.signOut();
-149 |     setUserProfile(null);
-150 |     setSavedWods([]);
-151 |   };
-152 | 
-153 |   // Função loadProfile atualizada na íntegra para receber o objeto user
-154 |   const loadProfile = async (user: any) => {
-155 |     const { data, error } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-156 |     
-157 |     if (error || !data) {
-158 |       setIsNewUser(true); 
-159 |       // Puxa o nome do Google (user_metadata) automaticamente para o state onboardForm
-160 |       setOnboardForm(prev => ({ 
-161 |         ...prev, 
-162 |         full_name: user.user_metadata?.full_name || user.user_metadata?.name || '' 
-163 |       }));
-164 |       setLoadingAuth(false);
-165 |       return;
+143 |       if (currentResultId) {
+144 |         const { error } = await supabase.from('wod_results').update(resultPayload).eq('id', currentResultId);
+145 |         if (error) console.error('Erro ao atualizar resultado:', error);
+146 |       } else {
+147 |         const { data, error } = await supabase.from('wod_results').insert([resultPayload]).select('id').single();
+148 |         if (error) {
+149 |           console.error('Erro ao salvar resultado:', error);
+150 |         } else {
+151 |           setCurrentResultId(data.id);
+152 |         }
+153 |       }
+154 |     }
+155 | 
+156 |     if (!isExporting) alert('Dados salvos com sucesso no DynaWOD!');
+157 |     
+158 |     return newShortCode;
+159 |   };
+160 | 
+161 |   const compartilharWod = async () => {
+162 |     const code = await salvarNoSupabase(true); 
+163 |     if (code) {
+164 |       navigator.clipboard.writeText(code);
+165 |       alert(`Código do WOD (${code}) copiado para a área de transferência! Envie para seus alunos.`);
 166 |     }
-167 | 
-168 |     setUserProfile(data as UserProfile);
-169 |     syncAtletaState(data);
-170 |     
-171 |     if (data.is_coach) {
-172 |       const { data: athletes } = await supabase.from('profiles').select('*').eq('coach_id', user.id);
-173 |       if (athletes) setMyAthletes(athletes as UserProfile[]);
-174 |     }
-175 |     
-176 |     setIsNewUser(false);
-177 |     setLoadingAuth(false);
-178 |   };
+167 |   };
+168 | 
+169 |   const importarWod = async () => {
+170 |     const codeToFind = window.prompt('Digite o código de 6 dígitos do WOD:');
+171 |     if (!codeToFind) return;
+172 | 
+173 |     const { data, error } = await supabase.from('wod_templates').select('*').eq('short_code', codeToFind.toUpperCase()).single();
+174 |     
+175 |     if (error || !data) {
+176 |       alert('WOD não encontrado. Verifique o código.');
+177 |       return;
+178 |     }
 179 | 
-180 |   const syncAtletaState = (prof: any) => {
-181 |     setAtleta({
-182 |       estatura: prof.estatura, peso: prof.peso, sexo: prof.sexo,
-183 |       nivelTecnico: prof.nivel_tecnico, envergadura: prof.envergadura,
-184 |       perna: prof.perna, bf: prof.bf, dataNascimento: prof.data_nascimento
-185 |     });
-186 |   };
-187 | 
-188 |   const saveOnboardingProfile = async () => {
-189 |     if (!session) return;
-190 | 
-191 |     // Trava de obrigatoriedade
-192 |     if (!onboardForm.full_name || !onboardForm.data_nascimento) {
-193 |       alert('⚠️ Por favor, preencha seu Nome Completo e a Data de Nascimento. O motor precisa da sua idade exata para calibrar o desgaste metabólico.');
-194 |       return;
-195 |     }
-196 | 
-197 |     const payload = {
-198 |       id: session.user.id,
-199 |       ...onboardForm
-200 |     };
-201 |     
-202 |     const { error } = await supabase.from('profiles').insert([payload]);
-203 |     if (error) {
-204 |       alert('Erro ao salvar perfil: ' + error.message);
-205 |     } else {
-206 |       loadProfile(session.user); // Usa o user inteiro, como ajustamos na etapa anterior
-207 |     }
-208 |   };
-209 | 
-210 |   const linkToCoach = async () => {
-211 |     if (!session || !coachIdInput) return;
-212 |     const { error } = await supabase.from('profiles').update({ coach_id: coachIdInput }).eq('id', session.user.id);
-213 |     if (error) alert('Erro ao vincular coach. Verifique o ID.');
-214 |     else { alert('Coach vinculado com sucesso!'); loadProfile(session.user); }
-215 |   };
-216 | 
-217 |   const salvarPerfilAtleta = async () => {
-218 |     if (!session) return;
-219 |     
-220 |     // Define se estamos atualizando o próprio usuário ou um aluno dele
-221 |     const targetId = selectedAthleteId === 'me' ? session.user.id : selectedAthleteId;
-222 | 
-223 |     const payload = {
-224 |       estatura: atleta.estatura,
-225 |       peso: atleta.peso,
-226 |       sexo: atleta.sexo,
-227 |       nivel_tecnico: atleta.nivelTecnico,
-228 |       envergadura: atleta.envergadura,
-229 |       perna: atleta.perna,
-230 |       bf: atleta.bf,
-231 |       data_nascimento: atleta.dataNascimento
-232 |     };
-233 | 
-234 |     const { error } = await supabase.from('profiles').update(payload).eq('id', targetId);
-235 | 
-236 |     if (error) {
-237 |       alert('Erro ao atualizar perfil oficial: ' + error.message);
-238 |     } else {
-239 |       alert('Perfil oficial atualizado com sucesso no banco de dados!');
-240 |       
-241 |       // Recarrega os dados para manter a interface sincronizada
-242 |       if (targetId === session.user.id) {
-243 |         loadProfile(session.user.id);
-244 |       } else {
-245 |         // Se for um coach editando o aluno, recarrega a lista de alunos
-246 |         supabase.from('profiles').select('*').eq('coach_id', session.user.id)
-247 |           .then(({ data }) => {
-248 |             if (data) setMyAthletes(data as UserProfile[]);
-249 |           });
-250 |       }
-251 |     }
-252 |   };
-253 | 
-254 |   const handleAthleteChange = (targetId: string) => {
-255 |     setSelectedAthleteId(targetId);
-256 |     if (targetId === 'me' && userProfile) {
-257 |       syncAtletaState(userProfile);
-258 |     } else {
-259 |       const athlete = myAthletes.find(a => a.id === targetId);
-260 |       if (athlete) syncAtletaState(athlete);
-261 |     }
-262 |   };
-263 | 
-264 |   const fetchWodsFromSupabase = async () => {
-265 |     const queryId = selectedAthleteId === 'me' ? session?.user.id : selectedAthleteId;
-266 |     
-267 |     const { data, error } = await supabase.from('wods').select('*').eq('athlete_id', queryId).order('created_at', { ascending: false });
-268 |     if (!error && data) setSavedWods(data as WodTemplateRecord[]);
-269 |   };
-270 | 
-271 |   const generateShortCode = () => Math.random().toString(36).substring(2, 8).toUpperCase();
-272 | 
-273 |   const salvarNoSupabase = async (isExporting = false) => {
-274 |     if (!session || !userProfile) return null;
-275 |     
-276 |     const targetAthleteId = selectedAthleteId === 'me' ? session.user.id : selectedAthleteId;
-277 |     const newShortCode = currentShortCode || generateShortCode();
-278 | 
-279 |     const templatePayload = {
-280 |       title: nomeTreino.trim() !== '' ? nomeTreino : `Treino ${tipoTreino} - ${new Date().toLocaleDateString('pt-BR')}`,
-281 |       short_code: newShortCode,
-282 |       tipo_treino: tipoTreino,
-283 |       tempo_alvo: tempoAlvo,
-284 |       rounds_prescritos: roundsPrescritos,
-285 |       movimentos: lousa,
-286 |       creator_id: session.user.id
-287 |     };
-288 | 
-289 |     let activeTemplateId = currentTemplateId;
-290 | 
-291 |     if (activeTemplateId) {
-292 |       if (!isExporting && !window.confirm('Deseja sobrescrever as alterações na prescrição deste WOD?')) return null;
-293 |       
-294 |       const { error } = await supabase.from('wod_templates').update(templatePayload).eq('id', activeTemplateId);
-295 |       if (error) { alert('Erro ao atualizar Template: ' + error.message); return null; }
-296 |     } else {
-297 |       const { data, error } = await supabase.from('wod_templates').insert([templatePayload]).select('id, short_code').single();
-298 |       if (error) { alert('Erro ao criar Template: ' + error.message); return null; }
-299 |       
-300 |       activeTemplateId = data.id;
-301 |       setCurrentTemplateId(data.id);
-302 |       setCurrentShortCode(data.short_code);
-303 |     }
-304 | 
-305 |     const hasResult = tempoReal || roundsReal > 0 || (resultado && resultado.potenciaReal > 0);
-306 | 
-307 |     if (hasResult) {
-308 |       const resultPayload = {
-309 |         template_id: activeTemplateId, 
-310 |         athlete_id: targetAthleteId,
-311 |         tempo_real: tempoReal,
-312 |         rounds_real: roundsReal,
-313 |         score_watts: resultado ? resultado.potenciaReal : 0,
-314 |         score_kcal: resultado ? resultado.gastoMetabolico : 0,
-315 |         timeline: timelineState,
-316 |         cargas_adaptadas: isScaled
-317 |       };
-318 | 
-319 |       if (currentResultId) {
-320 |         const { error } = await supabase.from('wod_results').update(resultPayload).eq('id', currentResultId);
-321 |         if (error) console.error('Erro ao atualizar resultado:', error);
-322 |       } else {
-323 |         const { data, error } = await supabase.from('wod_results').insert([resultPayload]).select('id').single();
-324 |         if (error) {
-325 |           console.error('Erro ao salvar resultado:', error);
-326 |         } else {
-327 |           setCurrentResultId(data.id);
-328 |         }
-329 |       }
-330 |     }
-331 | 
-332 |     if (!isExporting) alert('Dados salvos com sucesso no DynaWOD!');
-333 |     
-334 |     return newShortCode;
-335 |   };
-336 | 
-337 |   const compartilharWod = async () => {
-338 |     const code = await salvarNoSupabase(true); 
-339 |     if (code) {
-340 |       navigator.clipboard.writeText(code);
-341 |       alert(`Código do WOD (${code}) copiado para a área de transferência! Envie para seus alunos.`);
-342 |     }
-343 |   };
-344 | 
-345 |   const importarWod = async () => {
-346 |     const codeToFind = window.prompt('Digite o código de 6 dígitos do WOD:');
-347 |     if (!codeToFind) return;
-348 | 
-349 |     const { data, error } = await supabase.from('wod_templates').select('*').eq('short_code', codeToFind.toUpperCase()).single();
-350 |     
-351 |     if (error || !data) {
-352 |       alert('WOD não encontrado. Verifique o código.');
-353 |       return;
-354 |     }
-355 | 
-356 |     carregarDoSupabase(data);
-357 |   };
-358 | 
-359 |   const clonarWod = () => {
-360 |     if (!window.confirm('Deseja usar este treino como base para criar um NOVO WOD seu? O vínculo com o original será quebrado.')) return;
-361 |     
-362 |     setCurrentTemplateId(null);
-363 |     setCurrentShortCode(null);
-364 |     setCurrentResultId(null);
-365 |     
-366 |     alert('Pronto! O WOD foi desvinculado. Faça suas alterações e clique em "Salvar WOD".');
-367 |   };
-368 | 
-369 |   const addMovimento = (baseId: string | null = null) => {
-370 |     const newId = crypto.randomUUID();
-371 |     let newItem: ItemLousa = { originalId: newId, movId: 'air_squat', phase: 'round', reps: 10, carga: 0, tecnica: 'tng', extraVal: '', extraVal2: '' };
-372 |     if (baseId) {
-373 |       const idx = lousa.findIndex(m => m.originalId === baseId);
-374 |       if (idx !== -1) {
-375 |         newItem = { ...lousa[idx], originalId: newId };
-376 |         const updated = [...lousa];
-377 |         updated.splice(idx + 1, 0, newItem);
-378 |         setLousa(updated);
-379 |         return;
-380 |       }
-381 |     }
-382 |     setLousa([...lousa, newItem]);
-383 |   };
-384 |   const removeMovimento = (id: string) => setLousa(lousa.filter(m => m.originalId !== id));
-385 |   const updateMovimento = (id: string, field: keyof ItemLousa, val: any) => setLousa(lousa.map(item => item.originalId === id ? { ...item, [field]: val } : item));
-386 |   const handleTimelineChange = (rowId: string, field: keyof TimelineStateItem, val: any) => 
-387 |     setTimelineState(prev => ({ ...prev, [rowId]: { ...(prev[rowId] || {}), [field]: val } }));
-388 |   const carregarDoSupabase = (rec: any) => {
-389 |     setTipoTreino(rec.tipo_treino); 
-390 |     setTempoAlvo(rec.tempo_alvo); 
-391 |     setRoundsPrescritos(rec.rounds_prescritos);
-392 |     
-393 |     if (rec.rounds_real !== undefined) setRoundsReal(rec.rounds_real);
-394 |     if (rec.tempo_real) setTempoReal(rec.tempo_real);
-395 |     if (rec.atleta) setAtleta(rec.atleta);
-396 |     if (rec.movimentos) setLousa(rec.movimentos);
-397 |     if (rec.timeline) setTimelineState(rec.timeline);
-398 |     
-399 |     setCurrentTemplateId(rec.id);
-400 |     setCurrentShortCode(rec.short_code);
-401 |     
-402 |     setActiveTab('prescricao');
-403 | 
-404 |     if (rec.title && !rec.title.startsWith('Treino')) setNomeTreino(rec.title);
-405 |     else setNomeTreino('');
-406 |   };
-407 | 
-408 |   const processarWOD = () => {
-409 |     const rawTempoAlvo = parseClockTime(tempoAlvo);
-410 |     const tAlvoSec = rawTempoAlvo > 0 ? rawTempoAlvo : 0;
-411 |     const rawTempoReal = parseClockTime(tempoReal);
-412 |     const tRealSec = rawTempoReal > 0 ? rawTempoReal : 0;
-413 | 
-414 |     const ffm = (atleta?.peso || 80) * (1.0 - ((atleta?.bf || 15) / 100.0));
-415 |     const bmrDia = 370.0 + (21.6 * ffm);
-416 |     const bmrSec = bmrDia / 86400.0;
-417 | 
-418 |     let trabalhoMechTotalEsp = 0;
-419 |     lousa.forEach(m => {
-420 |       const cfg = movimentosDB[m.movId];
-421 |       if (!cfg) return;
-422 |       const mult = (m.phase === 'round') ? (roundsPrescritos || 1) : 1;
-423 |       const calc = calcularFisica(m.movId, cfg, m.reps, m.carga, m.extraVal, m.extraVal2 || '', atleta, m.tecnica, 0);
-424 |       const trab = calc?.trabMech || 0;
-425 |       trabalhoMechTotalEsp += trab * mult;
-426 |     });
-427 | 
-428 |     let roundsTimeline = (tipoTreino === 'FOR_TIME') ? (roundsPrescritos || 1) : Math.ceil(roundsReal || 1);
-429 |     if (roundsTimeline < 1) roundsTimeline = 1;
-430 | 
-431 |     const flatItems: any[] = [];
-432 |     lousa.filter(m => m.phase === 'buyin').forEach(m => flatItems.push({ rowId: `${m.originalId}-R0`, movId: m.movId, reps: m.reps, carga: m.carga, extraVal: m.extraVal, extraVal2: m.extraVal2, phase: 'buyin', tecnica: m.tecnica, badgeText: 'Buy-in', badgeClass: 'badge-buyin' }));
-433 |     for (let r = 1; r <= roundsTimeline; r++) lousa.filter(m => m.phase === 'round').forEach(m => flatItems.push({ rowId: `${m.originalId}-R${r}`, movId: m.movId, reps: m.reps, carga: m.carga, extraVal: m.extraVal, extraVal2: m.extraVal2, phase: 'round', tecnica: m.tecnica, badgeText: `R ${r}`, badgeClass: '' }));
-434 |     lousa.filter(m => m.phase === 'cashout').forEach(m => flatItems.push({ rowId: `${m.originalId}-R99`, movId: m.movId, reps: m.reps, carga: m.carga, extraVal: m.extraVal, extraVal2: m.extraVal2, phase: 'cashout', tecnica: m.tecnica, badgeText: 'Cash-out', badgeClass: 'badge-cashout' }));
-435 | 
-436 |     let somaTempoDeterminadoGlobal = 0, totalTransicaoGlobal = 0, trabalhoMechTotalReal = 0, gastoMetabolicoLiquidoTotal = 0, metabolicoRestanteGlobal = 0, lastEndSec = -1;
-437 |     let tempoDecorridoEstimado = 0; // Acumulador da linha do tempo para degradação celular
-438 |     
-439 |     const itemsProcessados: any[] = [];
-440 | 
-441 |     flatItems.forEach(row => {
-442 |       const config = movimentosDB[row.movId] || movimentosDB['air_squat']; 
-443 |       const state = timelineState[row.rowId] || { reps: row.reps, start: '', end: '' };
-444 |       const repsEffective = state.reps !== undefined ? Number(state.reps) : (row.reps || 0);
-445 |       
-446 |       const cargaEffective = state.carga !== undefined ? Number(state.carga) : (row.carga || 0);
-447 | 
-448 |       const startSec = parseClockTime(state.start);
-449 |       const endSec = parseClockTime(state.end);
-450 |       const tempoDefinitivoTemp = (startSec >= 0 && endSec > startSec) ? (endSec - startSec) : 0;
-451 |       
-452 |       // Injeção da variável latente de falha no motor biomecânico
-453 |       const calc = calcularFisica(row.movId, config, repsEffective, cargaEffective, row.extraVal, row.extraVal2, atleta, row.tecnica, tempoDefinitivoTemp, tempoDecorridoEstimado) || {};
-454 | 
-455 |       const trabMetabolicoWork = calc.trabMetabolicoWork || 0;
-456 |       const trabMetabolicoConcIsom = calc.trabMetabolicoConcIsom || 0;
-457 |       const trabMech = calc.trabMech || 0;
-458 | 
-459 |       let transicaoEspecifica = 0;
-460 |       if (tempoDefinitivoTemp > 0) {
-461 |         if (lastEndSec >= 0 && startSec >= lastEndSec) { transicaoEspecifica = startSec - lastEndSec; totalTransicaoGlobal += transicaoEspecifica; }
-462 |         lastEndSec = endSec; somaTempoDeterminadoGlobal += tempoDefinitivoTemp; gastoMetabolicoLiquidoTotal += trabMetabolicoWork;
-463 |       } else { 
-464 |         lastEndSec = -1; metabolicoRestanteGlobal += trabMetabolicoConcIsom; 
-465 |       }
-466 |       
-467 |       // Atualização do eixo temporal: Incrementa a carga de estresse (3s por repetição como heurística base caso deltaT seja omisso)
-468 |       const tempoDesgasteIteracao = tempoDefinitivoTemp > 0 ? tempoDefinitivoTemp : (repsEffective * 3.0);
-469 |       tempoDecorridoEstimado += (tempoDesgasteIteracao + transicaoEspecifica);
-470 | 
-471 |       trabalhoMechTotalReal += trabMech;
-472 |       itemsProcessados.push({ 
-473 |         ...calc, 
-474 |         nome: config.nome || row.movId, 
-475 |         reps: repsEffective, 
-476 |         labelRounds: row.badgeText, 
-477 |         tempoDefinitivo: tempoDefinitivoTemp, 
-478 |         transicaoEspecifica: tempoDefinitivoTemp > 0 && startSec >= lastEndSec ? startSec - lastEndSec : 0, 
-479 |         phase: row.phase 
-480 |       });
-481 |     });
-482 | 
-483 |     const tempoTotalReferencia = (tipoTreino === 'FOR_TIME' && tRealSec > 0) ? tRealSec : tAlvoSec;
-484 |     const tempoDisponivel = Math.max(0, tempoTotalReferencia - somaTempoDeterminadoGlobal - totalTransicaoGlobal);
-485 |     
-486 |     // Refatoração 4: Fator EPOC Sigmoidal baseado na fadiga termodinâmica extrema
-487 |     const refTempoEstimado = tempoTotalReferencia > 0 ? tempoTotalReferencia : tAlvoSec;
-488 |     const tempoLiquidoEstimado = Math.max(1, refTempoEstimado - totalTransicaoGlobal);
-489 |     const potRealEstimada = tempoLiquidoEstimado > 0 ? (trabalhoMechTotalReal / tempoLiquidoEstimado) : 0;
-490 |     const limiarPotencia = potRealEstimada / (atleta?.peso || 80);
-491 |     
-492 |     // Função sigmoide: Teto dinâmico máximo de 40% (1.40) com inflexão aos 3.5 W/kg
-493 |     const fatorEPOC = 1.0 + (0.40 / (1.0 + Math.exp(-1.5 * (limiarPotencia - 3.5))));
-494 | 
-495 |     let logDetalhes = "", lastPhase: string | null = null;
-496 |     let tempoTotalExecucaoEfetiva = 0;
-497 | 
-498 |     itemsProcessados.forEach(item => {
-499 |       if (item.phase !== lastPhase) {
-500 |         if (item.phase === 'buyin') logDetalhes += `<div style="margin-top:15px; padding:5px 10px; background:#2a2a2a; border-left:3px solid #f39c12;"><strong>▶ BUY-IN</strong></div>`;
-501 |         else if (item.phase === 'round') logDetalhes += `<div style="margin-top:15px; padding:5px 10px; background:#2a2a2a; border-left:3px solid var(--accent);"><strong>🔄 WOD PRINCIPAL</strong></div>`;
-502 |         else if (item.phase === 'cashout') logDetalhes += `<div style="margin-top:15px; padding:5px 10px; background:#2a2a2a; border-left:3px solid #2196f3;"><strong>⏹ CASH-OUT</strong></div>`;
-503 |         lastPhase = item.phase;
-504 |       }
-505 |       
-506 |       let tempoParaPotencia = item.tempoDefinitivo || 0; 
-507 |       const transEsp = item.transicaoEspecifica || 0;
-508 |       
-509 |       if (transEsp > 0) logDetalhes += `<span class="color-transition">&nbsp;&nbsp;↳ 🚶 Transição: ${transEsp.toFixed(0)}s</span><br/>`;
-510 |       
-511 |       const trabMetConcIsom = item.trabMetabolicoConcIsom || 0;
-512 |       const trabMetWork = item.trabMetabolicoWork || 0;
-513 |       const ergTime = item.ergTime || 0;
-514 |       
-515 |       if (tempoParaPotencia === 0) {
-516 |         if (metabolicoRestanteGlobal > 0 && tempoDisponivel > 0) {
-517 |           tempoParaPotencia = (trabMetConcIsom / metabolicoRestanteGlobal) * tempoDisponivel; 
-518 |         } else if (item.isErgo) {
-519 |           tempoParaPotencia = ergTime;
-520 |         }
-521 |         gastoMetabolicoLiquidoTotal += trabMetWork;
-522 |       }
-523 |       tempoTotalExecucaoEfetiva += tempoParaPotencia;
-524 | 
-525 |       const gastoBasalLinha = item.isCalorieErgo ? 0 : (bmrSec * tempoParaPotencia);
-526 |       const totalKcalLinha = (trabMetWork * fatorEPOC) + gastoBasalLinha;
-527 |       
-528 |       let strPot = "", strTmp = "";
-529 |       const trabMechLinha = item.trabMech || 0;
-530 |       const extraLog = item.infoExtraLog || '';
-531 | 
-532 |       if (tempoParaPotencia > 0) {
-533 |         strTmp = ` | 🕒 ${tempoParaPotencia.toFixed(0)}s`; 
-534 |         strPot = ` | <strong class="color-time">⚡ ${(trabMechLinha / tempoParaPotencia).toFixed(1)} W</strong>`;
-535 |       }
-536 |       
-537 |       logDetalhes += `• [${item.labelRounds}] ${item.reps}x ${item.nome}${extraLog}: <strong class="color-mech">${trabMechLinha.toFixed(0)} J</strong> | <strong class="color-metabolic">${totalKcalLinha.toFixed(1)} kCal</strong>${strTmp}${strPot}<br/>`;
-538 |     });
-539 | 
-540 |     const tempoLiquidoEsp = tAlvoSec - totalTransicaoGlobal;
-541 |     const potEsp = tempoLiquidoEsp > 0 ? (trabalhoMechTotalEsp / tempoLiquidoEsp) : 0;
-542 |     
-543 |     const refTempo = tempoTotalReferencia > 0 ? tempoTotalReferencia : tempoTotalExecucaoEfetiva;
-544 |     const tempoLiquidoReal = refTempo - totalTransicaoGlobal;
-545 |     const potReal = tempoLiquidoReal > 0 ? (trabalhoMechTotalReal / tempoLiquidoReal) : 0;
-546 |     
-547 |     const tempoTotalSessao = tempoTotalReferencia > 0 ? tempoTotalReferencia : (tempoTotalExecucaoEfetiva + totalTransicaoGlobal);
-548 |     const gastoBasalSessao = bmrSec * tempoTotalSessao;
-549 |     const gastoMetabolicoFinal = (gastoMetabolicoLiquidoTotal * fatorEPOC) + gastoBasalSessao;
-550 | 
-551 |     setResultado({ 
-552 |       trabalhoReal: trabalhoMechTotalReal || 0, 
-553 |       gastoMetabolico: gastoMetabolicoFinal || 0, 
-554 |       potenciaEsp: potEsp || 0, 
-555 |       potenciaReal: potReal || 0, 
-556 |       logDetalhesHTML: logDetalhes 
-557 |     });
-558 |   };
-559 | 
-560 |   if (loadingAuth) {
-561 |     return (
-562 |       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', backgroundColor: 'var(--bg-dark)' }}>
-563 |         <img 
-564 |           src="/loading.gif" 
-565 |           alt="Esquentando o motor biomecânico..." 
-566 |           style={{ width: '100%', maxWidth: '160px', height: 'auto', objectFit: 'contain' }} 
-567 |         />
-568 |       </div>
-569 |     );
-570 |   }
-571 | 
-572 |   if (!session) {
-573 |     return <LoginScreen onSignIn={signInWithGoogle} />;
-574 |   }
-575 | 
-576 |   if (isNewUser) {
-577 |     return (
-578 |       <OnboardingScreen 
-579 |         form={onboardForm} 
-580 |         setForm={setOnboardForm} 
-581 |         onSave={saveOnboardingProfile} 
-582 |         onSignOut={signOut} 
-583 |       />
-584 |     );
-585 |   }
-586 | 
-587 |   return (
-588 |     <div className="container" style={{ padding: 0, maxWidth: '1200px', margin: '0 auto' }}> 
-589 |       
-590 |       <Header 
-591 |         userProfile={userProfile}
-592 |         selectedAthleteId={selectedAthleteId}
-593 |         myAthletes={myAthletes}
-594 |         onAthleteChange={handleAthleteChange}
-595 |         onSignOut={signOut}
-596 |       />
-597 | 
-598 |       <div style={{ padding: '0 24px' }}>
-599 |         
-600 |         <Tabs activeTab={activeTab} setActiveTab={setActiveTab} />
-601 | 
-602 |         {activeTab === 'prescricao' && (
-603 |           <PrescricaoTab 
-604 |             nomeTreino={nomeTreino}
-605 |             setNomeTreino={setNomeTreino}
-606 |             tipoTreino={tipoTreino}
-607 |             setTipoTreino={setTipoTreino}
-608 |             tempoAlvo={tempoAlvo}
-609 |             setTempoAlvo={setTempoAlvo}
-610 |             roundsPrescritos={roundsPrescritos}
-611 |             setRoundsPrescritos={setRoundsPrescritos}
-612 |             lousa={lousa}
-613 |             addMovimento={addMovimento}
-614 |             removeMovimento={removeMovimento}
-615 |             updateMovimento={updateMovimento}
-616 |             handleDragStart={handleDragStart}
-617 |             handleDragEnter={handleDragEnter}
-618 |             handleDragEnd={handleDragEnd}
-619 |             currentShortCode={currentShortCode}
-620 |             currentTemplateId={currentTemplateId}
-621 |             importarWod={importarWod}
-622 |             compartilharWod={compartilharWod}
-623 |             clonarWod={clonarWod}
-624 |             salvarNoSupabase={salvarNoSupabase}
-625 |           />
-626 |         )}
-627 | 
-628 |         {activeTab === 'analise' && (
-629 |           <AnaliseTab
-630 |             tipoTreino={tipoTreino}
-631 |             tempoReal={tempoReal}
-632 |             setTempoReal={setTempoReal}
-633 |             roundsReal={roundsReal}
-634 |             setRoundsReal={setRoundsReal}
-635 |             isScaled={isScaled}
-636 |             setIsScaled={setIsScaled}
-637 |             lousa={lousa}
-638 |             timelineState={timelineState}
-639 |             handleTimelineChange={handleTimelineChange}
-640 |             processarWOD={processarWOD}
-641 |             resultado={resultado}
-642 |             gerarCardInstagram={gerarCardInstagram}
-643 |             roundsPrescritos={roundsPrescritos}
-644 |           />
-645 |         )}
-646 | 
-647 |         {activeTab === 'atleta' && (
-648 |           <AtletaTab
-649 |             selectedAthleteId={selectedAthleteId}
-650 |             atleta={atleta}
-651 |             setAtleta={setAtleta}
-652 |             salvarPerfilAtleta={salvarPerfilAtleta}
-653 |           />
-654 |         )}
-655 | 
-656 |         {activeTab === 'historico' && (
-657 |           <HistoricoTab
-658 |             selectedAthleteId={selectedAthleteId}
-659 |             userProfile={userProfile}
-660 |             sessionId={session?.user?.id}
-661 |             coachIdInput={coachIdInput}
-662 |             setCoachIdInput={setCoachIdInput}
-663 |             linkToCoach={linkToCoach}
-664 |             savedWods={savedWods}
-665 |             carregarDoSupabase={carregarDoSupabase}
-666 |           />
-667 |         )}
-668 |       
-669 |       </div> 
-670 | 
-671 |       <InstagramCard 
-672 |         tipoTreino={tipoTreino}
-673 |         tempoAlvo={tempoAlvo}
-674 |         roundsPrescritos={roundsPrescritos}
-675 |         lousaCount={lousa.length}
-676 |         tempoReal={tempoReal}
-677 |         isScaled={isScaled}
-678 |         resultado={resultado}
-679 |       />
-680 |       
-681 |     </div>
-682 |   );
-683 | }
+180 |     carregarDoSupabase(data);
+181 |   };
+182 | 
+183 |   const clonarWod = () => {
+184 |     if (!window.confirm('Deseja usar este treino como base para criar um NOVO WOD seu? O vínculo com o original será quebrado.')) return;
+185 |     
+186 |     setCurrentTemplateId(null);
+187 |     setCurrentShortCode(null);
+188 |     setCurrentResultId(null);
+189 |     
+190 |     alert('Pronto! O WOD foi desvinculado. Faça suas alterações e clique em "Salvar WOD".');
+191 |   };
+192 | 
+193 |   const carregarDoSupabase = (rec: any) => {
+194 |     setTipoTreino(rec.tipo_treino); 
+195 |     setTempoAlvo(rec.tempo_alvo); 
+196 |     setRoundsPrescritos(rec.rounds_prescritos);
+197 |     
+198 |     if (rec.rounds_real !== undefined) setRoundsReal(rec.rounds_real);
+199 |     if (rec.tempo_real) setTempoReal(rec.tempo_real);
+200 |     if (rec.atleta) setAtleta(rec.atleta);
+201 |     if (rec.movimentos) setLousa(rec.movimentos);
+202 |     if (rec.timeline) setTimelineState(rec.timeline);
+203 |     
+204 |     setCurrentTemplateId(rec.id);
+205 |     setCurrentShortCode(rec.short_code);
+206 |     
+207 |     setActiveTab('prescricao');
+208 | 
+209 |     if (rec.title && !rec.title.startsWith('Treino')) setNomeTreino(rec.title);
+210 |     else setNomeTreino('');
+211 |   };
+212 | 
+213 |   if (loadingAuth) {
+214 |     return (
+215 |       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', backgroundColor: 'var(--bg-dark)' }}>
+216 |         <img 
+217 |           src="/loading.gif" 
+218 |           alt="Esquentando o motor biomecânico..." 
+219 |           style={{ width: '100%', maxWidth: '160px', height: 'auto', objectFit: 'contain' }} 
+220 |         />
+221 |       </div>
+222 |     );
+223 |   }
+224 | 
+225 |   if (!session) {
+226 |     return <LoginScreen onSignIn={signInWithGoogle} />;
+227 |   }
+228 | 
+229 |   if (isNewUser) {
+230 |     return (
+231 |       <OnboardingScreen 
+232 |         form={onboardForm} 
+233 |         setForm={setOnboardForm} 
+234 |         onSave={saveOnboardingProfile} 
+235 |         onSignOut={signOut} 
+236 |       />
+237 |     );
+238 |   }
+239 | 
+240 |   return (
+241 |     <div className="container" style={{ padding: 0, maxWidth: '1200px', margin: '0 auto' }}> 
+242 |       
+243 |       <Header 
+244 |         userProfile={userProfile}
+245 |         selectedAthleteId={selectedAthleteId}
+246 |         myAthletes={myAthletes}
+247 |         onAthleteChange={handleAthleteChange}
+248 |         onSignOut={signOut}
+249 |       />
+250 | 
+251 |       <div style={{ padding: '0 24px' }}>
+252 |         
+253 |         <Tabs activeTab={activeTab} setActiveTab={setActiveTab} />
+254 | 
+255 |         {activeTab === 'prescricao' && (
+256 |           <PrescricaoTab 
+257 |             nomeTreino={nomeTreino}
+258 |             setNomeTreino={setNomeTreino}
+259 |             tipoTreino={tipoTreino}
+260 |             setTipoTreino={setTipoTreino}
+261 |             tempoAlvo={tempoAlvo}
+262 |             setTempoAlvo={setTempoAlvo}
+263 |             roundsPrescritos={roundsPrescritos}
+264 |             setRoundsPrescritos={setRoundsPrescritos}
+265 |             lousa={lousa}
+266 |             addMovimento={addMovimento}
+267 |             removeMovimento={removeMovimento}
+268 |             updateMovimento={updateMovimento}
+269 |             handleDragStart={handleDragStart}
+270 |             handleDragEnter={handleDragEnter}
+271 |             handleDragEnd={handleDragEnd}
+272 |             currentShortCode={currentShortCode}
+273 |             currentTemplateId={currentTemplateId}
+274 |             importarWod={importarWod}
+275 |             compartilharWod={compartilharWod}
+276 |             clonarWod={clonarWod}
+277 |             salvarNoSupabase={salvarNoSupabase}
+278 |           />
+279 |         )}
+280 | 
+281 |         {activeTab === 'analise' && (
+282 |           <AnaliseTab
+283 |             tipoTreino={tipoTreino}
+284 |             tempoReal={tempoReal}
+285 |             setTempoReal={setTempoReal}
+286 |             roundsReal={roundsReal}
+287 |             setRoundsReal={setRoundsReal}
+288 |             isScaled={isScaled}
+289 |             setIsScaled={setIsScaled}
+290 |             lousa={lousa}
+291 |             timelineState={timelineState}
+292 |             handleTimelineChange={handleTimelineChange}
+293 |             processarWOD={processarWOD}
+294 |             resultado={resultado}
+295 |             gerarCardInstagram={gerarCardInstagram}
+296 |             roundsPrescritos={roundsPrescritos}
+297 |           />
+298 |         )}
+299 | 
+300 |         {activeTab === 'atleta' && (
+301 |           <AtletaTab
+302 |             selectedAthleteId={selectedAthleteId}
+303 |             atleta={atleta}
+304 |             setAtleta={setAtleta}
+305 |             salvarPerfilAtleta={salvarPerfilAtleta}
+306 |           />
+307 |         )}
+308 | 
+309 |         {activeTab === 'historico' && (
+310 |           <HistoricoTab
+311 |             selectedAthleteId={selectedAthleteId}
+312 |             userProfile={userProfile}
+313 |             sessionId={session?.user?.id}
+314 |             coachIdInput={coachIdInput}
+315 |             setCoachIdInput={setCoachIdInput}
+316 |             linkToCoach={linkToCoach}
+317 |             savedWods={savedWods}
+318 |             carregarDoSupabase={carregarDoSupabase}
+319 |           />
+320 |         )}
+321 |       
+322 |       </div> 
+323 | 
+324 |       <InstagramCard 
+325 |         tipoTreino={tipoTreino}
+326 |         tempoAlvo={tempoAlvo}
+327 |         roundsPrescritos={roundsPrescritos}
+328 |         lousaCount={lousa.length}
+329 |         tempoReal={tempoReal}
+330 |         isScaled={isScaled}
+331 |         resultado={resultado}
+332 |       />
+333 |       
+334 |     </div>
+335 |   );
+336 | }
 
 --- FIM DO ARQUIVO: src\App.tsx ---
 
@@ -2220,6 +1876,416 @@ CONTEÚDO DOS ARQUIVOS
 166 | };
 
 --- FIM DO ARQUIVO: src\data\movements.ts ---
+
+========================================
+
+--- INÍCIO DO ARQUIVO: src\hooks\useAuth.ts ---
+  1 | import { useState, useEffect } from 'react';
+  2 | import { supabase } from '../lib/supabase';
+  3 | import type { Session } from '@supabase/supabase-js';
+  4 | import type { UserProfile, AtletaPerfil } from '../types';
+  5 | 
+  6 | export function useAuth() {
+  7 |   // === AUTENTICAÇÃO E PERFIL ===
+  8 |   const [session, setSession] = useState<Session | null>(null);
+  9 |   const [loadingAuth, setLoadingAuth] = useState(true);
+ 10 |   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+ 11 |   const [isNewUser, setIsNewUser] = useState(false);
+ 12 |   
+ 13 |   // === GESTÃO DE COACH E ATLETAS ===
+ 14 |   const [myAthletes, setMyAthletes] = useState<UserProfile[]>([]);
+ 15 |   const [selectedAthleteId, setSelectedAthleteId] = useState<string>('me');
+ 16 |   const [coachIdInput, setCoachIdInput] = useState('');
+ 17 | 
+ 18 |   const [atleta, setAtleta] = useState<AtletaPerfil>({
+ 19 |     estatura: 1.75, peso: 80, sexo: 'M', nivelTecnico: 'intermediario', envergadura: 1.75, perna: 0.85, bf: 15
+ 20 |   });
+ 21 | 
+ 22 |   const [onboardForm, setOnboardForm] = useState({
+ 23 |     full_name: '', apelido: '', is_coach: false, estatura: 1.75, peso: 80, sexo: 'M', 
+ 24 |     nivel_tecnico: 'intermediario', envergadura: 1.75, perna: 0.85, bf: 15, data_nascimento: ''
+ 25 |   });
+ 26 | 
+ 27 |   useEffect(() => {
+ 28 |     supabase.auth.getSession().then(({ data: { session } }) => {
+ 29 |       setSession(session);
+ 30 |       if (session) loadProfile(session.user);
+ 31 |       else setLoadingAuth(false);
+ 32 |     });
+ 33 | 
+ 34 |     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+ 35 |       setSession(session);
+ 36 |       if (session) loadProfile(session.user);
+ 37 |     });
+ 38 | 
+ 39 |     return () => subscription.unsubscribe();
+ 40 |   }, []);
+ 41 | 
+ 42 |   const signInWithGoogle = async () => {
+ 43 |     await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
+ 44 |   };
+ 45 | 
+ 46 |   const signOut = async () => {
+ 47 |     await supabase.auth.signOut();
+ 48 |     setUserProfile(null);
+ 49 |     // Para limpar corretamente a interface, retornamos ao 'me'
+ 50 |     setSelectedAthleteId('me');
+ 51 |   };
+ 52 | 
+ 53 |   const loadProfile = async (user: any) => {
+ 54 |     const { data, error } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+ 55 |     
+ 56 |     if (error || !data) {
+ 57 |       setIsNewUser(true); 
+ 58 |       setOnboardForm(prev => ({ 
+ 59 |         ...prev, 
+ 60 |         full_name: user.user_metadata?.full_name || user.user_metadata?.name || '' 
+ 61 |       }));
+ 62 |       setLoadingAuth(false);
+ 63 |       return;
+ 64 |     }
+ 65 | 
+ 66 |     setUserProfile(data as UserProfile);
+ 67 |     syncAtletaState(data);
+ 68 |     
+ 69 |     if (data.is_coach) {
+ 70 |       const { data: athletes } = await supabase.from('profiles').select('*').eq('coach_id', user.id);
+ 71 |       if (athletes) setMyAthletes(athletes as UserProfile[]);
+ 72 |     }
+ 73 |     
+ 74 |     setIsNewUser(false);
+ 75 |     setLoadingAuth(false);
+ 76 |   };
+ 77 | 
+ 78 |   const syncAtletaState = (prof: any) => {
+ 79 |     setAtleta({
+ 80 |       estatura: prof.estatura, peso: prof.peso, sexo: prof.sexo,
+ 81 |       nivelTecnico: prof.nivel_tecnico, envergadura: prof.envergadura,
+ 82 |       perna: prof.perna, bf: prof.bf, dataNascimento: prof.data_nascimento
+ 83 |     });
+ 84 |   };
+ 85 | 
+ 86 |   const saveOnboardingProfile = async () => {
+ 87 |     if (!session) return;
+ 88 |     if (!onboardForm.full_name || !onboardForm.data_nascimento) {
+ 89 |       alert('⚠️ Por favor, preencha seu Nome Completo e a Data de Nascimento. O motor precisa da sua idade exata para calibrar o desgaste metabólico.');
+ 90 |       return;
+ 91 |     }
+ 92 | 
+ 93 |     const payload = { id: session.user.id, ...onboardForm };
+ 94 |     const { error } = await supabase.from('profiles').insert([payload]);
+ 95 |     
+ 96 |     if (error) alert('Erro ao salvar perfil: ' + error.message);
+ 97 |     else loadProfile(session.user);
+ 98 |   };
+ 99 | 
+100 |   const linkToCoach = async () => {
+101 |     if (!session || !coachIdInput) return;
+102 |     const { error } = await supabase.from('profiles').update({ coach_id: coachIdInput }).eq('id', session.user.id);
+103 |     if (error) alert('Erro ao vincular coach. Verifique o ID.');
+104 |     else { alert('Coach vinculado com sucesso!'); loadProfile(session.user); }
+105 |   };
+106 | 
+107 |   const salvarPerfilAtleta = async () => {
+108 |     if (!session) return;
+109 |     
+110 |     const targetId = selectedAthleteId === 'me' ? session.user.id : selectedAthleteId;
+111 |     const payload = {
+112 |       estatura: atleta.estatura, peso: atleta.peso, sexo: atleta.sexo,
+113 |       nivel_tecnico: atleta.nivelTecnico, envergadura: atleta.envergadura,
+114 |       perna: atleta.perna, bf: atleta.bf, data_nascimento: atleta.dataNascimento
+115 |     };
+116 | 
+117 |     const { error } = await supabase.from('profiles').update(payload).eq('id', targetId);
+118 | 
+119 |     if (error) {
+120 |       alert('Erro ao atualizar perfil oficial: ' + error.message);
+121 |     } else {
+122 |       alert('Perfil oficial atualizado com sucesso no banco de dados!');
+123 |       if (targetId === session.user.id) {
+124 |         loadProfile(session.user);
+125 |       } else {
+126 |         supabase.from('profiles').select('*').eq('coach_id', session.user.id)
+127 |           .then(({ data }) => { if (data) setMyAthletes(data as UserProfile[]); });
+128 |       }
+129 |     }
+130 |   };
+131 | 
+132 |   const handleAthleteChange = (targetId: string) => {
+133 |     setSelectedAthleteId(targetId);
+134 |     if (targetId === 'me' && userProfile) {
+135 |       syncAtletaState(userProfile);
+136 |     } else {
+137 |       const athlete = myAthletes.find(a => a.id === targetId);
+138 |       if (athlete) syncAtletaState(athlete);
+139 |     }
+140 |   };
+141 | 
+142 |   // Retornamos tudo que o App.tsx vai precisar
+143 |   return {
+144 |     session, loadingAuth, userProfile, isNewUser,
+145 |     myAthletes, selectedAthleteId, coachIdInput, setCoachIdInput,
+146 |     atleta, setAtleta, onboardForm, setOnboardForm,
+147 |     signInWithGoogle, signOut, saveOnboardingProfile,
+148 |     linkToCoach, salvarPerfilAtleta, handleAthleteChange
+149 |   };
+150 | }
+
+--- FIM DO ARQUIVO: src\hooks\useAuth.ts ---
+
+========================================
+
+--- INÍCIO DO ARQUIVO: src\hooks\usePhysics.ts ---
+  1 | import { useState } from 'react';
+  2 | import { movimentosDB } from '../data/movements';
+  3 | import { calcularFisica, parseClockTime } from '../utils/physicsEngine';
+  4 | import type { 
+  5 |   ItemLousa, Modalidade, AtletaPerfil, 
+  6 |   TimelineStateItem, ResultadoProcessamento 
+  7 | } from '../types';
+  8 | 
+  9 | interface UsePhysicsProps {
+ 10 |   tipoTreino: Modalidade;
+ 11 |   tempoAlvo: string;
+ 12 |   tempoReal: string;
+ 13 |   roundsPrescritos: number;
+ 14 |   roundsReal: number;
+ 15 |   lousa: ItemLousa[];
+ 16 |   atleta: AtletaPerfil;
+ 17 | }
+ 18 | 
+ 19 | export function usePhysics({
+ 20 |   tipoTreino, tempoAlvo, tempoReal, roundsPrescritos, roundsReal, lousa, atleta
+ 21 | }: UsePhysicsProps) {
+ 22 |   
+ 23 |   const [timelineState, setTimelineState] = useState<Record<string, TimelineStateItem>>({});
+ 24 |   const [resultado, setResultado] = useState<ResultadoProcessamento | null>(null);
+ 25 | 
+ 26 |   const handleTimelineChange = (rowId: string, field: keyof TimelineStateItem, val: any) => {
+ 27 |     setTimelineState(prev => ({ ...prev, [rowId]: { ...(prev[rowId] || {}), [field]: val } }));
+ 28 |   };
+ 29 | 
+ 30 |   const processarWOD = () => {
+ 31 |     const rawTempoAlvo = parseClockTime(tempoAlvo);
+ 32 |     const tAlvoSec = rawTempoAlvo > 0 ? rawTempoAlvo : 0;
+ 33 |     const rawTempoReal = parseClockTime(tempoReal);
+ 34 |     const tRealSec = rawTempoReal > 0 ? rawTempoReal : 0;
+ 35 | 
+ 36 |     const ffm = (atleta?.peso || 80) * (1.0 - ((atleta?.bf || 15) / 100.0));
+ 37 |     const bmrDia = 370.0 + (21.6 * ffm);
+ 38 |     const bmrSec = bmrDia / 86400.0;
+ 39 | 
+ 40 |     let trabalhoMechTotalEsp = 0;
+ 41 |     lousa.forEach(m => {
+ 42 |       const cfg = movimentosDB[m.movId];
+ 43 |       if (!cfg) return;
+ 44 |       const mult = (m.phase === 'round') ? (roundsPrescritos || 1) : 1;
+ 45 |       const calc = calcularFisica(m.movId, cfg, m.reps, m.carga, m.extraVal, m.extraVal2 || '', atleta, m.tecnica, 0);
+ 46 |       const trab = calc?.trabMech || 0;
+ 47 |       trabalhoMechTotalEsp += trab * mult;
+ 48 |     });
+ 49 | 
+ 50 |     let roundsTimeline = (tipoTreino === 'FOR_TIME') ? (roundsPrescritos || 1) : Math.ceil(roundsReal || 1);
+ 51 |     if (roundsTimeline < 1) roundsTimeline = 1;
+ 52 | 
+ 53 |     const flatItems: any[] = [];
+ 54 |     lousa.filter(m => m.phase === 'buyin').forEach(m => flatItems.push({ rowId: `${m.originalId}-R0`, movId: m.movId, reps: m.reps, carga: m.carga, extraVal: m.extraVal, extraVal2: m.extraVal2, phase: 'buyin', tecnica: m.tecnica, badgeText: 'Buy-in', badgeClass: 'badge-buyin' }));
+ 55 |     for (let r = 1; r <= roundsTimeline; r++) lousa.filter(m => m.phase === 'round').forEach(m => flatItems.push({ rowId: `${m.originalId}-R${r}`, movId: m.movId, reps: m.reps, carga: m.carga, extraVal: m.extraVal, extraVal2: m.extraVal2, phase: 'round', tecnica: m.tecnica, badgeText: `R ${r}`, badgeClass: '' }));
+ 56 |     lousa.filter(m => m.phase === 'cashout').forEach(m => flatItems.push({ rowId: `${m.originalId}-R99`, movId: m.movId, reps: m.reps, carga: m.carga, extraVal: m.extraVal, extraVal2: m.extraVal2, phase: 'cashout', tecnica: m.tecnica, badgeText: 'Cash-out', badgeClass: 'badge-cashout' }));
+ 57 | 
+ 58 |     let somaTempoDeterminadoGlobal = 0, totalTransicaoGlobal = 0, trabalhoMechTotalReal = 0, gastoMetabolicoLiquidoTotal = 0, metabolicoRestanteGlobal = 0, lastEndSec = -1;
+ 59 |     let tempoDecorridoEstimado = 0; 
+ 60 |     
+ 61 |     const itemsProcessados: any[] = [];
+ 62 | 
+ 63 |     flatItems.forEach(row => {
+ 64 |       const config = movimentosDB[row.movId] || movimentosDB['air_squat']; 
+ 65 |       const state = timelineState[row.rowId] || { reps: row.reps, start: '', end: '' };
+ 66 |       const repsEffective = state.reps !== undefined ? Number(state.reps) : (row.reps || 0);
+ 67 |       
+ 68 |       const cargaEffective = state.carga !== undefined ? Number(state.carga) : (row.carga || 0);
+ 69 | 
+ 70 |       const startSec = parseClockTime(state.start);
+ 71 |       const endSec = parseClockTime(state.end);
+ 72 |       const tempoDefinitivoTemp = (startSec >= 0 && endSec > startSec) ? (endSec - startSec) : 0;
+ 73 |       
+ 74 |       const calc = calcularFisica(row.movId, config, repsEffective, cargaEffective, row.extraVal, row.extraVal2, atleta, row.tecnica, tempoDefinitivoTemp, tempoDecorridoEstimado) || {};
+ 75 | 
+ 76 |       const trabMetabolicoWork = calc.trabMetabolicoWork || 0;
+ 77 |       const trabMetabolicoConcIsom = calc.trabMetabolicoConcIsom || 0;
+ 78 |       const trabMech = calc.trabMech || 0;
+ 79 | 
+ 80 |       let transicaoEspecifica = 0;
+ 81 |       if (tempoDefinitivoTemp > 0) {
+ 82 |         if (lastEndSec >= 0 && startSec >= lastEndSec) { transicaoEspecifica = startSec - lastEndSec; totalTransicaoGlobal += transicaoEspecifica; }
+ 83 |         lastEndSec = endSec; somaTempoDeterminadoGlobal += tempoDefinitivoTemp; gastoMetabolicoLiquidoTotal += trabMetabolicoWork;
+ 84 |       } else { 
+ 85 |         lastEndSec = -1; metabolicoRestanteGlobal += trabMetabolicoConcIsom; 
+ 86 |       }
+ 87 |       
+ 88 |       const tempoDesgasteIteracao = tempoDefinitivoTemp > 0 ? tempoDefinitivoTemp : (repsEffective * 3.0);
+ 89 |       tempoDecorridoEstimado += (tempoDesgasteIteracao + transicaoEspecifica);
+ 90 | 
+ 91 |       trabalhoMechTotalReal += trabMech;
+ 92 |       itemsProcessados.push({ 
+ 93 |         ...calc, 
+ 94 |         nome: config.nome || row.movId, 
+ 95 |         reps: repsEffective, 
+ 96 |         labelRounds: row.badgeText, 
+ 97 |         tempoDefinitivo: tempoDefinitivoTemp, 
+ 98 |         transicaoEspecifica: tempoDefinitivoTemp > 0 && startSec >= lastEndSec ? startSec - lastEndSec : 0, 
+ 99 |         phase: row.phase 
+100 |       });
+101 |     });
+102 | 
+103 |     const tempoTotalReferencia = (tipoTreino === 'FOR_TIME' && tRealSec > 0) ? tRealSec : tAlvoSec;
+104 |     const tempoDisponivel = Math.max(0, tempoTotalReferencia - somaTempoDeterminadoGlobal - totalTransicaoGlobal);
+105 |     
+106 |     const refTempoEstimado = tempoTotalReferencia > 0 ? tempoTotalReferencia : tAlvoSec;
+107 |     const tempoLiquidoEstimado = Math.max(1, refTempoEstimado - totalTransicaoGlobal);
+108 |     const potRealEstimada = tempoLiquidoEstimado > 0 ? (trabalhoMechTotalReal / tempoLiquidoEstimado) : 0;
+109 |     const limiarPotencia = potRealEstimada / (atleta?.peso || 80);
+110 |     
+111 |     const fatorEPOC = 1.0 + (0.40 / (1.0 + Math.exp(-1.5 * (limiarPotencia - 3.5))));
+112 | 
+113 |     let logDetalhes = "", lastPhase: string | null = null;
+114 |     let tempoTotalExecucaoEfetiva = 0;
+115 | 
+116 |     itemsProcessados.forEach(item => {
+117 |       if (item.phase !== lastPhase) {
+118 |         if (item.phase === 'buyin') logDetalhes += `<div style="margin-top:15px; padding:5px 10px; background:#2a2a2a; border-left:3px solid #f39c12;"><strong>▶ BUY-IN</strong></div>`;
+119 |         else if (item.phase === 'round') logDetalhes += `<div style="margin-top:15px; padding:5px 10px; background:#2a2a2a; border-left:3px solid var(--accent);"><strong>🔄 WOD PRINCIPAL</strong></div>`;
+120 |         else if (item.phase === 'cashout') logDetalhes += `<div style="margin-top:15px; padding:5px 10px; background:#2a2a2a; border-left:3px solid #2196f3;"><strong>⏹ CASH-OUT</strong></div>`;
+121 |         lastPhase = item.phase;
+122 |       }
+123 |       
+124 |       let tempoParaPotencia = item.tempoDefinitivo || 0; 
+125 |       const transEsp = item.transicaoEspecifica || 0;
+126 |       
+127 |       if (transEsp > 0) logDetalhes += `<span class="color-transition">&nbsp;&nbsp;↳ 🚶 Transição: ${transEsp.toFixed(0)}s</span><br/>`;
+128 |       
+129 |       const trabMetConcIsom = item.trabMetabolicoConcIsom || 0;
+130 |       const trabMetWork = item.trabMetabolicoWork || 0;
+131 |       const ergTime = item.ergTime || 0;
+132 |       
+133 |       if (tempoParaPotencia === 0) {
+134 |         if (metabolicoRestanteGlobal > 0 && tempoDisponivel > 0) {
+135 |           tempoParaPotencia = (trabMetConcIsom / metabolicoRestanteGlobal) * tempoDisponivel; 
+136 |         } else if (item.isErgo) {
+137 |           tempoParaPotencia = ergTime;
+138 |         }
+139 |         gastoMetabolicoLiquidoTotal += trabMetWork;
+140 |       }
+141 |       tempoTotalExecucaoEfetiva += tempoParaPotencia;
+142 | 
+143 |       const gastoBasalLinha = item.isCalorieErgo ? 0 : (bmrSec * tempoParaPotencia);
+144 |       const totalKcalLinha = (trabMetWork * fatorEPOC) + gastoBasalLinha;
+145 |       
+146 |       let strPot = "", strTmp = "";
+147 |       const trabMechLinha = item.trabMech || 0;
+148 |       const extraLog = item.infoExtraLog || '';
+149 | 
+150 |       if (tempoParaPotencia > 0) {
+151 |         strTmp = ` | 🕒 ${tempoParaPotencia.toFixed(0)}s`; 
+152 |         strPot = ` | <strong class="color-time">⚡ ${(trabMechLinha / tempoParaPotencia).toFixed(1)} W</strong>`;
+153 |       }
+154 |       
+155 |       logDetalhes += `• [${item.labelRounds}] ${item.reps}x ${item.nome}${extraLog}: <strong class="color-mech">${trabMechLinha.toFixed(0)} J</strong> | <strong class="color-metabolic">${totalKcalLinha.toFixed(1)} kCal</strong>${strTmp}${strPot}<br/>`;
+156 |     });
+157 | 
+158 |     const tempoLiquidoEsp = tAlvoSec - totalTransicaoGlobal;
+159 |     const potEsp = tempoLiquidoEsp > 0 ? (trabalhoMechTotalEsp / tempoLiquidoEsp) : 0;
+160 |     
+161 |     const refTempo = tempoTotalReferencia > 0 ? tempoTotalReferencia : tempoTotalExecucaoEfetiva;
+162 |     const tempoLiquidoReal = refTempo - totalTransicaoGlobal;
+163 |     const potReal = tempoLiquidoReal > 0 ? (trabalhoMechTotalReal / tempoLiquidoReal) : 0;
+164 |     
+165 |     const tempoTotalSessao = tempoTotalReferencia > 0 ? tempoTotalReferencia : (tempoTotalExecucaoEfetiva + totalTransicaoGlobal);
+166 |     const gastoBasalSessao = bmrSec * tempoTotalSessao;
+167 |     const gastoMetabolicoFinal = (gastoMetabolicoLiquidoTotal * fatorEPOC) + gastoBasalSessao;
+168 | 
+169 |     setResultado({ 
+170 |       trabalhoReal: trabalhoMechTotalReal || 0, 
+171 |       gastoMetabolico: gastoMetabolicoFinal || 0, 
+172 |       potenciaEsp: potEsp || 0, 
+173 |       potenciaReal: potReal || 0, 
+174 |       logDetalhesHTML: logDetalhes 
+175 |     });
+176 |   };
+177 | 
+178 |   return {
+179 |     timelineState, setTimelineState, handleTimelineChange,
+180 |     resultado, setResultado, processarWOD
+181 |   };
+182 | }
+
+--- FIM DO ARQUIVO: src\hooks\usePhysics.ts ---
+
+========================================
+
+--- INÍCIO DO ARQUIVO: src\hooks\useWodBuilder.ts ---
+  1 | import { useState, useRef } from 'react';
+  2 | import type { ItemLousa } from '../types';
+  3 | 
+  4 | export function useWodBuilder() {
+  5 |   const [lousa, setLousa] = useState<ItemLousa[]>([
+  6 |     { originalId: crypto.randomUUID(), movId: 'thruster', phase: 'round', reps: 21, carga: 43, tecnica: 'tng', extraVal: '' }
+  7 |   ]);
+  8 | 
+  9 |   // === REFERÊNCIAS DO DRAG AND DROP ===
+ 10 |   const dragItem = useRef<number | null>(null);
+ 11 |   const dragOverItem = useRef<number | null>(null);
+ 12 | 
+ 13 |   const handleDragStart = (index: number) => { dragItem.current = index; };
+ 14 |   const handleDragEnter = (index: number) => { dragOverItem.current = index; };
+ 15 |   
+ 16 |   const handleDragEnd = (e: React.DragEvent<HTMLDivElement>) => {
+ 17 |     e.currentTarget.style.opacity = '1';
+ 18 |     if (dragItem.current !== null && dragOverItem.current !== null && dragItem.current !== dragOverItem.current) {
+ 19 |       const newLousa = [...lousa];
+ 20 |       const draggedItemContent = newLousa[dragItem.current];
+ 21 |       newLousa.splice(dragItem.current, 1);
+ 22 |       newLousa.splice(dragOverItem.current, 0, draggedItemContent);
+ 23 |       setLousa(newLousa);
+ 24 |     }
+ 25 |     dragItem.current = null;
+ 26 |     dragOverItem.current = null;
+ 27 |   };
+ 28 | 
+ 29 |   // === CONTROLE DE MOVIMENTOS ===
+ 30 |   const addMovimento = (baseId: string | null = null) => {
+ 31 |     const newId = crypto.randomUUID();
+ 32 |     let newItem: ItemLousa = { originalId: newId, movId: 'air_squat', phase: 'round', reps: 10, carga: 0, tecnica: 'tng', extraVal: '', extraVal2: '' };
+ 33 |     
+ 34 |     if (baseId) {
+ 35 |       const idx = lousa.findIndex(m => m.originalId === baseId);
+ 36 |       if (idx !== -1) {
+ 37 |         newItem = { ...lousa[idx], originalId: newId };
+ 38 |         const updated = [...lousa];
+ 39 |         updated.splice(idx + 1, 0, newItem);
+ 40 |         setLousa(updated);
+ 41 |         return;
+ 42 |       }
+ 43 |     }
+ 44 |     setLousa([...lousa, newItem]);
+ 45 |   };
+ 46 | 
+ 47 |   const removeMovimento = (id: string) => {
+ 48 |     setLousa(prev => prev.filter(m => m.originalId !== id));
+ 49 |   };
+ 50 | 
+ 51 |   const updateMovimento = (id: string, field: keyof ItemLousa, val: any) => {
+ 52 |     setLousa(prev => prev.map(item => item.originalId === id ? { ...item, [field]: val } : item));
+ 53 |   };
+ 54 | 
+ 55 |   return {
+ 56 |     lousa, setLousa,
+ 57 |     addMovimento, removeMovimento, updateMovimento,
+ 58 |     handleDragStart, handleDragEnter, handleDragEnd
+ 59 |   };
+ 60 | }
+
+--- FIM DO ARQUIVO: src\hooks\useWodBuilder.ts ---
 
 ========================================
 
