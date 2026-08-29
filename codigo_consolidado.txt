@@ -883,96 +883,78 @@ CONTEÚDO DOS ARQUIVOS
  20 |   resultado
  21 | }: InstagramCardProps) {
  22 |   return (
- 23 |     <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
- 24 |       <div 
- 25 |         id="instagram-card-export" 
- 26 |         style={{
- 27 |           width: '420px', 
- 28 |           backgroundColor: '#111315',
- 29 |           color: '#fff',
- 30 |           fontFamily: 'sans-serif',
- 31 |           padding: '40px 20px',
- 32 |           boxSizing: 'border-box',
- 33 |           display: 'flex',
- 34 |           flexDirection: 'column',
- 35 |           gap: '20px',
- 36 |           backgroundImage: 'linear-gradient(to bottom, #111315, #1a1a1a)'
- 37 |         }}
- 38 |       >
- 39 |         <div style={{ textAlign: 'center' }}>
- 40 |           <h1 style={{ margin: 0, fontSize: '32px', fontStyle: 'italic', fontWeight: '900', letterSpacing: '1px' }}>DynaWOD</h1>
- 41 |           <p style={{ margin: '5px 0 0 0', color: '#8a8d94', fontSize: '13px', fontWeight: 'bold' }}>V2 - RESUMO DE TREINO</p>
- 42 |           <p style={{ margin: '2px 0 0 0', color: '#8a8d94', fontSize: '12px' }}>Data: {new Date().toLocaleDateString('pt-BR')}</p>
- 43 |         </div>
- 44 | 
- 45 |         <div style={{ border: '2px solid #26272b', borderRadius: '12px', padding: '20px', backgroundColor: '#181a1e' }}>
- 46 |           <h2 style={{ margin: '0 0 12px 0', fontSize: '20px', display: 'flex', alignItems: 'baseline', gap: '8px' }}>
- 47 |             Prescription <span style={{ fontSize: '11px', color: '#8a8d94', fontWeight: 'normal' }}>(PLANTA BAIXA DO WOD)</span>
- 48 |           </h2>
- 49 |           <div style={{ color: '#d1d5db', fontSize: '16px', lineHeight: '1.6' }}>
- 50 |             <strong style={{ color: '#fff', fontSize: '18px' }}>TREINO {tipoTreino.replace('_', ' ')}</strong><br />
- 51 |             TIME CAP: <span style={{ color: '#fff' }}>{tempoAlvo || 'N/A'}</span> • RNDS: <span style={{ color: '#fff' }}>{roundsPrescritos || 'N/A'}</span><br />
- 52 |             <span style={{ color: '#8a8d94', fontSize: '14px' }}>Movimentos Cadastrados: {lousaCount}</span>
- 53 |           </div>
- 54 |         </div>
- 55 | 
- 56 |         <div style={{ border: '2px solid var(--dyna-red, #FF2B3D)', borderRadius: '12px', padding: '25px 15px', backgroundColor: '#181a1e', boxShadow: '0 0 25px rgba(255, 43, 61, 0.15)', position: 'relative', marginTop: '10px' }}>
- 57 |           <h2 style={{ margin: 0, fontSize: '24px', position: 'absolute', top: '-15px', backgroundColor: '#181a1e', padding: '0 10px', color: 'var(--dyna-red, #FF2B3D)' }}>
- 58 |             Resultado
- 59 |           </h2>
- 60 |           
- 61 |           <div style={{ textAlign: 'center', marginBottom: '25px', marginTop: '15px' }}>
- 62 |             <span style={{ fontSize: '16px', color: '#8a8d94', fontWeight: 'bold' }}>TEMPO TOTAL:</span>
- 63 |             <div style={{ fontSize: '54px', fontWeight: '900', margin: '5px 0', textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>
- 64 |               {tempoReal || '00:00'}
- 65 |             </div>
- 66 |             
- 67 |             {isScaled ? (
- 68 |               <span style={{ backgroundColor: '#FF2B3D', color: '#fff', padding: '6px 16px', borderRadius: '20px', fontSize: '16px', fontWeight: '900', letterSpacing: '1px' }}>STATUS: SCALED</span>
- 69 |             ) : (
- 70 |               <span style={{ backgroundColor: '#22c55e', color: '#fff', padding: '6px 16px', borderRadius: '20px', fontSize: '16px', fontWeight: '900', letterSpacing: '1px' }}>STATUS: RX</span>
- 71 |             )}
- 72 |           </div>
- 73 | 
- 74 |           <div style={{ display: 'flex', gap: '10px', justifyContent: 'space-between' }}>
- 75 |             <div style={{ flex: 1, backgroundColor: '#111315', padding: '15px 5px', borderRadius: '10px', textAlign: 'center', border: '1px solid #26272b' }}>
- 76 |               <div style={{ fontSize: '11px', color: '#8a8d94', marginBottom: '10px', fontWeight: 'bold' }}>POTÊNCIA MÉDIA</div>
- 77 |               
- 78 |               <svg width="70" height="35" viewBox="0 0 100 50" style={{ marginBottom: '8px' }}>
- 79 |                 <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="#26272b" strokeWidth="10" />
- 80 |                 <path d="M 10 50 A 40 40 0 0 1 70 20" fill="none" stroke="#FF2B3D" strokeWidth="10" strokeLinecap="round" />
- 81 |                 <line x1="50" y1="50" x2="65" y2="25" stroke="#fff" strokeWidth="3" strokeLinecap="round" />
- 82 |                 <circle cx="50" cy="50" r="4" fill="#fff" />
- 83 |               </svg>
- 84 | 
- 85 |               <div style={{ fontSize: '22px', fontWeight: '900' }}>
- 86 |                 {resultado ? resultado.potenciaReal.toFixed(0) : 0} <span style={{ fontSize: '12px', fontWeight: 'normal', color: '#8a8d94' }}>W</span>
- 87 |               </div>
- 88 |             </div>
- 89 |             
- 90 |             <div style={{ flex: 1, backgroundColor: '#111315', padding: '15px 5px', borderRadius: '10px', textAlign: 'center', border: '1px solid #26272b' }}>
- 91 |               <div style={{ fontSize: '11px', color: '#8a8d94', marginBottom: '10px', fontWeight: 'bold' }}>GASTO ENERGÉTICO</div>
- 92 |               
- 93 |               <svg width="70" height="35" viewBox="0 0 100 50" style={{ marginBottom: '8px' }}>
- 94 |                 <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="#26272b" strokeWidth="10" />
- 95 |                 <path d="M 10 50 A 40 40 0 0 1 85 30" fill="none" stroke="#ff9800" strokeWidth="10" strokeLinecap="round" />
- 96 |                 <path d="M 50 45 Q 40 45 45 30 Q 50 20 50 15 Q 50 25 55 30 Q 60 45 50 45" fill="#ff9800" />
- 97 |               </svg>
- 98 | 
- 99 |               <div style={{ fontSize: '22px', fontWeight: '900' }}>
-100 |                 {resultado ? resultado.gastoMetabolico.toFixed(0) : 0} <span style={{ fontSize: '12px', fontWeight: 'normal', color: '#8a8d94' }}>kcal</span>
-101 |               </div>
-102 |             </div>
-103 |           </div>
-104 |         </div>
-105 |         
-106 |         <div style={{ textAlign: 'center', color: '#52525b', fontSize: '12px', marginTop: '10px' }}>
-107 |           Gerado pelo aplicativo DynaWOD - dynawod.com
-108 |         </div>
-109 |       </div>
-110 |     </div>
-111 |   );
-112 | }
+ 23 |     <div className="insta-export-wrapper">
+ 24 |       <div id="instagram-card-export" className="insta-card">
+ 25 |         
+ 26 |         <div className="insta-header">
+ 27 |           <h1 className="insta-title">DynaWOD</h1>
+ 28 |           <p className="insta-subtitle">V2 - RESUMO DE TREINO</p>
+ 29 |           <p className="insta-date">Data: {new Date().toLocaleDateString('pt-BR')}</p>
+ 30 |         </div>
+ 31 | 
+ 32 |         <div className="insta-section">
+ 33 |           <h2 className="insta-section-title">
+ 34 |             Prescription <span className="insta-section-subtitle">(PLANTA BAIXA DO WOD)</span>
+ 35 |           </h2>
+ 36 |           <div className="insta-prescription-content">
+ 37 |             <strong className="insta-highlight-large">TREINO {tipoTreino.replace('_', ' ')}</strong><br />
+ 38 |             TIME CAP: <span className="insta-highlight font-mono">{tempoAlvo || 'N/A'}</span> • RNDS: <span className="insta-highlight font-mono">{roundsPrescritos || 'N/A'}</span><br />
+ 39 |             <span className="insta-text-muted">Movimentos Cadastrados: <span className="font-mono">{lousaCount}</span></span>
+ 40 |           </div>
+ 41 |         </div>
+ 42 | 
+ 43 |         <div className="insta-result-section">
+ 44 |           <h2 className="insta-result-title">Resultado</h2>
+ 45 |           
+ 46 |           <div className="insta-time-container">
+ 47 |             <span className="insta-time-label">TEMPO TOTAL:</span>
+ 48 |             <div className="insta-time-value">
+ 49 |               {tempoReal || '00:00'}
+ 50 |             </div>
+ 51 |             
+ 52 |             {isScaled ? (
+ 53 |               <span className="insta-status insta-status-scaled">STATUS: SCALED</span>
+ 54 |             ) : (
+ 55 |               <span className="insta-status insta-status-rx">STATUS: RX</span>
+ 56 |             )}
+ 57 |           </div>
+ 58 | 
+ 59 |           <div className="insta-metrics-row">
+ 60 |             <div className="insta-metric-box">
+ 61 |               <div className="insta-metric-title">POTÊNCIA MÉDIA</div>
+ 62 |               {/* O SVG continua com estilos inline pois são atributos de desenho vetorial */}
+ 63 |               <svg width="70" height="35" viewBox="0 0 100 50" style={{ marginBottom: '8px' }}>
+ 64 |                 <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="#26272b" strokeWidth="10" />
+ 65 |                 <path d="M 10 50 A 40 40 0 0 1 70 20" fill="none" stroke="#FF2B3D" strokeWidth="10" strokeLinecap="round" />
+ 66 |                 <line x1="50" y1="50" x2="65" y2="25" stroke="#fff" strokeWidth="3" strokeLinecap="round" />
+ 67 |                 <circle cx="50" cy="50" r="4" fill="#fff" />
+ 68 |               </svg>
+ 69 |               <div className="insta-metric-value">
+ 70 |                 {resultado ? resultado.potenciaReal.toFixed(0) : 0} <span className="insta-metric-unit">W</span>
+ 71 |               </div>
+ 72 |             </div>
+ 73 |             
+ 74 |             <div className="insta-metric-box">
+ 75 |               <div className="insta-metric-title">GASTO ENERGÉTICO</div>
+ 76 |               <svg width="70" height="35" viewBox="0 0 100 50" style={{ marginBottom: '8px' }}>
+ 77 |                 <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="#26272b" strokeWidth="10" />
+ 78 |                 <path d="M 10 50 A 40 40 0 0 1 85 30" fill="none" stroke="#ff9800" strokeWidth="10" strokeLinecap="round" />
+ 79 |                 <path d="M 50 45 Q 40 45 45 30 Q 50 20 50 15 Q 50 25 55 30 Q 60 45 50 45" fill="#ff9800" />
+ 80 |               </svg>
+ 81 |               <div className="insta-metric-value">
+ 82 |                 {resultado ? resultado.gastoMetabolico.toFixed(0) : 0} <span className="insta-metric-unit">kcal</span>
+ 83 |               </div>
+ 84 |             </div>
+ 85 |           </div>
+ 86 |         </div>
+ 87 |         
+ 88 |         <div className="insta-footer">
+ 89 |           Gerado pelo aplicativo DynaWOD - dynawod.com
+ 90 |         </div>
+ 91 |       </div>
+ 92 |     </div>
+ 93 |   );
+ 94 | }
 
 --- FIM DO ARQUIVO: src\components\export\InstagramCard.tsx ---
 
@@ -2582,7 +2564,7 @@ CONTEÚDO DOS ARQUIVOS
 317 |     border-bottom: 1px solid #333;
 318 |   }
 319 | 
-320 |   /* --- INSTAGRAM EXPORT CARD --- */
+320 | /* --- INSTAGRAM EXPORT CARD --- */
 321 | .insta-export-wrapper {
 322 |   position: absolute;
 323 |   left: -9999px;
@@ -2593,7 +2575,7 @@ CONTEÚDO DOS ARQUIVOS
 328 |   width: 420px;
 329 |   background-color: #111315;
 330 |   color: #fff;
-331 |   font-family: sans-serif;
+331 |   font-family: 'Roboto', sans-serif;
 332 |   padding: 40px 20px;
 333 |   box-sizing: border-box;
 334 |   display: flex;
@@ -2625,144 +2607,153 @@ CONTEÚDO DOS ARQUIVOS
 360 |   margin: 2px 0 0 0;
 361 |   color: #8a8d94;
 362 |   font-size: 12px;
-363 | }
-364 | 
-365 | .insta-section {
-366 |   border: 2px solid #26272b;
-367 |   border-radius: 12px;
-368 |   padding: 20px;
-369 |   background-color: #181a1e;
-370 | }
-371 | 
-372 | .insta-section-title {
-373 |   margin: 0 0 12px 0;
-374 |   font-size: 20px;
-375 |   display: flex;
-376 |   align-items: baseline;
-377 |   gap: 8px;
-378 | }
-379 | 
-380 | .insta-section-subtitle {
-381 |   font-size: 11px;
-382 |   color: #8a8d94;
-383 |   font-weight: normal;
-384 | }
-385 | 
-386 | .insta-prescription-content {
-387 |   color: #d1d5db;
-388 |   font-size: 16px;
-389 |   line-height: 1.6;
-390 | }
-391 | 
-392 | .insta-highlight {
-393 |   color: #fff;
-394 | }
-395 | 
-396 | .insta-highlight-large {
-397 |   color: #fff;
-398 |   font-size: 18px;
-399 | }
-400 | 
-401 | .insta-text-muted {
-402 |   color: #8a8d94;
-403 |   font-size: 14px;
-404 | }
-405 | 
-406 | .insta-result-section {
-407 |   border: 2px solid var(--dyna-red, #FF2B3D);
-408 |   border-radius: 12px;
-409 |   padding: 25px 15px;
-410 |   background-color: #181a1e;
-411 |   box-shadow: 0 0 25px rgba(255, 43, 61, 0.15);
-412 |   position: relative;
-413 |   margin-top: 10px;
-414 | }
-415 | 
-416 | .insta-result-title {
-417 |   margin: 0;
-418 |   font-size: 24px;
-419 |   position: absolute;
-420 |   top: -15px;
-421 |   background-color: #181a1e;
-422 |   padding: 0 10px;
-423 |   color: var(--dyna-red, #FF2B3D);
-424 | }
-425 | 
-426 | .insta-time-container {
-427 |   text-align: center;
-428 |   margin-bottom: 25px;
-429 |   margin-top: 15px;
-430 | }
-431 | 
-432 | .insta-time-label {
-433 |   font-size: 16px;
-434 |   color: #8a8d94;
-435 |   font-weight: bold;
-436 | }
-437 | 
-438 | .insta-time-value {
-439 |   font-size: 54px;
-440 |   font-weight: 900;
-441 |   margin: 5px 0;
-442 |   text-shadow: 0 2px 10px rgba(0,0,0,0.5);
-443 | }
-444 | 
-445 | .insta-status {
-446 |   color: #fff;
-447 |   padding: 6px 16px;
-448 |   border-radius: 20px;
-449 |   font-size: 16px;
-450 |   font-weight: 900;
-451 |   letter-spacing: 1px;
-452 | }
-453 | 
-454 | .insta-status-scaled {
-455 |   background-color: #FF2B3D;
-456 | }
-457 | 
-458 | .insta-status-rx {
-459 |   background-color: #22c55e;
-460 | }
-461 | 
-462 | .insta-metrics-row {
-463 |   display: flex;
-464 |   gap: 10px;
-465 |   justify-content: space-between;
-466 | }
-467 | 
-468 | .insta-metric-box {
-469 |   flex: 1;
-470 |   background-color: #111315;
-471 |   padding: 15px 5px;
-472 |   border-radius: 10px;
-473 |   text-align: center;
-474 |   border: 1px solid #26272b;
-475 | }
-476 | 
-477 | .insta-metric-title {
-478 |   font-size: 11px;
-479 |   color: #8a8d94;
-480 |   margin-bottom: 10px;
-481 |   font-weight: bold;
-482 | }
-483 | 
-484 | .insta-metric-value {
-485 |   font-size: 22px;
-486 |   font-weight: 900;
-487 | }
-488 | 
-489 | .insta-metric-unit {
-490 |   font-size: 12px;
-491 |   font-weight: normal;
-492 |   color: #8a8d94;
-493 | }
-494 | 
-495 | .insta-footer {
-496 |   text-align: center;
-497 |   color: #52525b;
-498 |   font-size: 12px;
-499 |   margin-top: 10px;
-500 | }
+363 |   font-family: 'Roboto Mono', monospace;
+364 | }
+365 | 
+366 | .insta-section {
+367 |   border: 2px solid #26272b;
+368 |   border-radius: 12px;
+369 |   padding: 20px;
+370 |   background-color: #181a1e;
+371 | }
+372 | 
+373 | .insta-section-title {
+374 |   margin: 0 0 12px 0;
+375 |   font-size: 20px;
+376 |   display: flex;
+377 |   align-items: baseline;
+378 |   gap: 8px;
+379 | }
+380 | 
+381 | .insta-section-subtitle {
+382 |   font-size: 11px;
+383 |   color: #8a8d94;
+384 |   font-weight: normal;
+385 | }
+386 | 
+387 | .insta-prescription-content {
+388 |   color: #d1d5db;
+389 |   font-size: 16px;
+390 |   line-height: 1.6;
+391 | }
+392 | 
+393 | .insta-highlight {
+394 |   color: #fff;
+395 | }
+396 | 
+397 | .insta-highlight-large {
+398 |   color: #fff;
+399 |   font-size: 18px;
+400 | }
+401 | 
+402 | .insta-text-muted {
+403 |   color: #8a8d94;
+404 |   font-size: 14px;
+405 | }
+406 | 
+407 | .insta-result-section {
+408 |   border: 2px solid var(--dyna-red, #FF2B3D);
+409 |   border-radius: 12px;
+410 |   padding: 25px 15px;
+411 |   background-color: #181a1e;
+412 |   box-shadow: 0 0 25px rgba(255, 43, 61, 0.15);
+413 |   position: relative;
+414 |   margin-top: 10px;
+415 | }
+416 | 
+417 | .insta-result-title {
+418 |   margin: 0;
+419 |   font-size: 24px;
+420 |   position: absolute;
+421 |   top: -15px;
+422 |   background-color: #181a1e;
+423 |   padding: 0 10px;
+424 |   color: var(--dyna-red, #FF2B3D);
+425 | }
+426 | 
+427 | .insta-time-container {
+428 |   text-align: center;
+429 |   margin-bottom: 25px;
+430 |   margin-top: 15px;
+431 | }
+432 | 
+433 | .insta-time-label {
+434 |   font-size: 16px;
+435 |   color: #8a8d94;
+436 |   font-weight: bold;
+437 | }
+438 | 
+439 | .insta-time-value {
+440 |   font-size: 54px;
+441 |   font-weight: 900;
+442 |   margin: 5px 0;
+443 |   text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+444 |   font-family: 'Roboto Mono', monospace;
+445 | }
+446 | 
+447 | .insta-status {
+448 |   color: #fff;
+449 |   padding: 6px 16px;
+450 |   border-radius: 20px;
+451 |   font-size: 16px;
+452 |   font-weight: 900;
+453 |   letter-spacing: 1px;
+454 | }
+455 | 
+456 | .insta-status-scaled {
+457 |   background-color: #FF2B3D;
+458 | }
+459 | 
+460 | .insta-status-rx {
+461 |   background-color: #22c55e;
+462 | }
+463 | 
+464 | .insta-metrics-row {
+465 |   display: flex;
+466 |   gap: 10px;
+467 |   justify-content: space-between;
+468 | }
+469 | 
+470 | .insta-metric-box {
+471 |   flex: 1;
+472 |   background-color: #111315;
+473 |   padding: 15px 5px;
+474 |   border-radius: 10px;
+475 |   text-align: center;
+476 |   border: 1px solid #26272b;
+477 | }
+478 | 
+479 | .insta-metric-title {
+480 |   font-size: 11px;
+481 |   color: #8a8d94;
+482 |   margin-bottom: 10px;
+483 |   font-weight: bold;
+484 | }
+485 | 
+486 | .insta-metric-value {
+487 |   font-size: 22px;
+488 |   font-weight: 900;
+489 |   font-family: 'Roboto Mono', monospace;
+490 | }
+491 | 
+492 | .insta-metric-unit {
+493 |   font-size: 12px;
+494 |   font-weight: normal;
+495 |   color: #8a8d94;
+496 |   font-family: 'Roboto', sans-serif;
+497 | }
+498 | 
+499 | .insta-footer {
+500 |   text-align: center;
+501 |   color: #52525b;
+502 |   font-size: 12px;
+503 |   margin-top: 10px;
+504 | }
+505 | 
+506 | /* Classe utilitária para aplicar Roboto Mono em spans genéricos do card */
+507 | .font-mono {
+508 |   font-family: 'Roboto Mono', monospace !important;
+509 | }
 
 --- FIM DO ARQUIVO: src\index.css ---
 

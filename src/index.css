@@ -317,7 +317,7 @@ button:hover {
     border-bottom: 1px solid #333;
   }
 
-  /* --- INSTAGRAM EXPORT CARD --- */
+/* --- INSTAGRAM EXPORT CARD --- */
 .insta-export-wrapper {
   position: absolute;
   left: -9999px;
@@ -328,7 +328,7 @@ button:hover {
   width: 420px;
   background-color: #111315;
   color: #fff;
-  font-family: sans-serif;
+  font-family: 'Roboto', sans-serif;
   padding: 40px 20px;
   box-sizing: border-box;
   display: flex;
@@ -360,6 +360,7 @@ button:hover {
   margin: 2px 0 0 0;
   color: #8a8d94;
   font-size: 12px;
+  font-family: 'Roboto Mono', monospace;
 }
 
 .insta-section {
@@ -440,6 +441,7 @@ button:hover {
   font-weight: 900;
   margin: 5px 0;
   text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+  font-family: 'Roboto Mono', monospace;
 }
 
 .insta-status {
@@ -484,12 +486,14 @@ button:hover {
 .insta-metric-value {
   font-size: 22px;
   font-weight: 900;
+  font-family: 'Roboto Mono', monospace;
 }
 
 .insta-metric-unit {
   font-size: 12px;
   font-weight: normal;
   color: #8a8d94;
+  font-family: 'Roboto', sans-serif;
 }
 
 .insta-footer {
@@ -497,4 +501,9 @@ button:hover {
   color: #52525b;
   font-size: 12px;
   margin-top: 10px;
+}
+
+/* Classe utilitária para aplicar Roboto Mono em spans genéricos do card */
+.font-mono {
+  font-family: 'Roboto Mono', monospace !important;
 }
