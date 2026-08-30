@@ -34,17 +34,19 @@ export interface ItemLousa {
   movId: string;
   phase: Phase;
   reps: number;
-  carga: number;
+  cargaMasc: number; // <- ATUALIZADO
+  cargaFem: number;  // <- ATUALIZADO
   tecnica: Tecnica;
   extraVal: string;
   extraVal2?: string;
+  carga?: number; // Prop de compatibilidade para treinos velhos no DB
 }
 
 export interface TimelineStateItem {
   reps: number;
   start: string;
   end: string;
-  carga?: number;
+  cargaUsada?: number; // <- ATUALIZADO
 }
 
 export interface AtletaPerfil {
@@ -55,12 +57,11 @@ export interface AtletaPerfil {
   envergadura: number;
   perna: number;
   bf: number;
-  // --- NOVAS VARIÁVEIS DE ANTROPOMETRIA AVANÇADA ---
   usaAntropometriaAvancada?: boolean;
   dataNascimento?: string;
-  circTorax?: number; // em metros (ex: 1.10)
-  circCoxa?: number;  // em metros (ex: 0.65)
-  mobilidade?: number; // ESCALA 0 a 100 (100 = Perfeita, < 100 = Encurtamentos)
+  circTorax?: number; 
+  circCoxa?: number;  
+  mobilidade?: number; 
 }
 
 export interface ResultadoProcessamento {
@@ -71,7 +72,6 @@ export interface ResultadoProcessamento {
   logDetalhesHTML: string;
 }
 
-// 1. A Prescrição (O Treino Clássico / Template)
 export interface WodTemplateRecord {
   id?: string;
   created_at?: string;
@@ -82,20 +82,20 @@ export interface WodTemplateRecord {
   rounds_prescritos: number;
   movimentos: ItemLousa[]; 
   creator_id?: string;
+  hash?: string;
 }
 
-// 2. A Execução (O Resultado do Atleta)
 export interface WodResultRecord {
   id?: string;
   created_at?: string;
-  template_id: string; // Isso liga o resultado ao WOD clássico!
+  template_id: string; 
   athlete_id?: string;
   tempo_real: string;
   rounds_real: number;
   score_watts: number;
   score_kcal: number;
   timeline?: Record<string, TimelineStateItem>; 
-  cargas_adaptadas: boolean; // True = Scaled, False = RX
+  cargas_adaptadas: boolean; 
 }
 
 export interface UserProfile {

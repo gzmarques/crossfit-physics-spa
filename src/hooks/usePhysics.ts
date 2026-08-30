@@ -27,6 +27,13 @@ export function usePhysics({
     setTimelineState(prev => ({ ...prev, [rowId]: { ...(prev[rowId] || {}), [field]: val } }));
   };
 
+  // Resolve a compatibilidade com DB antigo e pega a carga exata por gênero
+  const getCargaPorSexo = (m: ItemLousa, atleta: AtletaPerfil) => {
+    const cM = m.cargaMasc !== undefined ? m.cargaMasc : (m.carga || 0);
+    const cF = m.cargaFem !== undefined ? m.cargaFem : (m.carga || 0);
+    return atleta?.sexo === 'F' ? cF : cM;
+  };
+
   const processarWOD = () => {
     const rawTempoAlvo = parseClockTime(tempoAlvo);
     const tAlvoSec = rawTempoAlvo > 0 ? rawTempoAlvo : 0;
@@ -42,7 +49,9 @@ export function usePhysics({
       const cfg = movimentosDB[m.movId];
       if (!cfg) return;
       const mult = (m.phase === 'round') ? (roundsPrescritos || 1) : 1;
-      const calc = calcularFisica(m.movId, cfg, m.reps, m.carga, m.extraVal, m.extraVal2 || '', atleta, m.tecnica, 0);
+      
+      const cargaAdaptada = getCargaPorSexo(m, atleta);
+      const calc = calcularFisica(m.movId, cfg, m.reps, cargaAdaptada, m.extraVal, m.extraVal2 || '', atleta, m.tecnica, 0);
       const trab = calc?.trabMech || 0;
       trabalhoMechTotalEsp += trab * mult;
     });
@@ -51,9 +60,9 @@ export function usePhysics({
     if (roundsTimeline < 1) roundsTimeline = 1;
 
     const flatItems: any[] = [];
-    lousa.filter(m => m.phase === 'buyin').forEach(m => flatItems.push({ rowId: `${m.originalId}-R0`, movId: m.movId, reps: m.reps, carga: m.carga, extraVal: m.extraVal, extraVal2: m.extraVal2, phase: 'buyin', tecnica: m.tecnica, badgeText: 'Buy-in', badgeClass: 'badge-buyin' }));
-    for (let r = 1; r <= roundsTimeline; r++) lousa.filter(m => m.phase === 'round').forEach(m => flatItems.push({ rowId: `${m.originalId}-R${r}`, movId: m.movId, reps: m.reps, carga: m.carga, extraVal: m.extraVal, extraVal2: m.extraVal2, phase: 'round', tecnica: m.tecnica, badgeText: `R ${r}`, badgeClass: '' }));
-    lousa.filter(m => m.phase === 'cashout').forEach(m => flatItems.push({ rowId: `${m.originalId}-R99`, movId: m.movId, reps: m.reps, carga: m.carga, extraVal: m.extraVal, extraVal2: m.extraVal2, phase: 'cashout', tecnica: m.tecnica, badgeText: 'Cash-out', badgeClass: 'badge-cashout' }));
+    lousa.filter(m => m.phase === 'buyin').forEach(m => flatItems.push({ rowId: `${m.originalId}-R0`, movId: m.movId, reps: m.reps, cargaOriginalMasc: m.cargaMasc, cargaOriginalFem: m.cargaFem, cargaAntiga: m.carga, extraVal: m.extraVal, extraVal2: m.extraVal2, phase: 'buyin', tecnica: m.tecnica, badgeText: 'Buy-in', badgeClass: 'badge-buyin' }));
+    for (let r = 1; r <= roundsTimeline; r++) lousa.filter(m => m.phase === 'round').forEach(m => flatItems.push({ rowId: `${m.originalId}-R${r}`, movId: m.movId, reps: m.reps, cargaOriginalMasc: m.cargaMasc, cargaOriginalFem: m.cargaFem, cargaAntiga: m.carga, extraVal: m.extraVal, extraVal2: m.extraVal2, phase: 'round', tecnica: m.tecnica, badgeText: `R ${r}`, badgeClass: '' }));
+    lousa.filter(m => m.phase === 'cashout').forEach(m => flatItems.push({ rowId: `${m.originalId}-R99`, movId: m.movId, reps: m.reps, cargaOriginalMasc: m.cargaMasc, cargaOriginalFem: m.cargaFem, cargaAntiga: m.carga, extraVal: m.extraVal, extraVal2: m.extraVal2, phase: 'cashout', tecnica: m.tecnica, badgeText: 'Cash-out', badgeClass: 'badge-cashout' }));
 
     let somaTempoDeterminadoGlobal = 0, totalTransicaoGlobal = 0, trabalhoMechTotalReal = 0, gastoMetabolicoLiquidoTotal = 0, metabolicoRestanteGlobal = 0, lastEndSec = -1;
     let tempoDecorridoEstimado = 0; 
@@ -65,7 +74,9 @@ export function usePhysics({
       const state = timelineState[row.rowId] || { reps: row.reps, start: '', end: '' };
       const repsEffective = state.reps !== undefined ? Number(state.reps) : (row.reps || 0);
       
-      const cargaEffective = state.carga !== undefined ? Number(state.carga) : (row.carga || 0);
+      // Reconstrói a carga com base no sexo e nas preferências da Timeline
+      const baseCarga = getCargaPorSexo({ cargaMasc: row.cargaOriginalMasc, cargaFem: row.cargaOriginalFem, carga: row.cargaAntiga } as any, atleta);
+      const cargaEffective = state.cargaUsada !== undefined ? Number(state.cargaUsada) : baseCarga;
 
       const startSec = parseClockTime(state.start);
       const endSec = parseClockTime(state.end);

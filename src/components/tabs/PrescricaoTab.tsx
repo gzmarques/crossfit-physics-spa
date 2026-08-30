@@ -4,6 +4,7 @@ import { SearchableMovementSelect } from '../shared/SearchableMovementSelect';
 import { movimentosDB } from '../../data/movements';
 import { useWodStore } from '../../store/useWodStore';
 import type { Modalidade, ItemLousa } from '../../types';
+import { SearchableWodSelect } from '../shared/SearchableWodSelect';
 
 interface PrescricaoTabProps {
   currentShortCode: string | null;
@@ -12,10 +13,11 @@ interface PrescricaoTabProps {
   compartilharWod: () => void;
   clonarWod: () => void;
   salvarNoSupabase: (isExporting: boolean) => void;
+  carregarDoSupabase: (wod: any) => void; 
 }
 
 export function PrescricaoTab({
-  currentShortCode, currentTemplateId, importarWod, compartilharWod, clonarWod, salvarNoSupabase
+  currentShortCode, currentTemplateId, importarWod, compartilharWod, clonarWod, salvarNoSupabase, carregarDoSupabase
 }: PrescricaoTabProps) {
   
   const { 
@@ -42,6 +44,11 @@ export function PrescricaoTab({
 
   const renderMovimento = (item: ItemLousa) => {
     const cfg = movimentosDB[item.movId] || movimentosDB['pushup'];
+    
+    // Tratamento de compatibilidade caso o DB velho traga apenas 'carga'
+    const cM = item.cargaMasc !== undefined ? item.cargaMasc : (item.carga || 0);
+    const cF = item.cargaFem !== undefined ? item.cargaFem : (item.carga || 0);
+
     return (
       <div 
         key={item.originalId} 
@@ -54,6 +61,7 @@ export function PrescricaoTab({
         onDragEnter={() => handleDragEnter(item.originalId)}
         onDragEnd={handleDragEnd}
         onDragOver={(e) => e.preventDefault()}
+        style={{ gridTemplateColumns: '1.5fr 0.6fr 1fr 1.2fr 0.8fr auto' }} /* Ajuste do grid para caber a carga extra */
       >
         <div className="drag-handle">
           <svg width="10" height="20" viewBox="0 0 8 20" fill="currentColor">
@@ -80,14 +88,21 @@ export function PrescricaoTab({
         </div>
         
         <div>
-          <label>Carga/Téc.</label>
+          <label>Carga ♂ / ♀</label>
           <div style={{ display: 'flex', gap: '5px' }}>
-            <input type="number" disabled={!cfg.usaCarga} value={item.carga} onChange={e => updateMovimento(item.originalId, 'carga', Number(e.target.value))} />
-            <select value={item.tecnica} onChange={e => updateMovimento(item.originalId, 'tecnica', e.target.value)}>
-              <option value="tng">T&G</option>
-              <option value="drop">Drop</option>
-            </select>
+            <input type="number" placeholder="Masc" disabled={!cfg.usaCarga} value={cM} onChange={e => updateMovimento(item.originalId, 'cargaMasc', Number(e.target.value))} style={{ flex: 1 }} />
+            <input type="number" placeholder="Fem" disabled={!cfg.usaCarga} value={cF} onChange={e => updateMovimento(item.originalId, 'cargaFem', Number(e.target.value))} style={{ flex: 1 }} />
           </div>
+        </div>
+
+        <div>
+          <label>Técnica</label>
+          <select value={item.tecnica} onChange={e => updateMovimento(item.originalId, 'tecnica', e.target.value)}>
+            <option value="tng">T&G</option>
+            <option value="drop">Drop</option>
+            <option value="strict">Strict</option>
+            <option value="kipping">Kipping</option>
+          </select>
         </div>
         
         <div>
@@ -125,7 +140,11 @@ export function PrescricaoTab({
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', marginBottom: '15px' }}>
         <div className="form-group" style={{ marginBottom: 0 }}>
           <label>Nome do Treino (Opcional)</label>
-          <input type="text" value={nomeTreino} onChange={e => setNomeTreino(e.target.value)} placeholder="Ex: Murph, Fran, Open 24.1..." />
+          <SearchableWodSelect 
+            value={nomeTreino} 
+            onChange={setNomeTreino} 
+            onSelectWod={carregarDoSupabase} 
+          />
         </div>
         <div className="form-group" style={{ marginBottom: 0 }}>
           <label>Modalidade</label>
@@ -149,7 +168,6 @@ export function PrescricaoTab({
 
       <h2>Quadro de Movimentos</h2>
       
-      {/* SEÇÃO: BUY-IN */}
       <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: 'var(--bg-card, #181a1e)', borderRadius: '8px', border: '1px solid #333' }}>
         <label style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1rem', cursor: 'pointer', margin: 0, color: hasBuyIn ? '#f39c12' : 'var(--text-muted, #8a8d94)' }}>
           <input type="checkbox" checked={hasBuyIn} onChange={e => setHasBuyIn(e.target.checked)} style={{ width: '18px', height: '18px', cursor: 'pointer' }} />
@@ -168,7 +186,6 @@ export function PrescricaoTab({
         )}
       </div>
 
-      {/* SEÇÃO PRINCIPAL: WOD */}
       <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: 'var(--bg-card, #181a1e)', borderRadius: '8px', border: '1px solid var(--dyna-red, #FF2B3D)' }}>
         <h3 style={{ margin: '0 0 15px 0', color: 'var(--dyna-red, #FF2B3D)', fontSize: '1.1rem' }}>WOD Principal</h3>
         <div className="wod-list" style={{ marginBottom: '10px' }}>
@@ -179,7 +196,6 @@ export function PrescricaoTab({
         </button>
       </div>
 
-      {/* SEÇÃO: CASH-OUT */}
       <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: 'var(--bg-card, #181a1e)', borderRadius: '8px', border: '1px solid #333' }}>
         <label style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1rem', cursor: 'pointer', margin: 0, color: hasCashOut ? '#2196f3' : 'var(--text-muted, #8a8d94)' }}>
           <input type="checkbox" checked={hasCashOut} onChange={e => setHasCashOut(e.target.checked)} style={{ width: '18px', height: '18px', cursor: 'pointer' }} />

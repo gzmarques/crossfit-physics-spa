@@ -1,5 +1,5 @@
 import { movimentosDB } from '../../data/movements';
-import type { ItemLousa, Modalidade, TimelineStateItem, ResultadoProcessamento } from '../../types';
+import type { ItemLousa, Modalidade, TimelineStateItem, ResultadoProcessamento, AtletaPerfil } from '../../types';
 
 interface AnaliseTabProps {
   tipoTreino: Modalidade;
@@ -16,13 +16,22 @@ interface AnaliseTabProps {
   resultado: ResultadoProcessamento | null;
   gerarCardInstagram: () => void;
   roundsPrescritos: number;
+  atleta?: AtletaPerfil;
 }
 
 export function AnaliseTab({
   tipoTreino, tempoReal, setTempoReal, roundsReal, setRoundsReal,
   isScaled, setIsScaled, lousa, timelineState, handleTimelineChange,
-  processarWOD, resultado, gerarCardInstagram, roundsPrescritos
+  processarWOD, resultado, gerarCardInstagram, roundsPrescritos, atleta
 }: AnaliseTabProps) {
+
+  // Resolve a carga correta para a UI
+  const getCargaPorSexo = (m: ItemLousa) => {
+    const cM = m.cargaMasc !== undefined ? m.cargaMasc : (m.carga || 0);
+    const cF = m.cargaFem !== undefined ? m.cargaFem : (m.carga || 0);
+    return atleta?.sexo === 'F' ? cF : cM;
+  };
+
   return (
     <div className="panel">
       <div style={{ backgroundColor: 'var(--bg-card, #181a1e)', padding: '20px', borderRadius: '8px', borderLeft: '4px solid var(--dyna-red, #FF2B3D)', marginBottom: '25px' }}>
@@ -61,13 +70,16 @@ export function AnaliseTab({
             const cfg = movimentosDB[m.movId];
             const st = timelineState[rowId] || { reps: m.reps, start: '', end: '' };
             
+            const cargaSugerida = getCargaPorSexo(m);
+            const inputCarga = st.cargaUsada !== undefined ? st.cargaUsada : cargaSugerida;
+
             rows.push(
               <div key={rowId} className="wod-item-analise">
                 <div className={`badge-round ${badgeClass}`}>{badgeText}</div>
                 <div>
                   <div style={{ fontWeight: 'bold' }}>{cfg ? cfg.nome : m.movId}</div>
                   <div style={{ fontSize: '0.75rem', color: '#aaa' }}>
-                    RX: {m.carga > 0 ? `${m.carga}kg` : '--'} {m.extraVal ? `| ${m.extraVal}` : ''}
+                    RX: {cargaSugerida > 0 ? `${cargaSugerida}kg` : '--'} {m.extraVal ? `| ${m.extraVal}` : ''}
                   </div>
                 </div>
                 <div><label>Reps</label><input type="number" value={st.reps !== undefined ? st.reps : m.reps} onChange={e => handleTimelineChange(rowId, 'reps', e.target.value === '' ? '' : Number(e.target.value))} /></div>
@@ -76,10 +88,10 @@ export function AnaliseTab({
                   <label>Carga Real</label>
                   <input 
                     type="number" 
-                    value={st.carga !== undefined ? st.carga : m.carga} 
-                    onChange={e => handleTimelineChange(rowId, 'carga', e.target.value === '' ? '' : Number(e.target.value))}
+                    value={inputCarga} 
+                    onChange={e => handleTimelineChange(rowId, 'cargaUsada', e.target.value === '' ? '' : Number(e.target.value))}
                     disabled={!(cfg?.usaCarga)}
-                    style={{ border: isScaled && (st.carga !== undefined ? st.carga : m.carga) < m.carga ? '1px solid var(--dyna-red, #FF2B3D)' : '' }}
+                    style={{ border: isScaled && inputCarga < cargaSugerida ? '1px solid var(--dyna-red, #FF2B3D)' : '' }}
                   />
                 </div>
 

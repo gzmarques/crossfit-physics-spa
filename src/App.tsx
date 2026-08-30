@@ -7,6 +7,7 @@ import { LoginScreen } from './components/auth/LoginScreen';
 import { OnboardingScreen } from './components/auth/OnboardingScreen';
 import { Header } from './components/layout/Header';
 import { Tabs } from './components/layout/Tabs';
+import { WodCatalogModal } from './components/shared/WodCatalogModal';
 import { PrescricaoTab } from './components/tabs/PrescricaoTab';
 import { AnaliseTab } from './components/tabs/AnaliseTab';
 import { AtletaTab } from './components/tabs/AtletaTab';
@@ -39,6 +40,8 @@ export default function App() {
   const [currentShortCode, setCurrentShortCode] = useState<string | null>(null);
 
   const [savedWods, setSavedWods] = useState<WodTemplateRecord[]>([]);
+
+  const [isCatalogOpen, setIsCatalogOpen] = useState(false);
 
   const {
     timelineState, setTimelineState, handleTimelineChange,
@@ -99,6 +102,8 @@ export default function App() {
     const targetAthleteId = selectedAthleteId === 'me' ? session.user.id : selectedAthleteId;
     const newShortCode = currentShortCode || generateShortCode();
 
+    const assinaturaHash = wodService.gerarAssinatura(tipoTreino, roundsPrescritos, lousa);
+
     const templatePayload = {
       title: nomeTreino.trim() !== '' ? nomeTreino : `Treino ${tipoTreino} - ${new Date().toLocaleDateString('pt-BR')}`,
       short_code: newShortCode,
@@ -106,7 +111,8 @@ export default function App() {
       tempo_alvo: tempoAlvo,
       rounds_prescritos: roundsPrescritos,
       movimentos: lousa,
-      creator_id: session.user.id
+      creator_id: session.user.id,
+      hash: assinaturaHash // <-- Enviando o hash para o banco
     };
 
     let activeTemplateId = currentTemplateId;
@@ -116,10 +122,24 @@ export default function App() {
         if (!isExporting && !window.confirm('Deseja sobrescrever as alterações na prescrição deste WOD?')) return null;
         await wodService.updateTemplate(activeTemplateId, templatePayload);
       } else {
-        const data = await wodService.createTemplate(templatePayload);
-        activeTemplateId = data.id;
-        setCurrentTemplateId(data.id);
-        setCurrentShortCode(data.short_code);
+        // 2. Antes de criar, verifica se a exata mesma prescrição já existe
+        const templateExistente = await wodService.getTemplateByHash(assinaturaHash);
+        
+        if (templateExistente) {
+          activeTemplateId = templateExistente.id;
+          setCurrentTemplateId(templateExistente.id);
+          setCurrentShortCode(templateExistente.short_code);
+          
+          if (!isExporting) {
+            console.log('WOD idêntico encontrado no banco. Vinculando resultado ao template existente para evitar duplicidade.');
+          }
+        } else {
+          // 3. Se não existe, cria um novo
+          const data = await wodService.createTemplate(templatePayload);
+          activeTemplateId = data.id;
+          setCurrentTemplateId(data.id);
+          setCurrentShortCode(data.short_code);
+        }
       }
 
       const hasResult = tempoReal || roundsReal > 0 || (resultado && resultado.potenciaReal > 0);
@@ -162,16 +182,8 @@ export default function App() {
     }
   };
 
-  const importarWod = async () => {
-    const codeToFind = window.prompt('Digite o código de 6 dígitos do WOD:');
-    if (!codeToFind) return;
-
-    try {
-      const data = await wodService.getWodByShortCode(codeToFind.toUpperCase());
-      carregarDoSupabase(data);
-    } catch (error) {
-      alert('WOD não encontrado. Verifique o código.');
-    }
+  const importarWod = () => {
+    setIsCatalogOpen(true);
   };
 
   const clonarWod = () => {
@@ -254,6 +266,7 @@ export default function App() {
             compartilharWod={compartilharWod}
             clonarWod={clonarWod}
             salvarNoSupabase={salvarNoSupabase}
+            carregarDoSupabase={carregarDoSupabase}
           />
         )}
 
@@ -308,6 +321,12 @@ export default function App() {
         tempoReal={tempoReal}
         isScaled={isScaled}
         resultado={resultado}
+      />
+
+      <WodCatalogModal 
+        isOpen={isCatalogOpen} 
+        onClose={() => setIsCatalogOpen(false)} 
+        onSelectWod={carregarDoSupabase} 
       />
       
     </div>

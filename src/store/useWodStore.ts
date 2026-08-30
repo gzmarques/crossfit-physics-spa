@@ -2,18 +2,15 @@ import { create } from 'zustand';
 import type { ItemLousa, Modalidade, Phase } from '../types';
 
 interface WodState {
-  // Estados
   nomeTreino: string;
   tipoTreino: Modalidade;
   tempoAlvo: string;
   roundsPrescritos: number;
   lousa: ItemLousa[];
   
-  // Toggles de Visibilidade/Ativação
   hasBuyIn: boolean;
   hasCashOut: boolean;
 
-  // Ações
   setNomeTreino: (nome: string) => void;
   setTipoTreino: (tipo: Modalidade) => void;
   setTempoAlvo: (tempo: string) => void;
@@ -34,7 +31,7 @@ export const useWodStore = create<WodState>((set, get) => ({
   tipoTreino: 'FOR_TIME',
   tempoAlvo: '05:00',
   roundsPrescritos: 3,
-  lousa: [{ originalId: crypto.randomUUID(), movId: 'thruster', phase: 'round', reps: 21, carga: 43, tecnica: 'tng', extraVal: '' }],
+  lousa: [{ originalId: crypto.randomUUID(), movId: 'thruster', phase: 'round', reps: 21, cargaMasc: 43, cargaFem: 29, tecnica: 'tng', extraVal: '' }],
   
   hasBuyIn: false,
   hasCashOut: false,
@@ -44,14 +41,12 @@ export const useWodStore = create<WodState>((set, get) => ({
   setTempoAlvo: (tempo) => set({ tempoAlvo: tempo }),
   setRoundsPrescritos: (rounds) => set({ roundsPrescritos: rounds }),
   
-  // Ao carregar um WOD (ex: do Histórico), ativamos os painéis automaticamente se houver dados
   setLousa: (lousa) => set({ 
     lousa,
     hasBuyIn: lousa.some(m => m.phase === 'buyin'),
     hasCashOut: lousa.some(m => m.phase === 'cashout')
   }),
 
-  // Se o usuário desativar o painel, removemos os movimentos daquela fase
   setHasBuyIn: (val) => set((state) => ({
     hasBuyIn: val,
     lousa: val ? state.lousa : state.lousa.filter(m => m.phase !== 'buyin')
@@ -65,7 +60,7 @@ export const useWodStore = create<WodState>((set, get) => ({
   addMovimento: (baseId = null, phase = 'round') => {
     const { lousa } = get();
     const newId = crypto.randomUUID();
-    let newItem: ItemLousa = { originalId: newId, movId: 'air_squat', phase, reps: 10, carga: 0, tecnica: 'tng', extraVal: '' };
+    let newItem: ItemLousa = { originalId: newId, movId: 'air_squat', phase, reps: 10, cargaMasc: 0, cargaFem: 0, tecnica: 'tng', extraVal: '' };
     
     if (baseId) {
       const idx = lousa.findIndex(m => m.originalId === baseId);
@@ -88,7 +83,6 @@ export const useWodStore = create<WodState>((set, get) => ({
     lousa: state.lousa.map(item => item.originalId === id ? { ...item, [field]: val } : item)
   })),
 
-  // Modificado para usar ID no Drag and Drop (evita bugs ao arrastar em listas filtradas)
   reorderMovimento: (fromId, toId) => set((state) => {
     const fromIndex = state.lousa.findIndex(m => m.originalId === fromId);
     const toIndex = state.lousa.findIndex(m => m.originalId === toId);
