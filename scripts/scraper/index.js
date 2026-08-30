@@ -2,116 +2,38 @@ import puppeteer from 'puppeteer';
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 import crypto from 'crypto';
+import { GoogleGenAI, Type } from '@google/genai';
+import { movimentosDB } from '../../src/data/movements.ts';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-import { movimentosDB } from '../../src/data/movements.ts'; 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.resolve(__dirname, '../../.env.local') });
 
-dotenv.config({ path: '.env.local' });
+const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+if (!serviceKey) {
+  console.error("❌ ERRO FATAL: SUPABASE_SERVICE_ROLE_KEY não encontrada no ambiente!");
+  process.exit(1);
+}
 
-console.log("URL:", process.env.VITE_SUPABASE_URL ? "OK" : "FALTOU");
-console.log("ANON KEY:", process.env.VITE_SUPABASE_ANON_KEY ? "OK" : "FALTOU");
-console.log("SERVICE ROLE:", process.env.SUPABASE_SERVICE_ROLE_KEY ? "OK" : "FALTOU");
+if (!process.env.GEMINI_API_KEY) {
+  console.error("❌ ERRO FATAL: GEMINI_API_KEY não encontrada!");
+  process.exit(1);
+}
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY 
+  serviceKey 
 );
 
-const DICIONARIO_HEURISTICO = [
-  { id: 'burpee_over_db', keywords: ['burpee', /over|facing|lateral/, /dumbbell|db/], score: 30, usaCarga: false, defaultTech: 'normal' },
-  { id: 'burpee_over_bar', keywords: ['burpee', /over|facing|lateral/, /bar|barbell/], score: 30, usaCarga: false, defaultTech: 'normal' },
-  { id: 'burpee_box_jump_over', keywords: ['burpee', 'box', 'jump', 'over'], score: 40, usaCarga: false, defaultTech: 'normal' },
-  { id: 'burpee_box_jump', keywords: ['burpee', 'box', 'jump'], score: 30, usaCarga: false, defaultTech: 'normal' },
-  { id: 'burpee', keywords: ['burpee'], score: 10, usaCarga: false, defaultTech: 'normal' },
-  { id: 'box_jump_over', keywords: ['box jump over'], score: 30, usaCarga: false, defaultTech: 'normal' },
-  { id: 'box_jump', keywords: ['box jump'], score: 25, usaCarga: false, defaultTech: 'normal' },
-  { id: 'db_snatch', keywords: [/dumbbell|db/, 'snatch'], score: 20, usaCarga: true, defaultTech: 'tng' },
-  { id: 'db_clean', keywords: [/dumbbell|db/, 'clean'], score: 20, usaCarga: true, defaultTech: 'tng' },
-  { id: 'db_jerk', keywords: [/dumbbell|db/, /jerk|push press/], score: 20, usaCarga: true, defaultTech: 'tng' },
-  { id: 'bmu', keywords: [/bar muscle-?up|\bbmu\b/], score: 20, usaCarga: false, defaultTech: 'kipping' },
-  { id: 'rmu', keywords: [/ring muscle-?up|\brmu\b/], score: 20, usaCarga: false, defaultTech: 'kipping' },
-  { id: 'c2b', keywords: [/chest-?to-?bar|\bc2b\b/], score: 20, usaCarga: false, defaultTech: 'kipping' },
-  { id: 't2b', keywords: [/toes-?to-?bar|\bt2b\b/], score: 20, usaCarga: false, defaultTech: 'kipping' },
-  { id: 'pullup', keywords: [/pull-?up/], score: 15, usaCarga: false, defaultTech: 'kipping' },
-  { id: 'hspu', keywords: [/handstand push-?up|\bhspu\b/], score: 25, usaCarga: false, defaultTech: 'kipping' },
-  { id: 'pushup', keywords: [/push-?up/], score: 10, usaCarga: false, defaultTech: 'normal' },
-  { id: 'double_under', keywords: [/double-?under|\bdu\b/], score: 20, usaCarga: false, defaultTech: 'normal' },
-  { id: 'single_under', keywords: [/single-?under|\bsu\b/], score: 20, usaCarga: false, defaultTech: 'normal' },
-  { id: 'overhead_squat', keywords: ['overhead', 'squat'], score: 20, usaCarga: true, defaultTech: 'tng' },
-  { id: 'front_squat', keywords: ['front', 'squat'], score: 20, usaCarga: true, defaultTech: 'tng' },
-  { id: 'back_squat', keywords: ['back', 'squat'], score: 20, usaCarga: true, defaultTech: 'tng' },
-  { id: 'air_squat', keywords: ['squat'], score: 10, usaCarga: false, defaultTech: 'normal' },
-  { id: 'thruster', keywords: ['thruster'], score: 20, usaCarga: true, defaultTech: 'tng' },
-  { id: 'deadlift', keywords: ['deadlift'], score: 20, usaCarga: true, defaultTech: 'tng' },
-  { id: 'clean_jerk', keywords: ['clean', 'jerk'], score: 30, usaCarga: true, defaultTech: 'tng' },
-  { id: 'clean', keywords: ['clean'], score: 10, usaCarga: true, defaultTech: 'tng' },
-  { id: 'snatch', keywords: ['snatch'], score: 10, usaCarga: true, defaultTech: 'tng' },
-  { id: 'ghd_situp', keywords: [/ghd/], score: 20, usaCarga: false, defaultTech: 'normal' },
-  { id: 'situp', keywords: [/sit-?up/], score: 10, usaCarga: false, defaultTech: 'normal' },
-  { id: 'wall_ball', keywords: ['wall', 'ball'], score: 20, usaCarga: true, defaultTech: 'normal' },
-  { id: 'farmers_carry', keywords: [/farmer/, /carry/], score: 25, usaCarga: true, defaultTech: 'normal' },
-  { id: 'lunge_suitcase', keywords: [/lunge/, /weighted|dumbbell|db/], score: 25, usaCarga: true, defaultTech: 'normal' },
-  { id: 'walking_lunge', keywords: [/lunge/], score: 10, usaCarga: false, defaultTech: 'normal' },
-  { id: 'row', keywords: ['row'], score: 20, usaCarga: false, defaultTech: 'normal' },
-  { id: 'run', keywords: ['run'], score: 20, usaCarga: false, defaultTech: 'normal' },
-  { id: 'bike_erg', keywords: ['bikeerg'], score: 20, usaCarga: false, defaultTech: 'normal' },
-  { id: 'echo_bike', keywords: [/echo bike/], score: 20, usaCarga: false, defaultTech: 'normal' },
-  { id: 'assault_bike', keywords: [/assault bike/], score: 20, usaCarga: false, defaultTech: 'normal' },
-  { id: 'skierg', keywords: ['skierg'], score: 20, usaCarga: false, defaultTech: 'normal' },
-];
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const MOVEMENT_IDS_VALIDOS = Object.keys(movimentosDB);
 
-Object.keys(movimentosDB).forEach(id => {
-  if (DICIONARIO_HEURISTICO.some(r => r.id === id)) return;
-  const config = movimentosDB[id];
-  const palavrasChave = config.nome.toLowerCase().replace(/[()-]/g, ' ').split(/\s+/).filter(w => w.length > 2);
-  DICIONARIO_HEURISTICO.push({ id, keywords: palavrasChave, score: palavrasChave.length * 10, usaCarga: config.usaCarga, defaultTech: config.usaCarga ? 'tng' : 'normal' });
-});
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const DELAY_ENTRE_REQUISICOES_MS = 15000; 
 
-function converterLbParaKg(valorLb) {
-  return Math.round((valorLb * 0.453592) * 10) / 10;
-}
-
-function extrairCarga(linha) {
-  let cM = 0; let cF = 0;
-  const matchSlash = linha.match(/(\d+)\s*(?:\/|\|)\s*(\d+)\s*(?:lb|lbs|kg|#)/i);
-  const matchMasc = linha.match(/(?:♂|men|male|m)\s*:?\s*(\d+)\s*(?:lb|lbs|kg|#)/i);
-  const matchFem = linha.match(/(?:♀|women|female|w)\s*:?\s*(\d+)\s*(?:lb|lbs|kg|#)/i);
-  const matchGeneric = linha.match(/(\d+)\s*(?:lb|lbs|kg|#)/i);
-
-  if (matchSlash) {
-    const v1 = parseInt(matchSlash[1], 10);
-    const v2 = parseInt(matchSlash[2], 10);
-    cM = Math.max(v1, v2); cF = Math.min(v1, v2);
-  } else {
-    if (matchMasc) cM = parseInt(matchMasc[1], 10);
-    if (matchFem) cF = parseInt(matchFem[1], 10);
-    if (!matchMasc && !matchFem && matchGeneric) cM = parseInt(matchGeneric[1], 10); 
-  }
-  if (/(?:lb|lbs|#)/i.test(linha)) {
-    if (cM > 0) cM = converterLbParaKg(cM);
-    if (cF > 0) cF = converterLbParaKg(cF);
-  }
-  return { cM, cF };
-}
-
-function extrairAltura(linha) {
-  let aM = 0; let aF = 0;
-  const matchSlash = linha.match(/(\d+)\s*(?:\/|\|)\s*(\d+)\s*(?:-?\s*in|-?\s*inch|"|in\b)/i);
-  const matchMasc = linha.match(/(?:♂|men|male|m)\s*:?\s*(\d+)\s*(?:-?\s*in|-?\s*inch|"|in\b)/i);
-  const matchFem = linha.match(/(?:♀|women|female|w)\s*:?\s*(\d+)\s*(?:-?\s*in|-?\s*inch|"|in\b)/i);
-  const matchGeneric = linha.match(/(\d+)\s*(?:-?\s*in|-?\s*inch|"|in\b)/i);
-
-  if (matchSlash) {
-    const v1 = parseInt(matchSlash[1], 10);
-    const v2 = parseInt(matchSlash[2], 10);
-    aM = Math.max(v1, v2); aF = Math.min(v1, v2);
-  } else {
-    if (matchMasc) aM = parseInt(matchMasc[1], 10);
-    if (matchFem) aF = parseInt(matchFem[1], 10);
-    if (!matchMasc && !matchFem && matchGeneric) aM = parseInt(matchGeneric[1], 10); 
-  }
-  return { aM, aF };
-}
-
+// --- LÓGICA ORIGINAL DE ABREVIAÇÃO DE MOVIMENTOS RESGATADA ---
 function abreviarMovimento(movId) {
   const mapaSiglas = {
     bmu: 'BMU', rmu: 'RMU', c2b: 'C2B', t2b: 'T2B', pullup: 'PU', hspu: 'HSPU', pushup: 'PUSH',
@@ -130,62 +52,58 @@ function abreviarMovimento(movId) {
   }).join('-');
 }
 
-function analisarLinha(linhaTexto) {
-  if (/time cap|post time|resources|find a gym|crossfit games/i.test(linhaTexto)) return null;
-  const repMatch = linhaTexto.match(/^[\s\-]*(max|\d+)/i);
-  if (!repMatch) return null;
-
-  const normalizedLine = linhaTexto.toLowerCase();
-  let bestMatch = null; let highestScore = 0;
-
-  for (const item of DICIONARIO_HEURISTICO) {
-    let matchesAll = true;
-    for (const kw of item.keywords) {
-      if (typeof kw === 'string') { if (!normalizedLine.includes(kw)) matchesAll = false; } 
-      else if (kw instanceof RegExp) { if (!kw.test(normalizedLine)) matchesAll = false; }
-    }
-    if (matchesAll && item.score > highestScore) {
-      highestScore = item.score;
-      bestMatch = item;
-    }
-  }
+function gerarTituloFallback(tipoTreino, tempoAlvo, rounds, movimentos) {
+  const movsUnicos = [...new Set(movimentos.filter(m => m.phase === 'round').map(m => abreviarMovimento(m.movId)))];
+  const movsNomes = movsUnicos.slice(0, 3).join('+');
+  const sufixo = movsUnicos.length > 3 ? '...' : '';
   
-  if (!bestMatch) return null;
-
-  let reps = repMatch[1].toLowerCase() === 'max' ? 99 : parseInt(repMatch[1], 10);
-  let cargaMasc = 0; let cargaFem = 0;
-  let tecnica = bestMatch.defaultTech;
-  let extraVal = '-';
-
-  if (bestMatch.usaCarga) {
-    const { cM, cF } = extrairCarga(linhaTexto);
-    cargaMasc = cM; cargaFem = cF;
-  }
-
-  if (/box|wall|target|jump/i.test(linhaTexto)) {
-    const { aM, aF } = extrairAltura(linhaTexto);
-    if (aM > 0 && aF > 0 && aM !== aF) extraVal = `${aM}/${aF}in`;
-    else if (aM > 0) extraVal = `${aM}in`;
-  }
-
-  if (/strict/i.test(linhaTexto)) tecnica = 'strict';
-  if (/butterfly/i.test(linhaTexto)) tecnica = 'butterfly';
-  
-  return {
-    originalId: crypto.randomUUID(), movId: bestMatch.id, phase: 'round',
-    reps, cargaMasc, cargaFem, tecnica, extraVal
-  };
+  if (tipoTreino === 'AMRAP') return `AMRAP ${tempoAlvo ? tempoAlvo.split(':')[0] : ''}: ${movsNomes}${sufixo}`.replace(/\s+:/, ':');
+  if (tipoTreino === 'EMOM') return `EMOM ${tempoAlvo ? tempoAlvo.split(':')[0] : ''}: ${movsNomes}${sufixo}`.replace(/\s+:/, ':');
+  return `${rounds} RFT: ${movsNomes}${sufixo}`;
 }
+// -----------------------------------------------------------
 
-async function rasparTreino(urlBase) {
-  console.log(`\n🚀 [DEBUG] Iniciando navegador headless para varredura em: ${urlBase}`);
+const wodResponseSchema = {
+  type: Type.OBJECT,
+  properties: {
+    title: { type: Type.STRING, description: "Título identificador do WOD. Se for apenas data/número, retorne vazio." },
+    tipo_treino: { type: Type.STRING, enum: ["FOR_TIME", "AMRAP", "EMOM"] },
+    tempo_alvo: { type: Type.STRING, description: "Tempo limite no formato 'mm:ss' (ex: '15:00'). Se não houver, retornar ''" },
+    rounds_prescritos: { type: Type.INTEGER, description: "Quantidade de rounds do treino principal." },
+    movimentos: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          movId: { type: Type.STRING, enum: MOVEMENT_IDS_VALIDOS },
+          phase: { type: Type.STRING, enum: ["buyin", "round", "cashout"] },
+          reps: { type: Type.INTEGER },
+          cargaMasc: { type: Type.NUMBER },
+          cargaFem: { type: Type.NUMBER },
+          tecnica: { type: Type.STRING, enum: ["normal", "tng", "drop", "strict", "kipping", "butterfly"] },
+          extraVal: { type: Type.STRING }
+        },
+        required: ["movId", "phase", "reps", "cargaMasc", "cargaFem", "tecnica", "extraVal"]
+      }
+    }
+  },
+  required: ["title", "tipo_treino", "tempo_alvo", "rounds_prescritos", "movimentos"]
+};
+
+async function rasparTreinoComGemini(url) {
+  console.log(`\n🌐 Buscando HTML da página: ${url}`);
   
-  const browser = await puppeteer.launch({ headless: true });
+  const browser = await puppeteer.launch({ 
+    headless: true,
+    args: ['--no-sandbox', '--disable-setuid-sandbox'] 
+  });
   const page = await browser.newPage();
+  
+  let textoBruto = '';
   
   try {
     await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
-    await page.goto(urlBase, { waitUntil: 'networkidle2', timeout: 30000 });
+    await page.goto(url, { waitUntil: 'networkidle2', timeout: 35000 });
 
     const html = await page.content();
     await browser.close();
@@ -193,106 +111,261 @@ async function rasparTreino(urlBase) {
     const { load } = await import('cheerio');
     const $ = load(html);
 
-    let tituloWod = $('h1, .workout-title, .post-title').first().text().trim() || 'WOD Importado';
-
-    $('script, style, iframe, noscript').remove();
+    $('script, style, iframe, noscript, header, footer, nav').remove();
     $('br').replaceWith('\n');
-    $('p, div, li, h1, h2, h3, h4, tr, article, section').append('\n');
+    $('p, div, li, h1, h2, h3, h4, tr').append('\n');
 
-    const textoBruto = $('body').text();
-    const linhasBrutas = textoBruto.split('\n')
-      .map(linha => linha.replace(/\s+/g, ' ').trim())
-      .filter(linha => linha.length > 2 && linha.length < 150);
+    textoBruto = $('body').text()
+      .split('\n')
+      .map(linha => linha.trim())
+      .filter(linha => linha.length > 2)
+      .join('\n');
 
-    let indiceFimWod = linhasBrutas.length;
-    for (let i = 0; i < linhasBrutas.length; i++) {
-      if (/^(scaling|compare to|comments on|resources)/i.test(linhasBrutas[i])) {
-        indiceFimWod = i; break;
+  } catch (error) {
+      tentativas++;
+      const isRateLimit = error.status === 429 || error.status === 503 || error.message?.includes('RESOURCE_EXHAUSTED') || error.message?.includes('high demand');
+      
+      if (isRateLimit && tentativas < 3) {
+        console.warn(`⚠️ API congestionada. Tentativa ${tentativas}/3. Aguardando 15s...`);
+        await sleep(15000);
+      } else {
+        console.error(`❌ Falha na API do Gemini após ${tentativas} tentativa(s):`, error.message);
+        
+        // NOVO: Se o erro for de cota/limite, envia sinal para abortar todo o lote
+        if (isRateLimit) return 'FATAL';
+        
+        return; // Erro comum (ex: site fora do ar), apenas pula esta URL
       }
     }
-    const linhasWod = linhasBrutas.slice(0, indiceFimWod);
 
-    let tituloDetectado = null;
-    for (let i = 0; i < Math.min(6, linhasWod.length); i++) {
-      if (/(open workout \d{2}\.\d+|quarterfinal(s)? workout|semifinal(s)? workout|hero workout|benchmark)/i.test(linhasWod[i])) { tituloDetectado = linhasWod[i]; break; }
-      if (/^(Fran|Murph|Grace|Isabel|Diane|Amanda|Cindy|Mary|Angie|Barbara|Chelsea|Linda|Helen|Karen|Jackie|Nancy|Eva|Kelly|Lynne|Nicole)$/i.test(linhasWod[i])) { tituloDetectado = linhasWod[i]; break; }
-    }
-    if (tituloDetectado) tituloWod = tituloDetectado;
+  const promptSystem = `
+Você é um especialista em interpretação e análise biomecânica de treinos de CrossFit.
+Extraia e estruture a prescrição de um treino a partir do texto de uma página web.
 
-    let roundsPrescritos = 1; let tipoTreino = 'FOR_TIME'; let tempoAlvo = ''; let AMRAPDetectado = false;
+REGRAS:
+1. Mapeie cada exercício para o 'movId' válido.
+2. Se a carga estiver em libras (lbs/#), converta para kg multiplicando por 0.453592.
+3. Se houver variação Masc/Fem, preencha cargaMasc e cargaFem. Sem carga, preencha 0.
+4. Identifique Buy-in, Round e Cash-out.
+5. Se for AMRAP, rounds_prescritos = 1 e tempo_alvo = duração.
+6. Não use nomes numéricos (ex: '240302') para o título.
+  `;
 
-    for (let i = 0; i < linhasWod.length; i++) {
-      const linha = linhasWod[i];
-      const amrapMatch = linha.match(/(?:amrap|as many rounds).*?(\d+)\s*(?:min|minute)/i) || linha.match(/(\d+)\s*(?:-?minute|-?min).*?(?:amrap|as many rounds)/i);
-      if (amrapMatch || /amrap|as many rounds/i.test(linha)) {
-        tipoTreino = 'AMRAP'; AMRAPDetectado = true; roundsPrescritos = 1; 
-        if (amrapMatch) tempoAlvo = `${parseInt(amrapMatch[1] || amrapMatch[2], 10).toString().padStart(2, '0')}:00`;
+  let tentativas = 0;
+  let sucessoNaIA = false;
+  let responseText = null;
+
+  while (tentativas < 3 && !sucessoNaIA) {
+    try {
+      const response = await ai.models.generateContent({
+        model: 'gemini-3.6-flash',
+        contents: [
+          { role: 'user', parts: [{ text: `Analise o texto abaixo e extraia o WOD:\n\n${textoBruto.substring(0, 4000)}` }] }
+        ],
+        config: {
+          systemInstruction: promptSystem,
+          responseMimeType: 'application/json',
+          responseSchema: wodResponseSchema,
+          temperature: 0.1, 
+        }
+      });
+      
+      responseText = response.text;
+      sucessoNaIA = true;
+
+    } catch (error) {
+      tentativas++;
+      const isRateLimit = error.status === 429 || error.status === 503 || error.message?.includes('RESOURCE_EXHAUSTED') || error.message?.includes('high demand');
+      
+      if (isRateLimit && tentativas < 3) {
+        console.warn(`⚠️ API congestionada. Tentativa ${tentativas}/3. Aguardando 15s...`);
+        await sleep(15000);
+      } else {
+        console.error(`❌ Falha na API do Gemini após ${tentativas} tentativa(s):`, error.message);
+        return; 
       }
-      if (/emom/i.test(linha)) tipoTreino = 'EMOM';
+    }
+  }
 
-      const roundMatch = linha.match(/(\d+)\s*rounds?(?:\s*for time|\s*to complete|\s*of)?/i);
-      if (roundMatch && !AMRAPDetectado && tipoTreino !== 'EMOM') {
-        const val = parseInt(roundMatch[1], 10);
-        if (val > 1 && val < 30) roundsPrescritos = val;
+  if (!responseText) return;
+
+  try {
+    const parsedData = JSON.parse(responseText);
+
+    if (!parsedData || !parsedData.movimentos || parsedData.movimentos.length === 0) {
+      console.warn("⚠️ Nenhum treino estruturado pôde ser identificado.");
+      return;
+    }
+
+    const movimentosComId = parsedData.movimentos.map(m => ({
+      ...m,
+      originalId: crypto.randomUUID()
+    }));
+
+    // --- APLICAÇÃO DO FALLBACK DE NOME ---
+    let tituloFinal = parsedData.title;
+    if (!tituloFinal || /^\d+$/.test(tituloFinal.trim()) || tituloFinal.trim() === '') {
+      tituloFinal = gerarTituloFallback(parsedData.tipo_treino, parsedData.tempo_alvo, parsedData.rounds_prescritos, movimentosComId);
+    }
+
+    const assinaturaHash = `${parsedData.tipo_treino}_${parsedData.rounds_prescritos}_[${movimentosComId.map(m => `${m.movId}:${m.reps}:${m.cargaMasc}:${m.tecnica}`).join('|')}]`;
+
+    const payload = {
+      title: tituloFinal,
+      short_code: crypto.randomBytes(3).toString('hex').toUpperCase(),
+      tipo_treino: parsedData.tipo_treino,
+      tempo_alvo: parsedData.tempo_alvo || '',
+      rounds_prescritos: parsedData.rounds_prescritos || 1,
+      movimentos: movimentosComId,
+      creator_id: process.env.BOT_USER_ID || null,
+      hash: assinaturaHash,
+      source_url: url
+    };
+
+    console.log("\n✅ Treino Estruturado com Sucesso:");
+    console.log(`📌 Título: ${payload.title}`);
+    
+    const { error } = await supabase.from('wod_templates').insert([payload]);
+    
+    if (error) {
+      console.error("❌ Erro ao salvar no Supabase:", error.message);
+    } else {
+      console.log(`💾 Treino salvo com sucesso no banco! Código: [${payload.short_code}]`);
+    }
+
+  } catch (error) {
+    console.error("❌ Erro ao processar o JSON retornado pela IA:", error.message);
+  }
+}
+
+async function executarBatch(urls) {
+  console.log(`🚀 Iniciando Raspagem Inteligente. Total de URLs: ${urls.length}`);
+  
+  for (let i = 0; i < urls.length; i++) {
+    console.log(`\n--------------------------------------------------`);
+    console.log(`Processing [${i + 1}/${urls.length}]`);
+    
+    // NOVO: Capturamos o status retornado pela função
+    const status = await rasparTreinoComGemini(urls[i]);
+    
+    // NOVO: O Kill Switch é ativado
+    if (status === 'FATAL') {
+      console.log("\n🛑 KILL SWITCH ATIVADO: Cota do Gemini esgotada. Abortando o resto da fila para evitar bloqueios!");
+      break; 
+    }
+
+    if (i < urls.length - 1) await sleep(DELAY_ENTRE_REQUISICOES_MS);
+  }
+  
+  console.log("\n🎉 Processamento finalizado!");
+}
+
+const urlsParaRaspagem = [
+  'https://www.crossfit.com/240301',
+  'https://www.crossfit.com/240302',
+  'https://www.crossfit.com/240303',
+  'https://www.crossfit.com/240304',
+  'https://www.crossfit.com/240308',
+  'https://www.crossfit.com/240309'
+];
+
+// Dicionário de sites permitidos e suas regras de extração
+const SITES_ALVO = {
+  crossfit_main: {
+    urlIndice: 'https://www.crossfit.com/workout',
+    // Regra: Só pega links que terminam com 6 números (ex: /240301)
+    regexFiltro: /crossfit\.com\/\d{6}\/?$/ 
+  },
+  wodwell: {
+    urlIndice: 'https://wodwell.com/wods/',
+    // Regra: Só pega links de workouts específicos
+    regexFiltro: /wodwell\.com\/wod\//
+  }
+};
+
+async function colherLinksDeTreinos(siteKey) {
+  const alvo = SITES_ALVO[siteKey];
+  if (!alvo) return [];
+
+  console.log(`🕷️ Iniciando Spider na página índice: ${alvo.urlIndice}`);
+  
+  const browser = await puppeteer.launch({ headless: true });
+  const page = await browser.newPage();
+  
+  try {
+    await page.goto(alvo.urlIndice, { waitUntil: 'networkidle2' });
+    const html = await page.content();
+    await browser.close();
+
+    const { load } = await import('cheerio');
+    const $ = load(html);
+    
+    const linksEncontrados = new Set(); // Set evita links duplicados
+
+    // Procura todas as tags <a> na página
+    $('a').each((_, el) => {
+      let href = $(el).attr('href');
+      if (!href) return;
+      
+      // Resolve links relativos (ex: /240301 -> https://www.crossfit.com/240301)
+      if (href.startsWith('/')) {
+        const baseUrl = new URL(alvo.urlIndice).origin;
+        href = baseUrl + href;
       }
 
-      const timeCapMatch = linha.match(/(?:time\s*)?cap:?\s*(\d+)\s*(?:min|minute)/i);
-      if (timeCapMatch && tipoTreino === 'FOR_TIME') tempoAlvo = `${parseInt(timeCapMatch[1], 10).toString().padStart(2, '0')}:00`;
-    }
-
-    let cargaGlobalM = 0; let cargaGlobalF = 0; let alturaGlobalBox = '-';
-
-    for (let i = 0; i < linhasWod.length; i++) {
-      const { cM, cF } = extrairCarga(linhasWod[i]);
-      if (cM > cargaGlobalM) cargaGlobalM = cM;
-      if (cF > cargaGlobalF) cargaGlobalF = cF;
-
-      const { aM, aF } = extrairAltura(linhasWod[i]);
-      if (aM > 0 && aF > 0 && aM !== aF) alturaGlobalBox = `${aM}/${aF}in`;
-      else if (aM > 0) alturaGlobalBox = `${aM}in`;
-    }
-
-    const lousa = [];
-    for (let i = 0; i < linhasWod.length; i++) {
-      const item = analisarLinha(linhasWod[i]);
-      if (item) lousa.push(item);
-    }
-
-    if (lousa.length === 0) return;
-
-    lousa.forEach(item => {
-      if (item.cargaMasc === 0 && movimentosDB[item.movId]?.usaCarga) {
-        item.cargaMasc = cargaGlobalM;
-        item.cargaFem = cargaGlobalF;
-      }
-      if (item.extraVal === '-' && /box/.test(item.movId) && alturaGlobalBox !== '-') {
-        item.extraVal = alturaGlobalBox;
+      // Se o link bater com a nossa regra de ouro, entra pra lista
+      if (alvo.regexFiltro.test(href)) {
+        linksEncontrados.add(href);
       }
     });
 
-    if (!tituloDetectado) {
-      const movsUnicos = [...new Set(lousa.map(m => abreviarMovimento(m.movId)))];
-      const movsNomes = movsUnicos.slice(0, 3).join('+');
-      const sufixo = movsUnicos.length > 3 ? '...' : '';
-      if (tipoTreino === 'AMRAP') tituloWod = `AMRAP ${tempoAlvo ? tempoAlvo.split(':')[0] : ''}: ${movsNomes}${sufixo}`.replace(/\s+:/, ':');
-      else if (tipoTreino === 'EMOM') tituloWod = `EMOM ${tempoAlvo ? tempoAlvo.split(':')[0] : ''}: ${movsNomes}${sufixo}`.replace(/\s+:/, ':');
-      else tituloWod = `${roundsPrescritos} RFT: ${movsNomes}${sufixo}`;
-    }
+    const urlsFinais = Array.from(linksEncontrados);
+    console.log(`🎯 Spider encontrou ${urlsFinais.length} links válidos de treinos!`);
+    return urlsFinais;
 
-    console.table(lousa.map(m => ({ Movimento: m.movId, Reps: m.reps, CargaM: m.cargaMasc, CargaF: m.cargaFem, Extra: m.extraVal })));
-
-    const assinaturaHash = `${tipoTreino}_${roundsPrescritos}_[${lousa.map(m => `${m.movId}:${m.reps}:${m.cargaMasc}:${m.tecnica}`).join('|')}]`;
-
-    const payload = {
-      title: tituloWod, short_code: crypto.randomBytes(3).toString('hex').toUpperCase(),
-      tipo_treino: tipoTreino, tempo_alvo: tempoAlvo, rounds_prescritos: roundsPrescritos, movimentos: lousa, hash: assinaturaHash
-    };
-
-    const { error } = await supabase.from('wod_templates').insert([payload]);
-    if (error) console.error(error.message);
-    else console.log(`💾 Treino "${tituloWod}" [${payload.short_code}] salvo!`);
-    
-  } catch (erro) { console.error('❌ Falha:', erro.message); }
+  } catch (error) {
+    await browser.close();
+    console.error(`❌ Erro no Spider ao varrer ${alvo.urlIndice}:`, error.message);
+    return [];
+  }
 }
 
-rasparTreino('https://www.crossfit.com/240309');
+async function filtrarUrlsIneditas(urlsEncontradas) {
+  if (urlsEncontradas.length === 0) return [];
+
+  // Pede ao Supabase para verificar quais dessas URLs ele já conhece
+  const { data, error } = await supabase
+    .from('wod_templates')
+    .select('source_url')
+    .in('source_url', urlsEncontradas);
+
+  if (error) {
+    console.error("❌ Erro ao checar histórico no banco:", error.message);
+    return urlsEncontradas; // Na dúvida, tenta processar
+  }
+
+  const urlsJaNoBanco = new Set(data.map(d => d.source_url));
+  const urlsIneditas = urlsEncontradas.filter(url => !urlsJaNoBanco.has(url));
+
+  console.log(`🛡️ Filtro Anti-Repetição: ${urlsEncontradas.length} links no site -> ${urlsJaNoBanco.size} já estavam no banco -> ${urlsIneditas.length} inéditos para o Gemini.`);
+  
+  return urlsIneditas;
+}
+
+async function iniciarSistema() {
+  const urlsFresquinhas = await colherLinksDeTreinos('crossfit_main');
+  
+  // Passa a lista na peneira do banco de dados
+  const urlsIneditas = await filtrarUrlsIneditas(urlsFresquinhas);
+  
+  // Corta a lista para não estourar a cota diária do plano gratuito (ex: máximo 10 por dia)
+  const cotaSegura = urlsIneditas.slice(0, 10);
+  
+  if (cotaSegura.length > 0) {
+    await executarBatch(cotaSegura);
+  } else {
+    console.log("🛑 Nenhum treino inédito hoje. O bot vai descansar.");
+  }
+}
+
+iniciarSistema();
