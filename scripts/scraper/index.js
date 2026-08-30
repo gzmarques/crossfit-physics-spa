@@ -260,15 +260,6 @@ async function executarBatch(urls) {
   console.log("\n🎉 Processamento finalizado!");
 }
 
-const urlsParaRaspagem = [
-  'https://www.crossfit.com/240301',
-  'https://www.crossfit.com/240302',
-  'https://www.crossfit.com/240303',
-  'https://www.crossfit.com/240304',
-  'https://www.crossfit.com/240308',
-  'https://www.crossfit.com/240309'
-];
-
 // Dicionário de sites permitidos e suas regras de extração
 const SITES_ALVO = {
   crossfit_main: {

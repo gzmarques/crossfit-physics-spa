@@ -1,0 +1,34 @@
+name: Bot DynaWOD - Scraper Diário
+
+on:
+  schedule:
+    # Roda todos os dias às 08:00 UTC (05:00 no horário de Brasília)
+    - cron: '0 8 * * *'
+  
+  # Habilita um botão no painel do GitHub para você rodar manualmente quando quiser
+  workflow_dispatch: 
+
+jobs:
+  run-scraper:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Baixar o código do repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Instalar Dependências
+        run: npm ci # Usa npm ci para uma instalação mais rápida e limpa baseada no package-lock.json
+
+      - name: Executar Scraper
+        # Injeta as variáveis de ambiente seguras cadastradas no GitHub
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          BOT_USER_ID: ${{ secrets.BOT_USER_ID }}
+        run: node scripts/scraper/index.js

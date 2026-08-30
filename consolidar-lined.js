@@ -7,7 +7,7 @@ const ARQUIVO_SAIDA = 'codigo_consolidado.txt';
 
 const EXTENSOES_PERMITIDAS = new Set([
   '.js', '.jsx', '.ts', '.tsx', '.html', '.css', 
-  '.json', '.md', '.yml', '.yaml', '.env', '.local'
+  '.json', '.md', '.yml', '.yaml'
 ]);
 
 const IGNORAR_PASTAS = new Set([
@@ -16,7 +16,7 @@ const IGNORAR_PASTAS = new Set([
 ]);
 
 const IGNORAR_ARQUIVOS = new Set([
-  ARQUIVO_SAIDA, 'package-lock.json', 'yarn.lock', 'pnpm-lock.yaml', '.DS_Store'
+  ARQUIVO_SAIDA, 'package-lock.json', 'yarn.lock', 'pnpm-lock.yaml', '.DS_Store', '.env.local', '.env'
 ]);
 
 let contadorArquivos = 0;
