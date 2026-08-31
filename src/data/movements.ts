@@ -105,43 +105,62 @@ export const movimentosDB: Record<string, MovimentoConfig> = {
   'k2e': { nome: 'Knees to Elbows (K2E)', grupo: 'Core BW', categoria: 'core_k2e', usaCarga: false, estilosPermitidos: ['kipping', 'strict'] },
   
   // === MONOSTRUTURAL E STRONGMAN ===
-  'run': { nome: 'Corrida', grupo: 'Monostrutural', categoria: 'corrida', usaCarga: false, estilosPermitidos: ['normal'], paramExtra: { label: 'Dist (m)', val: '400', type: 'number' } },
-  'air_runner': { nome: 'Curved Treadmill (AirRunner)', grupo: 'Monostrutural', categoria: 'air_runner', usaCarga: false, estilosPermitidos: ['normal'], paramExtra: { label: 'Dist (m)', val: '400', type: 'number' } },
-  'shuttle_run': { nome: 'Shuttle Run', grupo: 'Monostrutural', categoria: 'shuttle_run', usaCarga: false, estilosPermitidos: ['normal'], paramExtra: { label: 'Tiro (m)', val: '7.5', type: 'number' } },
+  'run': { nome: 'Corrida', grupo: 'Monostrutural', categoria: 'corrida', usaCarga: false, estilosPermitidos: ['normal'] },
+  'air_runner': { nome: 'Curved Treadmill (AirRunner)', grupo: 'Monostrutural', categoria: 'air_runner', usaCarga: false, estilosPermitidos: ['normal'] },
+  'shuttle_run': { 
+    nome: 'Shuttle Run', 
+    grupo: 'Monostrutural', 
+    categoria: 'shuttle_run', 
+    usaCarga: false, 
+    estilosPermitidos: ['normal'], 
+    paramExtra: { label: 'Tiro (m)', val: '7.5', type: 'number' } 
+  },
   'farmers_carry': { 
     nome: 'Farmer\'s Carry', grupo: 'Monostrutural', categoria: 'corrida_carga', usaCarga: true, estilosPermitidos: ['normal'],
-    paramExtra: { label: 'Trecho (m)', val: '10', type: 'number' },
-    paramExtra2: { label: 'Terreno (η)', val: '1.0', type: 'select', options: [ {label: 'Ginásio', value: '1.0'}, {label: 'Terra/Cascalho', value: '1.1'}, {label: 'Grama', value: '1.2'}, {label: 'Areia Solta', value: '2.1'} ] }
+    paramExtra: { label: 'Terreno (η)', val: '1.0', type: 'select', options: [ {label: 'Ginásio', value: '1.0'}, {label: 'Terra/Cascalho', value: '1.1'}, {label: 'Grama', value: '1.2'}, {label: 'Areia Solta', value: '2.1'} ] }
   }, 
   'yoke_carry': { 
     nome: 'Yoke Carry', grupo: 'Hyrox / Strongman', categoria: 'yoke_carry', usaCarga: true, estilosPermitidos: ['normal'],
-    paramExtra: { label: 'Trecho (m)', val: '10', type: 'number' },
-    paramExtra2: { label: 'Terreno (η)', val: '1.0', type: 'select', options: [ {label: 'Ginásio', value: '1.0'}, {label: 'Terra/Cascalho', value: '1.1'}, {label: 'Grama', value: '1.2'}, {label: 'Areia Solta', value: '2.1'} ] }
+    paramExtra: { label: 'Terreno (η)', val: '1.0', type: 'select', options: [ {label: 'Ginásio', value: '1.0'}, {label: 'Terra/Cascalho', value: '1.1'}, {label: 'Grama', value: '1.2'}, {label: 'Areia Solta', value: '2.1'} ] }
   },
   'sled_push': { 
     nome: 'Sled Push', grupo: 'Monostrutural', categoria: 'friccao_horizontal_push', usaCarga: true, estilosPermitidos: ['normal'],
-    paramExtra: { label: 'Trecho (m)', val: '10', type: 'number' },
-    paramExtra2: { label: 'Superfície (μ)', val: '0.35', type: 'select', options: [ {label: 'Grama Sintética', value: '0.35'}, {label: 'Grama Natural', value: '0.50'}, {label: 'Asfalto', value: '0.65'}, {label: 'Emborrachado', value: '0.85'} ] } 
+    paramExtra: { label: 'Superfície (μ)', val: '0.35', type: 'select', options: [ {label: 'Grama Sintética', value: '0.35'}, {label: 'Grama Natural', value: '0.50'}, {label: 'Asfalto', value: '0.65'}, {label: 'Emborrachado', value: '0.85'} ] } 
   }, 
   'sled_pull': { 
     nome: 'Sled Pull', grupo: 'Monostrutural', categoria: 'friccao_horizontal_pull', usaCarga: true, estilosPermitidos: ['normal'],
-    paramExtra: { label: 'Trecho (m)', val: '10', type: 'number' },
-    paramExtra2: { label: 'Superfície (μ)', val: '0.35', type: 'select', options: [ {label: 'Grama Sintética', value: '0.35'}, {label: 'Grama Natural', value: '0.50'}, {label: 'Asfalto', value: '0.65'}, {label: 'Emborrachado', value: '0.85'} ] } 
+    paramExtra: { label: 'Superfície (μ)', val: '0.35', type: 'select', options: [ {label: 'Grama Sintética', value: '0.35'}, {label: 'Grama Natural', value: '0.50'}, {label: 'Asfalto', value: '0.65'}, {label: 'Emborrachado', value: '0.85'} ] } 
   }, 
   'heavy_sled_pull': { 
     nome: 'Heavy Sled Pull', grupo: 'Hyrox / Strongman', categoria: 'friccao_horizontal_pull_heavy', usaCarga: true, estilosPermitidos: ['normal'],
-    paramExtra: { label: 'Trecho (m)', val: '10', type: 'number' },
-    paramExtra2: { label: 'Superfície (μ)', val: '0.35', type: 'select', options: [ {label: 'Grama Sintética', value: '0.35'}, {label: 'Grama Natural', value: '0.50'}, {label: 'Asfalto', value: '0.65'}, {label: 'Emborrachado', value: '0.85'} ] } 
+    paramExtra: { label: 'Superfície (μ)', val: '0.35', type: 'select', options: [ {label: 'Grama Sintética', value: '0.35'}, {label: 'Grama Natural', value: '0.50'}, {label: 'Asfalto', value: '0.65'}, {label: 'Emborrachado', value: '0.85'} ] } 
   },
   
   // === ERGÔMETROS ===
-  'row': { nome: 'Remo (Concept2)', grupo: 'Ergômetros', categoria: 'remo', usaCarga: false, estilosPermitidos: ['normal'], paramExtra: { label: 'Pace ou Cal', val: '2:00', type: 'text' } },
-  'skierg': { nome: 'SkiErg (Concept2)', grupo: 'Ergômetros', categoria: 'remo', usaCarga: false, estilosPermitidos: ['normal'], paramExtra: { label: 'Pace ou Cal', val: '2:10', type: 'text' } },
-  'bike_erg': { nome: 'BikeErg (Concept2)', grupo: 'Ergômetros', categoria: 'bike', usaCarga: false, estilosPermitidos: ['normal'], paramExtra: { label: 'RPM', val: '70', type: 'number' } },
-  'echo_bike': { nome: 'Rogue Echo Bike', grupo: 'Ergômetros', categoria: 'echo_bike', usaCarga: false, estilosPermitidos: ['normal'], paramExtra: { label: 'RPM', val: '60', type: 'number' } },
-  'assault_bike': { nome: 'Assault AirBike', grupo: 'Ergômetros', categoria: 'assault_bike', usaCarga: false, estilosPermitidos: ['normal'], paramExtra: { label: 'RPM', val: '60', type: 'number' } },
-  
-  // === CORDA ===
+  'row': { 
+    nome: 'Remo (Concept2)', grupo: 'Ergômetros', categoria: 'remo', usaCarga: false, estilosPermitidos: ['normal'], 
+    paramExtra: { label: 'Unidade', val: 'm', type: 'select', options: [{label: 'Metros (m)', value: 'm'}, {label: 'Calorias (cal)', value: 'cal'}] } 
+  },
+  'skierg': { 
+    nome: 'SkiErg (Concept2)', grupo: 'Ergômetros', categoria: 'remo', usaCarga: false, estilosPermitidos: ['normal'], 
+    paramExtra: { label: 'Unidade', val: 'm', type: 'select', options: [{label: 'Metros (m)', value: 'm'}, {label: 'Calorias (cal)', value: 'cal'}] } 
+  },
+  'bike_erg': { 
+    nome: 'BikeErg (Concept2)', grupo: 'Ergômetros', categoria: 'bike', usaCarga: false, estilosPermitidos: ['normal'], 
+    paramExtra: { label: 'RPM', val: '70', type: 'number' },
+    paramExtra2: { label: 'Unidade', val: 'm', type: 'select', options: [{label: 'Metros', value: 'm'}, {label: 'Calorias', value: 'cal'}] }
+  },
+  'echo_bike': { 
+    nome: 'Rogue Echo Bike', grupo: 'Ergômetros', categoria: 'echo_bike', usaCarga: false, estilosPermitidos: ['normal'], 
+    paramExtra: { label: 'RPM', val: '60', type: 'number' },
+    paramExtra2: { label: 'Unidade', val: 'cal', type: 'select', options: [{label: 'Calorias', value: 'cal'}, {label: 'Metros', value: 'm'}] }
+  },
+  'assault_bike': { 
+    nome: 'Assault AirBike', grupo: 'Ergômetros', categoria: 'assault_bike', usaCarga: false, estilosPermitidos: ['normal'], 
+    paramExtra: { label: 'RPM', val: '60', type: 'number' },
+    paramExtra2: { label: 'Unidade', val: 'cal', type: 'select', options: [{label: 'Calorias', value: 'cal'}, {label: 'Metros', value: 'm'}] }
+  },
+  // === PULOS DE CORDA ===
   'single_under': { nome: 'Single-unders', grupo: 'Corda', categoria: 'vertical_bw_total', usaCarga: false, estilosPermitidos: ['normal'], paramExtra: { label: 'Salto(m)', val: '0.05', type: 'number'} },
   'su_crossover': { nome: 'SU Crossover', grupo: 'Corda', categoria: 'vertical_bw_total', usaCarga: false, estilosPermitidos: ['normal'], paramExtra: { label: 'Salto(m)', val: '0.08', type: 'number'} },
   'double_under': { nome: 'Double-unders', grupo: 'Corda', categoria: 'vertical_bw_total', usaCarga: false, estilosPermitidos: ['normal'], paramExtra: { label: 'Salto(m)', val: '0.12', type: 'number'} },

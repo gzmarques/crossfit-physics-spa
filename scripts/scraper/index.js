@@ -97,10 +97,12 @@ async function extrairTreinosEmLoteComIA(loteBruto) {
   Regras de conversão:
   1. 'tipo_treino' deve ser "FOR_TIME", "AMRAP" ou "EMOM".
   2. Mapeie os exercícios para a chave 'movId'. Tente usar estes IDs exatos se aplicável: ${movimentosConhecidos}.
-  3. 'cargaMasc' e 'cargaFem' devem ser números puros em KG (ex: se o texto diz 135/95 lbs, converta para 61 e 43). Se for só peso corporal, use 0.
+  3. 'cargaMasc' e 'cargaFem' devem ser números puros em KG. Se for só peso corporal, use 0.
   4. 'phase' deve ser "buyin", "round" ou "cashout".
   5. 'tecnica' deve ser "normal", "tng", "drop", "strict" ou "kipping". Na dúvida, use "normal".
-  6. Mantenha a 'url' original em cada treino.
+  6. REGRA DE MONOSTRUTURAIS: Para corrida contínua (run), remo (row), bikes e corda, o valor (em metros ou cal) DEVE ir obrigatoriamente no campo 'reps'. EXCEÇÃO: Para 'shuttle_run', o campo 'reps' é o número de idas/vindas, e o campo 'extraVal' é a distância de cada tiro.
+  7. Use 'extraVal' APENAS para métricas secundárias (ex: altura de caixa, target do wall ball, ou para especificar se a repetição no ergômetro é "cal" ou "m").
+  8. Mantenha a 'url' original em cada treino.
   
   Textos brutos: ${JSON.stringify(loteBruto)}`;
   

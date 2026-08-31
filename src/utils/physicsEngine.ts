@@ -423,39 +423,36 @@ export function calcularFisica(
           break;
 
       case 'friccao_horizontal_push': {
-          const trecho = Number(extraV) || 10;
-          const mu_push = Number(extraV2) || 0.35; 
-
+          const mu_push = Number(extraV) || 0.35; // Agora vem do extraV direto
           const loadRatio = pCarga / Math.max(1, atleta.peso);
           const anguloDinamico = Math.max(10, 30 - (loadRatio * 5)); 
           const radDinamico = anguloDinamico * Math.PI / 180;
           
           const F_push = (mu_push * (pCarga + MASSA_SLED) * G) / (Math.cos(radDinamico) - mu_push * Math.sin(radDinamico));
-          const W_sled_push = F_push * Math.cos(radDinamico) * trecho;
           
-          tMech = W_sled_push + (atleta.peso * G * 0.15 * trecho); 
-          exL = ` (${safeReps}x ${trecho}m | μ:${mu_push})`; 
+          // O tMech calcula o trabalho de APENAS 1 METRO
+          tMech = (F_push * Math.cos(radDinamico)) + (atleta.peso * G * 0.15); 
+          exL = ` (${safeReps}m | μ:${mu_push})`; 
           break;
       }
       case 'friccao_horizontal_pull': {
-          const trecho = Number(extraV) || 10;
-          const mu_pull = Number(extraV2) || 0.35; 
+          const mu_pull = Number(extraV) || 0.35; // Vem do extraV
 
           const rad20 = 20 * Math.PI / 180;
           const F_pull = (mu_pull * (pCarga + MASSA_SLED) * G) / (Math.cos(rad20) + mu_pull * Math.sin(rad20));
-          const W_sled_pull = F_pull * Math.cos(rad20) * trecho;
           
-          tMech = W_sled_pull + (atleta.peso * G * 0.15 * trecho); 
-          exL = ` (${safeReps}x ${trecho}m | μ:${mu_pull})`; 
+          // 1 METRO
+          tMech = (F_pull * Math.cos(rad20)) + (atleta.peso * G * 0.15); 
+          exL = ` (${safeReps}m | μ:${mu_pull})`; 
           break;
       }
       case 'friccao_horizontal_pull_heavy': {
-          const trecho = Number(extraV) || 10;
-          const mu_pullH = Number(extraV2) || 0.35; 
-
+          const mu_pullH = Number(extraV) || 0.35; 
           const F_pull_h = mu_pullH * pCarga * G; 
-          tMech = (F_pull_h * trecho) + (atleta.peso * G * 0.15 * trecho); 
-          exL = ` (${safeReps}x ${trecho}m | μ:${mu_pullH})`; 
+          
+          // 1 METRO
+          tMech = F_pull_h + (atleta.peso * G * 0.15); 
+          exL = ` (${safeReps}m | μ:${mu_pullH})`; 
           break;
       }
 
@@ -463,96 +460,162 @@ export function calcularFisica(
       case 'yoke_carry': {
           const racioSobrecarga = pCarga / Math.max(1, atleta.peso);
           const oscilacaoDinamica = 0.05 + (0.02 * racioSobrecarga); 
-          // O cálculo aqui é feito para 1 metro. No final do motor, ele multiplica pelo safeReps (que agora é a distância total).
+        
+          // Calcula o trabalho para 1 metro
           tMech = (atleta.peso + pCarga) * G * oscilacaoDinamica; 
-          
+        
+          // CORREÇÃO: Aplicar o fator de ineficiência do terreno no trabalho mecânico
+          const fatorTerreno = parseFloat(extraV) || 1.0;
+          tMech *= fatorTerreno; 
+        
           let nomeTerreno = "Ginásio";
-          if (extraV === '1.1') nomeTerreno = "Terra";
-          if (extraV === '1.2') nomeTerreno = "Turf";
-          if (extraV === '2.1') nomeTerreno = "Areia";
-          if (extraV === '4.1') nomeTerreno = "Neve";
+          if (extraV === '1.1') nomeTerreno = "Terra/Cascalho";
+          if (extraV === '1.2') nomeTerreno = "Grama";
+          if (extraV === '2.1') nomeTerreno = "Areia Solta";
+        
           exL = ` (${safeReps}m em ${nomeTerreno})`; 
           break;
       }
-      case 'shuttle_run': 
-          tMech = (atleta.peso * G * (0.07 * 0.75 * extraSafe)) + (0.50 * atleta.peso * Math.pow(3.0, 2)); 
-          exL = ` (${extraSafe.toFixed(1)}m)`; 
-          break;
+      case 'shuttle_run': {
+            // extraSafe = distância de 1 tiro (vem do paramExtra)
+            const distTiro = extraSafe > 0 ? extraSafe : 7.5;
+            
+            // Trabalho para correr aquele trecho
+            const trabCorrida = atleta.peso * G * (0.07 * 0.75 * distTiro);
+            
+            // Trabalho de frenagem/arrancada nas pontas (desacelerar o corpo a zero e acelerar de novo)
+            const trabFrenagem = 0.50 * atleta.peso * Math.pow(3.0, 2); 
+            
+            // tMech = energia de apenas UMA repetição (um tiro)
+            tMech = trabCorrida + trabFrenagem; 
+            
+            // O log mostra exatamente o que aconteceu: "10x de 7.5m"
+            exL = ` (${safeReps}x de ${distTiro.toFixed(1)}m)`; 
+            break;
+        }
       case 'corrida': 
-          tMech = atleta.peso * G * (0.07 * 0.75 * extraSafe); 
-          exL = ` (${extraSafe.toFixed(1)}m)`; 
+      case 'run':
+          tMech = atleta.peso * G * (0.07 * 0.75); 
+          exL = ` (${safeReps}m)`; 
           break;
       case 'air_runner': 
-          tMech = atleta.peso * G * 0.09 * extraSafe; 
-          exL = ` (${extraSafe.toFixed(1)}m)`; 
+          tMech = atleta.peso * G * 0.09; 
+          exL = ` (${safeReps}m)`; 
           break;
       
-      case 'remo': {
-          const extraStr = (extraV !== undefined && extraV !== null) ? extraV.toString().toLowerCase() : "";
-          let tempoTrabalho = 0;
+      case 'remo':
+      case 'skierg':
+      case 'row': {
+          // O parâmetro extra agora define apenas a UNIDADE ('m' ou 'cal').
+          // A quantidade real vem de 'safeReps'.
+          const extraStr = (extraV !== undefined && extraV !== null) ? extraV.toString().toLowerCase() : "m";
+          const isCal = extraStr.includes('cal');
+          
+          // O ecrã da máquina omite o esforço para deslocar a própria massa (1 metro ou 1 cal).
+          const fatorTranslacao = (movId === 'remo' || movId === 'row') ? 0.35 : 0.15;
 
-          if (extraStr.includes('cal')) {
-              const calVal = Math.max(0.1, parseFloat(extraStr) || 0);
-              const tempoUso = deltaT > 0 ? deltaT : Math.max(1.0, calVal * 6.0);
-              tempoTrabalho = tempoUso;
-              P = Math.max(1.0, ((calVal * (3600.0 / tempoUso)) - 300.0) / (4.0 * 0.8604));
-              sErgo = Math.pow(2.80 / P, 1.0 / 3.0); 
-              tMech = (P * tempoUso) / safeReps; 
+          if (isCal) {
+              // CÁLCULO PARA 1 REP = 1 CALORIA
+              // Assumindo um ritmo médio onde 1 caloria leva ~3.6 segundos exigindo ~200W
+              const tempoPorCal = 3.6; 
+              P = 200.0;
+              tMech = P * tempoPorCal; // ~720 Joules mecânicos por caloria
+              
+              // Penalidade cinética invisível
+              const penalidadeTranslacao = atleta.peso * fatorTranslacao * tempoPorCal;
+              tMech += penalidadeTranslacao;
+              
               isErgo = true;
               isCalorieErgo = true;
-              exL = ` (${calVal.toFixed(1)} Cal)`;
+              exL = ` (${safeReps} Cal)`;
           } else {
-              const parsedTime = parseClockTime(extraV);
-              const t_split = parsedTime > 0 ? parsedTime : 120.0;
-              sErgo = Math.max(0.02, t_split / 500.0); 
-              tempoTrabalho = sErgo; 
-              P = Math.max(1.0, 2.80 / Math.pow(sErgo, 3)); 
-              tMech = P * sErgo; 
-              isErgo = true; 
-              exL = ` (Pace ${extraV || '2:00'})`; 
+              // CÁLCULO PARA 1 REP = 1 METRO
+              // Assumindo pace padrão 2:00/500m -> 0.24 segundos por metro
+              const tempoPorMetro = 120.0 / 500.0; 
+              P = Math.max(1.0, 2.80 / Math.pow(tempoPorMetro, 3)); // ~202.5W
+              tMech = P * tempoPorMetro; // ~48.6 Joules mecânicos por metro
+              
+              const penalidadeTranslacao = atleta.peso * fatorTranslacao * tempoPorMetro;
+              tMech += penalidadeTranslacao;
+              
+              isErgo = true;
+              isCalorieErgo = false;
+              exL = ` (${safeReps}m)`;
           }
-
-          // --- NOVA REFATORAÇÃO 5: Penalidade Cinética Translatória (Concept2) ---
-          // O ecrã da máquina omite o esforço invisível para deslocar a própria massa.
-          // O Remo exige translação total no monotrilho (fator 0.35), SkiErg exige oscilação de tronco (fator 0.15).
-          const fatorTranslacao = movId === 'row' ? 0.35 : 0.15;
-          const penalidadeTranslacao = atleta.peso * fatorTranslacao * tempoTrabalho;
-          
-          tMech += (penalidadeTranslacao / safeReps);
-
           break;
       }
-      case 'bike': {
-          const rpmBike = extra > 0 ? extra : 70.0;
+      case 'bike':
+      case 'bike_erg': {
+          const rpmBike = extraSafe > 0 ? extraSafe : 70.0;
+          // Curva original
           P = Math.max(1.0, 0.000474 * Math.pow(rpmBike, 3)); 
-          sErgo = 4184.0 / P; 
-          tMech = P * sErgo; 
+          
+          const unidade = (extraV2 || 'm').toString().toLowerCase();
+          if (unidade === 'cal') {
+              tMech = 4184.0; // Trabalho mecânico exato para 1 kcal na máquina
+              isCalorieErgo = true;
+              exL = ` (${safeReps} Cal @ ${rpmBike.toFixed(0)} RPM)`;
+          } else {
+              // Convertendo Potência para Velocidade (m/s) no padrão Concept2
+              const velocidade = Math.pow(P / 2.80, 1.0 / 3.0); 
+              const tempoPorMetro = 1.0 / Math.max(0.1, velocidade);
+              tMech = P * tempoPorMetro; // Trabalho para 1 metro
+              isCalorieErgo = false;
+              exL = ` (${safeReps}m @ ${rpmBike.toFixed(0)} RPM)`;
+          }
           isErgo = true; 
-          exL = ` (${rpmBike.toFixed(0)} RPM)`; 
           break;
       }
+      
       case 'echo_bike': {
-          const echoRpm = Math.max(20.0, extra > 0 ? extra : 60.0);
+          const echoRpm = Math.max(20.0, extraSafe > 0 ? extraSafe : 60.0);
+          // Polinômio original da Echo Bike
           P = 1e-5 * Math.pow(echoRpm, 4) - 0.0011 * Math.pow(echoRpm, 3) + 0.1455 * Math.pow(echoRpm, 2) - 3.3264 * echoRpm + 29.355;
           P = Math.max(1.0, P);
-          sErgo = 4184.0 / P; 
-          tMech = P * sErgo; 
+          
+          const unidade = (extraV2 || 'cal').toString().toLowerCase();
+          if (unidade === 'cal') {
+              tMech = 4184.0; 
+              isCalorieErgo = true;
+              exL = ` (${safeReps} Cal @ ${echoRpm.toFixed(0)} RPM)`;
+          } else {
+              // Estimativa de velocidade linear baseada em RPM para Air Bikes
+              const velocidade = echoRpm * 0.15; 
+              const tempoPorMetro = 1.0 / Math.max(0.1, velocidade);
+              tMech = P * tempoPorMetro;
+              isCalorieErgo = false;
+              exL = ` (${safeReps}m @ ${echoRpm.toFixed(0)} RPM)`;
+          }
           isErgo = true; 
-          exL = ` (${echoRpm.toFixed(0)} RPM)`; 
           break;
       }
+      
       case 'assault_bike': {
-          const abRpm = extra > 0 ? extra : 60.0;
+          const abRpm = extraSafe > 0 ? extraSafe : 60.0;
+          // Curva cúbica original da Assault
           P = Math.max(1.0, 0.00342 * Math.pow(abRpm, 3)); 
-          sErgo = 4184.0 / P; 
-          tMech = P * sErgo; 
+          
+          const unidade = (extraV2 || 'cal').toString().toLowerCase();
+          if (unidade === 'cal') {
+              tMech = 4184.0;
+              isCalorieErgo = true;
+              exL = ` (${safeReps} Cal @ ${abRpm.toFixed(0)} RPM)`;
+          } else {
+              const velocidade = abRpm * 0.15; 
+              const tempoPorMetro = 1.0 / Math.max(0.1, velocidade);
+              tMech = P * tempoPorMetro;
+              isCalorieErgo = false;
+              exL = ` (${safeReps}m @ ${abRpm.toFixed(0)} RPM)`;
+          }
           isErgo = true; 
-          exL = ` (${abRpm.toFixed(0)} RPM)`; 
           break;
       }
       case 'heavy_du': {
+          // No Heavy DU, a massa da corda pode continuar vindo do extraV
           const mC = extra > 0 ? extra : 1.5; 
+          // O tMech já é a energia gasta em 1 único salto. 
           tMech = (atleta.peso * G * 0.10) + (0.50 * (mC * 0.10) * Math.pow(15.0, 2)); 
+          exL = ` (${mC}kg corda)`;
           break;
       }
       default:
@@ -579,7 +642,7 @@ export function calcularFisica(
       // 1. Definição estrita das grandezas do modelo de Pandolf
       const W = atleta.peso; // Peso corporal basal do atleta (kg)
       const L = pCarga;      // Massa da carga transportada (kg)
-      const V = deltaT > 0 ? (extraSafe / deltaT) : 1.2; // Velocidade de translação (m/s)
+      const V = deltaT > 0 ? (distanciaDinamica / deltaT) : 1.2; // Velocidade de translação (m/s)
       
       // 2. Fatores exógenos (Terreno e Topografia)
       const G_grade = 0; // Gradiente de elevação em %. (0 = plano). Expansível futuramente.
