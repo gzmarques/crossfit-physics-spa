@@ -3,7 +3,7 @@ name: Bot DynaWOD - Scraper Diário
 on:
   schedule:
     # Roda todos os dias às 08:00 UTC (05:00 no horário de Brasília)
-    - cron: '0 8 * * *'
+    - cron: '0 0,6,12,18 * * *' 
   
   # Habilita um botão no painel do GitHub para você rodar manualmente quando quiser
   workflow_dispatch: 

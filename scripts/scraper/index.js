@@ -15,33 +15,42 @@ if (fs.existsSync('.env.local')) {
 // 1. CONFIGURAÇÕES INICIAIS (Supabase e Gemini)
 // ============================================================================
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // Chave com poderes totais
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY; 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 // ============================================================================
-// 2. MÓDULO DE INTELIGÊNCIA ARTIFICIAL (Gemini)
+// 2. MÓDULO DE INTELIGÊNCIA ARTIFICIAL (Processamento em Lote)
 // ============================================================================
-async function extrairTreinoComIA(textoBruto) {
-  const prompt = `Extraia o treino de CrossFit deste texto. Retorne os dados estritamente no formato JSON exigido. Texto: ${textoBruto}`;
+async function extrairTreinosEmLoteComIA(loteBruto) {
+  // Passamos o array JSON diretamente no prompt para o Gemini
+  const prompt = `Extraia os treinos de CrossFit da seguinte lista de textos de páginas web. 
+  Retorne estritamente um ARRAY de objetos JSON. 
+  Para cada treino identificado, mantenha o valor exato da propriedade 'url' correspondente ao texto analisado.
+  Lista de textos brutos: ${JSON.stringify(loteBruto)}`;
   
   let tentativas = 0;
   while (tentativas < 3) {
     try {
       const response = await ai.models.generateContent({
-        model: 'gemini-3.6-flash', // Ou o modelo que você está usando
+        model: 'gemini-3.6-flash',
         contents: prompt,
         config: {
           responseMimeType: 'application/json',
+          // O Schema foi alterado de OBJECT para ARRAY de objetos para forçar a formatação em lote
           responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              titulo: { type: Type.STRING },
-              descricao: { type: Type.STRING },
-              tipo: { type: Type.STRING },
-            },
-            required: ['titulo', 'descricao', 'tipo'],
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                url: { type: Type.STRING },
+                titulo: { type: Type.STRING },
+                descricao: { type: Type.STRING },
+                tipo: { type: Type.STRING },
+              },
+              required: ['url', 'titulo', 'descricao', 'tipo'],
+            }
           },
         }
       });
@@ -56,7 +65,6 @@ async function extrairTreinoComIA(textoBruto) {
       
       if (tentativas >= 3) {
         console.error(`❌ Falha fatal na API do Gemini após 3 tentativas:`, error.message);
-        // O Kill Switch: Retorna 'FATAL' para o orquestrador abortar o lote e proteger a cota
         return 'FATAL';
       }
     }
@@ -71,7 +79,7 @@ async function obterDataMaisAntigaCrossfit() {
     .from('wod_templates')
     .select('source_url')
     .like('source_url', '%crossfit.com/%')
-    .order('source_url', { ascending: true }) // Busca o link mais antigo
+    .order('source_url', { ascending: true }) 
     .limit(1);
 
   if (error || !data || data.length === 0) {
@@ -85,11 +93,10 @@ async function obterDataMaisAntigaCrossfit() {
     return `${yy}${mm}${dd}`; 
   }
 
-  // Extrai o YYMMDD da coluna source_url
   return data[0].source_url.split('/').pop(); 
 }
 
-function gerarLinksHistoricosCrossfit(dataBaseYYMMDD, diasParaTras = 10) {
+function gerarLinksHistoricosCrossfit(dataBaseYYMMDD, diasParaTras = 30) {
   const links = [];
   const ano = 2000 + parseInt(dataBaseYYMMDD.substring(0, 2));
   const mes = parseInt(dataBaseYYMMDD.substring(2, 4)) - 1; 
@@ -109,97 +116,118 @@ function gerarLinksHistoricosCrossfit(dataBaseYYMMDD, diasParaTras = 10) {
   return links;
 }
 
-async function salvarTreino(treinoData, url) {
+// Transformado em um bulk insert para disparar apenas 1 requisição ao Supabase
+async function salvarTreinosEmLote(treinosArray) {
+  if (!treinosArray || treinosArray.length === 0) return;
+
+  // Formata o array vindo do Gemini (ou do filtro de Rest Day) para as colunas exatas do banco
+  const payload = treinosArray.map(t => ({
+    titulo: t.titulo, 
+    descricao: t.descricao, 
+    tipo: t.tipo,
+    source_url: t.url
+  }));
+
   const { error } = await supabase
-    .from('wod_templates') // Nome correto da tabela
-    .insert([{ ...treinoData, source_url: url }]); // Mapeia a URL para a coluna correta
+    .from('wod_templates') 
+    .insert(payload); 
     
   if (error) {
-    console.error(`❌ Erro ao salvar no banco:`, error.message);
+    console.error(`❌ Erro ao salvar o lote no banco:`, error.message);
   } else {
-    console.log(`💾 Treino salvo com sucesso! URL: ${url}`);
+    console.log(`💾 Lote de ${payload.length} treinos salvo com sucesso!`);
   }
 }
 
 // ============================================================================
-// 4. MÓDULO DE NAVEGAÇÃO WEB (Puppeteer)
+// 4. MÓDULO DE NAVEGAÇÃO WEB (Puppeteer - Refatorado para performance)
 // ============================================================================
-async function extrairTextoBruto(url) {
-  // Argumentos essenciais para rodar liso no servidor Linux do GitHub Actions
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox']
-  });
-  
+// Recebe a instância do navegador pronta para evitar abrir e fechar o Chromium a cada loop
+async function extrairTextoBruto(browser, url) {
   const page = await browser.newPage();
   
   try {
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
-    // Remove cabeçalhos, rodapés e menus para não sujar o texto da IA
+    
     await page.evaluate(() => {
       const seletoresInuteis = ['header', 'footer', 'nav', '.sidebar', '.menu'];
       seletoresInuteis.forEach(seletor => {
         document.querySelectorAll(seletor).forEach(el => el.remove());
       });
     });
+    
     const texto = await page.evaluate(() => document.body.innerText);
     return texto.trim();
   } catch (error) {
     console.error(`⚠️ Erro ao raspar página ${url}:`, error.message);
     return null;
   } finally {
-    await browser.close();
+    await page.close(); // Fecha apenas a aba para não estourar a memória RAM da máquina virtual
   }
 }
 
 // ============================================================================
-// 5. ORQUESTADOR PRINCIPAL (O Motor do Bot)
+// 5. ORQUESTADOR PRINCIPAL (Otimizado para Bulk Processing)
 // ============================================================================
 async function iniciarSistema() {
-  console.log("🚀 Iniciando motor de Scraping Histórico do CrossFit.com...");
+  console.log("🚀 Iniciando motor de Scraping Histórico (Modo Lote)...");
   
-  // 1. Consulta o passado
   const dataMaisAntiga = await obterDataMaisAntigaCrossfit();
   console.log(`🕰️ Treino mais antigo no banco é de: ${dataMaisAntiga}. Viajando para trás...`);
   
-  // 2. Gera 10 links inéditos do passado (sem usar cota de navegação)
-  const urlsParaProcessar = gerarLinksHistoricosCrossfit(dataMaisAntiga, 10);
+  // Alterado de 10 para 30 dias por lote para maximizar o uso da cota da IA
+  const urlsParaProcessar = gerarLinksHistoricosCrossfit(dataMaisAntiga, 30);
   console.log(`🎯 Processando ${urlsParaProcessar.length} links no formato Máquina do Tempo.`);
+
+  // Inicializa o Puppeteer UMA ÚNICA VEZ para todo o lote
+  const browser = await puppeteer.launch({
+    headless: true,
+    args: ['--no-sandbox', '--disable-setuid-sandbox']
+  });
+
+  const loteParaIA = [];
+  const loteParaBanco = [];
 
   let contador = 1;
   for (const url of urlsParaProcessar) {
-    console.log(`--------------------------------------------------`);
-    console.log(`Processing [${contador++}/${urlsParaProcessar.length}]`);
-    console.log(`🌐 Buscando texto da página: ${url}`);
+    console.log(`🌐 [${contador++}/${urlsParaProcessar.length}] Buscando texto: ${url}`);
     
-    // 3. Raspagem da página
-    const textoBruto = await extrairTextoBruto(url);
+    const textoBruto = await extrairTextoBruto(browser, url);
     if (!textoBruto) continue;
 
-    // 4. 🛡️ Trava do Rest Day: Impede que lixo consuma a cota do Gemini
     if (textoBruto.toLowerCase().includes('rest day')) {
-      console.log(`⏸️ REST DAY detectado. Ignorando a IA e poupando cota.`);
-      // Salva no banco imediatamente como Rest Day para não tentar raspar de novo no futuro
-      await salvarTreino({ titulo: "Rest Day", descricao: "Rest Day", tipo: "Rest" }, url); 
-      continue;
+      console.log(`⏸️ REST DAY detectado. Separando para bulk insert direto.`);
+      loteParaBanco.push({ url, titulo: "Rest Day", descricao: "Rest Day", tipo: "Rest" });
+    } else {
+      // Guarda URL e o Texto para enviar tudo mastigado para a IA de uma vez
+      loteParaIA.push({ url, texto: textoBruto });
     }
+  }
 
-    // 5. Envia texto limpo para o Gemini
-    const treinoData = await extrairTreinoComIA(textoBruto);
+  // Derruba o navegador para liberar memória RAM antes de chamar a IA
+  await browser.close();
+
+  console.log(`\n🧠 Enviando um lote único de ${loteParaIA.length} treinos para o Gemini processar...`);
+  
+  if (loteParaIA.length > 0) {
+    const treinosProcessados = await extrairTreinosEmLoteComIA(loteParaIA);
     
-    // 6. 🛑 Kill Switch: Aborta o lote inteiro se a cota do Google estourar
-    if (treinoData === 'FATAL') {
-      console.log("🛑 Kill Switch ativado por limite de API. Encerrando lote atual.");
-      break; 
-    }
-    
-    // 7. Salva o treino real no banco
-    if (treinoData) {
-      await salvarTreino(treinoData, url);
+    if (treinosProcessados === 'FATAL') {
+      console.log("🛑 Kill Switch ativado por limite de API. O lote não foi convertido.");
+    } else {
+      // Junta os treinos processados pela IA com os Rest Days que foram interceptados
+      loteParaBanco.push(...treinosProcessados);
     }
   }
   
-  console.log("✅ Lote finalizado com sucesso!");
+  if (loteParaBanco.length > 0) {
+    console.log(`\n💾 Disparando Bulk Insert para o Supabase...`);
+    await salvarTreinosEmLote(loteParaBanco);
+  } else {
+    console.log("⚠️ Não sobrou nenhum dado para salvar neste lote.");
+  }
+  
+  console.log("✅ Execução finalizada!");
 }
 
 // Dispara o script
