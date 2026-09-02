@@ -1,4 +1,4 @@
-import { Trophy, Dumbbell, LogOut } from 'lucide-react';
+import { Trophy, Dumbbell } from 'lucide-react';
 import type { UserProfile } from '../../types';
 
 interface HeaderProps {
@@ -6,15 +6,13 @@ interface HeaderProps {
   selectedAthleteId: string;
   myAthletes: UserProfile[];
   onAthleteChange: (id: string) => void;
-  onSignOut: () => Promise<void>;
 }
 
 export function Header({ 
   userProfile, 
   selectedAthleteId, 
   myAthletes, 
-  onAthleteChange, 
-  onSignOut 
+  onAthleteChange 
 }: HeaderProps) {
   return (
     <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 24px', backgroundColor: 'var(--bg-dark, #0a0a0a)', borderBottom: '1px solid var(--line-silver, #26272b)', marginBottom: '24px' }}>
@@ -43,13 +41,7 @@ export function Header({
             </optgroup>
           </select>
         )}
-        
-        <button 
-          onClick={onSignOut} 
-          style={{ width: 'auto', backgroundColor: 'var(--dyna-burgundy, #7A0F1B)', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer', fontWeight: 'bold' }}
-        >
-          <LogOut size={"1.2em"} /> Sair
-        </button>
+
       </div>
     </header>
   );

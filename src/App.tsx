@@ -6,7 +6,7 @@ import html2canvas from 'html2canvas';
 import { LoginScreen } from './components/auth/LoginScreen';
 import { OnboardingScreen } from './components/auth/OnboardingScreen';
 import { Header } from './components/layout/Header';
-import { Tabs } from './components/layout/Tabs';
+import { Sidebar } from './components/layout/Sidebar';
 import { WodCatalogModal } from './components/shared/WodCatalogModal';
 import { PrescricaoTab } from './components/tabs/PrescricaoTab';
 import { AnaliseTab } from './components/tabs/AnaliseTab';
@@ -244,93 +244,103 @@ export default function App() {
   }
 
   return (
-    <div className="container" style={{ padding: 0, maxWidth: '1200px', margin: '0 auto' }}> 
+    // Novo Wrapper principal com display Flex
+    <div className="layout-wrapper" style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}> 
       
-      <Header 
-        userProfile={userProfile}
-        selectedAthleteId={selectedAthleteId}
-        myAthletes={myAthletes}
-        onAthleteChange={handleAthleteChange}
-        onSignOut={signOut}
+      {/* Sidebar Injetada Aqui */}
+      <Sidebar 
+        activeTab={activeTab} 
+        setActiveTab={setActiveTab} 
+        userProfile={userProfile} 
+        onSignOut={signOut} 
       />
 
-      <div style={{ padding: '0 24px' }}>
+      {/* Área de Conteúdo Principal */}
+      <div className="main-content" style={{ flex: 1, overflowY: 'auto', backgroundColor: 'var(--bg-dark)' }}>
+        <Header 
+          userProfile={userProfile}
+          selectedAthleteId={selectedAthleteId}
+          myAthletes={myAthletes}
+          onAthleteChange={handleAthleteChange}
+        />
+
+        <div className="container" style={{ padding: '0 24px 40px 24px', maxWidth: '1200px', margin: '0 auto' }}>
+          
+          {/* O COMPONENTE <Tabs /> FOI REMOVIDO DAQUI */}
+
+          {activeTab === 'prescricao' && (
+            <PrescricaoTab 
+              currentShortCode={currentShortCode}
+              currentTemplateId={currentTemplateId}
+              importarWod={importarWod}
+              compartilharWod={compartilharWod}
+              clonarWod={clonarWod}
+              salvarNoSupabase={salvarNoSupabase}
+              carregarDoSupabase={carregarDoSupabase}
+            />
+          )}
+
+          {activeTab === 'analise' && (
+            <AnaliseTab
+              tipoTreino={tipoTreino}
+              tempoReal={tempoReal}
+              setTempoReal={setTempoReal}
+              roundsReal={roundsReal}
+              setRoundsReal={setRoundsReal}
+              isScaled={isScaled}
+              setIsScaled={setIsScaled}
+              lousa={lousa}
+              timelineState={timelineState}
+              handleTimelineChange={handleTimelineChange}
+              processarWOD={processarWOD}
+              resultado={resultado}
+              gerarCardInstagram={gerarCardInstagram}
+              roundsPrescritos={roundsPrescritos}
+              temperatura={temperatura}
+              setTemperatura={setTemperatura}
+            />
+          )}
+
+          {activeTab === 'atleta' && (
+            <AtletaTab
+              selectedAthleteId={selectedAthleteId}
+              atleta={atleta}
+              setAtleta={setAtleta}
+              salvarPerfilAtleta={salvarPerfilAtleta}
+            />
+          )}
+
+          {activeTab === 'historico' && (
+            <HistoricoTab
+              selectedAthleteId={selectedAthleteId}
+              userProfile={userProfile}
+              sessionId={session?.user?.id}
+              coachIdInput={coachIdInput}
+              setCoachIdInput={setCoachIdInput}
+              linkToCoach={linkToCoach}
+              savedWods={savedWods}
+              carregarDoSupabase={carregarDoSupabase}
+            />
+          )}
         
-        <Tabs activeTab={activeTab} setActiveTab={setActiveTab} />
+        </div> 
 
-        {activeTab === 'prescricao' && (
-          <PrescricaoTab 
-            currentShortCode={currentShortCode}
-            currentTemplateId={currentTemplateId}
-            importarWod={importarWod}
-            compartilharWod={compartilharWod}
-            clonarWod={clonarWod}
-            salvarNoSupabase={salvarNoSupabase}
-            carregarDoSupabase={carregarDoSupabase}
-          />
-        )}
+        <InstagramCard 
+          tipoTreino={tipoTreino}
+          tempoAlvo={tempoAlvo}
+          roundsPrescritos={roundsPrescritos}
+          lousaCount={lousa.length}
+          tempoReal={tempoReal}
+          isScaled={isScaled}
+          resultado={resultado}
+        />
 
-        {activeTab === 'analise' && (
-          <AnaliseTab
-            tipoTreino={tipoTreino}
-            tempoReal={tempoReal}
-            setTempoReal={setTempoReal}
-            roundsReal={roundsReal}
-            setRoundsReal={setRoundsReal}
-            isScaled={isScaled}
-            setIsScaled={setIsScaled}
-            lousa={lousa}
-            timelineState={timelineState}
-            handleTimelineChange={handleTimelineChange}
-            processarWOD={processarWOD}
-            resultado={resultado}
-            gerarCardInstagram={gerarCardInstagram}
-            roundsPrescritos={roundsPrescritos}
-            temperatura={temperatura}
-            setTemperatura={setTemperatura}
-          />
-        )}
-
-        {activeTab === 'atleta' && (
-          <AtletaTab
-            selectedAthleteId={selectedAthleteId}
-            atleta={atleta}
-            setAtleta={setAtleta}
-            salvarPerfilAtleta={salvarPerfilAtleta}
-          />
-        )}
-
-        {activeTab === 'historico' && (
-          <HistoricoTab
-            selectedAthleteId={selectedAthleteId}
-            userProfile={userProfile}
-            sessionId={session?.user?.id}
-            coachIdInput={coachIdInput}
-            setCoachIdInput={setCoachIdInput}
-            linkToCoach={linkToCoach}
-            savedWods={savedWods}
-            carregarDoSupabase={carregarDoSupabase}
-          />
-        )}
-      
-      </div> 
-
-      <InstagramCard 
-        tipoTreino={tipoTreino}
-        tempoAlvo={tempoAlvo}
-        roundsPrescritos={roundsPrescritos}
-        lousaCount={lousa.length}
-        tempoReal={tempoReal}
-        isScaled={isScaled}
-        resultado={resultado}
-      />
-
-      <WodCatalogModal 
-        isOpen={isCatalogOpen} 
-        onClose={() => setIsCatalogOpen(false)} 
-        onSelectWod={carregarDoSupabase} 
-      />
-      
+        <WodCatalogModal 
+          isOpen={isCatalogOpen} 
+          onClose={() => setIsCatalogOpen(false)} 
+          onSelectWod={carregarDoSupabase} 
+        />
+      </div>
     </div>
   );
 }

@@ -532,3 +532,132 @@ button:hover {
 .font-mono {
   font-family: 'Roboto Mono', monospace !important;
 }
+
+/* --- SIDEBAR E LAYOUT PRINCIPAL --- */
+.layout-wrapper {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+.sidebar {
+  background-color: var(--bg-card);
+  border-right: 1px solid var(--line-silver);
+  display: flex;
+  flex-direction: column;
+  transition: width 0.3s ease;
+  height: 100vh;
+  z-index: 50;
+  /* Utilizando a fonte Inter no peso 400 (o mais fino importado no index.html) */
+  font-family: 'Inter', sans-serif;
+  font-weight: 400; 
+}
+
+.sidebar.expanded {
+  width: 240px;
+}
+
+.sidebar.collapsed {
+  width: 70px;
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  padding: 20px;
+  min-height: 70px;
+  border-bottom: 1px solid var(--line-silver);
+}
+
+.toggle-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+}
+
+.toggle-btn:hover {
+  color: var(--text-main);
+  background: transparent;
+}
+
+.sidebar-logo {
+  margin-left: 15px;
+  display: flex;
+  align-items: center;
+}
+
+.sidebar-nav {
+  flex: 1;
+  padding: 20px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 24px;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: all 0.2s;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.sidebar-icon {
+  min-width: 22px; /* Garante que o ícone não amasse ao fechar a barra */
+  margin-right: 20px;
+}
+
+.sidebar-item:hover {
+  background-color: #252525;
+  color: var(--text-main);
+}
+
+.sidebar-item.active {
+  background-color: rgba(255, 43, 61, 0.1);
+  color: var(--dyna-red);
+  border-right: 3px solid var(--dyna-red);
+  font-weight: 500;
+}
+
+.sidebar-footer {
+  border-top: 1px solid var(--line-silver);
+  padding: 15px 0;
+}
+
+.sidebar-user-info {
+  padding: 0 24px 15px 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-user-info .user-name {
+  color: var(--text-main);
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.sidebar-user-info .user-role {
+  color: var(--dyna-red);
+  font-size: 0.75rem;
+  font-weight: 400; /* Fino */
+}
+
+.sidebar-item.logout:hover {
+  color: var(--dyna-red);
+  background-color: rgba(255, 43, 61, 0.05);
+}
+
+/* Esconde as antigas tabs se ainda sobrarem marcações */
+.tabs {
+  display: none;
+}
