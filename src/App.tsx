@@ -45,7 +45,7 @@ export default function App() {
 
   const {
     timelineState, setTimelineState, handleTimelineChange,
-    resultado, processarWOD
+    resultado, processarWOD, temperatura, setTemperatura
   } = usePhysics({
     tipoTreino, tempoAlvo, tempoReal, roundsPrescritos, roundsReal, lousa, atleta
   });
@@ -286,6 +286,8 @@ export default function App() {
             resultado={resultado}
             gerarCardInstagram={gerarCardInstagram}
             roundsPrescritos={roundsPrescritos}
+            temperatura={temperatura}
+            setTemperatura={setTemperatura}
           />
         )}
 

@@ -43,7 +43,11 @@ export function PrescricaoTab({
   };
 
   const renderMovimento = (item: ItemLousa) => {
-    const cfg = movimentosDB[item.movId] || movimentosDB['pushup'];
+    const cfg = movimentosDB[item.movId];
+    const isDesconhecido = !cfg; // <- Verifica se o movimento existe no dicionário
+    
+    // Fallback de segurança para não quebrar os inputs de renderização
+    const safeCfg = cfg || movimentosDB['pushup'];
     
     // Tratamento de compatibilidade caso o DB velho traga apenas 'carga'
     const cM = item.cargaMasc !== undefined ? item.cargaMasc : (item.carga || 0);
@@ -61,8 +65,17 @@ export function PrescricaoTab({
         onDragEnter={() => handleDragEnter(item.originalId)}
         onDragEnd={handleDragEnd}
         onDragOver={(e) => e.preventDefault()}
-        style={{ gridTemplateColumns: '1.5fr 0.6fr 1fr 1.2fr 0.8fr auto' }} /* Ajuste do grid para caber a carga extra */
+        style={{ 
+          gridTemplateColumns: '1.5fr 0.6fr 1fr 1.2fr 0.8fr auto',
+          border: isDesconhecido ? '2px dashed #ff9800' : 'none' // <- Destaque visual
+        }} 
       >
+        {isDesconhecido && (
+          <div style={{ gridColumn: '1 / -1', color: '#ff9800', fontWeight: 'bold', fontSize: '0.9rem', marginBottom: '10px' }}>
+            ⚠️ Atenção: O movimento "{item.movId}" não está mapeado no motor. Os cálculos usarão um perfil genérico até ser atualizado.
+          </div>
+        )}
+      
         <div className="drag-handle">
           <svg width="10" height="20" viewBox="0 0 8 20" fill="currentColor">
             <circle cx="2" cy="2" r="1.5"/><circle cx="6" cy="2" r="1.5"/>
@@ -90,8 +103,9 @@ export function PrescricaoTab({
         <div>
           <label>Carga ♂ / ♀</label>
           <div style={{ display: 'flex', gap: '5px' }}>
-            <input type="number" placeholder="Masc" disabled={!cfg.usaCarga} value={cM} onChange={e => updateMovimento(item.originalId, 'cargaMasc', Number(e.target.value))} style={{ flex: 1 }} />
-            <input type="number" placeholder="Fem" disabled={!cfg.usaCarga} value={cF} onChange={e => updateMovimento(item.originalId, 'cargaFem', Number(e.target.value))} style={{ flex: 1 }} />
+            {/* Substituir cfg por safeCfg aqui */}
+            <input type="number" placeholder="Masc" disabled={!safeCfg.usaCarga} value={cM} onChange={e => updateMovimento(item.originalId, 'cargaMasc', Number(e.target.value))} style={{ flex: 1 }} />
+            <input type="number" placeholder="Fem" disabled={!safeCfg.usaCarga} value={cF} onChange={e => updateMovimento(item.originalId, 'cargaFem', Number(e.target.value))} style={{ flex: 1 }} />
           </div>
         </div>
 
@@ -108,14 +122,14 @@ export function PrescricaoTab({
         <div>
           <div style={{ display: 'flex', gap: '5px' }}>
             <div style={{ flex: 1 }}>
-              <label>{cfg.paramExtra ? cfg.paramExtra.label : 'Param.'}</label>
-              <input type="text" disabled={!cfg.paramExtra} value={item.extraVal || ''} onChange={e => updateMovimento(item.originalId, 'extraVal', e.target.value)} />
+              <label>{safeCfg.paramExtra ? safeCfg.paramExtra.label : 'Param.'}</label>
+              <input type="text" disabled={!safeCfg.paramExtra} value={item.extraVal || ''} onChange={e => updateMovimento(item.originalId, 'extraVal', e.target.value)} />
             </div>
-            {cfg.paramExtra2 && (
+            {safeCfg.paramExtra2 && (
               <div style={{ flex: 1 }}>
-                <label>{cfg.paramExtra2.label}</label>
-                <select value={item.extraVal2 || cfg.paramExtra2.val} onChange={e => updateMovimento(item.originalId, 'extraVal2', e.target.value)}>
-                  {cfg.paramExtra2.options?.map(opt => (
+                <label>{safeCfg.paramExtra2.label}</label>
+                <select value={item.extraVal2 || safeCfg.paramExtra2.val} onChange={e => updateMovimento(item.originalId, 'extraVal2', e.target.value)}>
+                  {safeCfg.paramExtra2.options?.map(opt => (
                     <option key={opt.value} value={opt.value}>{opt.label}</option>
                   ))}
                 </select>

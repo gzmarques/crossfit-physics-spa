@@ -22,6 +22,7 @@ export function usePhysics({
   
   const [timelineState, setTimelineState] = useState<Record<string, TimelineStateItem>>({});
   const [resultado, setResultado] = useState<ResultadoProcessamento | null>(null);
+  const [temperatura, setTemperatura] = useState<number>(20);
 
   const handleTimelineChange = (rowId: string, field: keyof TimelineStateItem, val: any) => {
     setTimelineState(prev => ({ ...prev, [rowId]: { ...(prev[rowId] || {}), [field]: val } }));
@@ -78,11 +79,14 @@ export function usePhysics({
       const baseCarga = getCargaPorSexo({ cargaMasc: row.cargaOriginalMasc, cargaFem: row.cargaOriginalFem, carga: row.cargaAntiga } as any, atleta);
       const cargaEffective = state.cargaUsada !== undefined ? Number(state.cargaUsada) : baseCarga;
 
+      const extraEffective = state.extraValUsado !== undefined ? String(state.extraValUsado) : String(row.extraVal || '');
+
       const startSec = parseClockTime(state.start);
       const endSec = parseClockTime(state.end);
       const tempoDefinitivoTemp = (startSec >= 0 && endSec > startSec) ? (endSec - startSec) : 0;
       
-      const calc = calcularFisica(row.movId, config, repsEffective, cargaEffective, row.extraVal, row.extraVal2, atleta, row.tecnica, tempoDefinitivoTemp, tempoDecorridoEstimado) || {};
+      // Passamos o extraEffective em vez de row.extraVal
+      const calc = calcularFisica(row.movId, config, repsEffective, cargaEffective, extraEffective, row.extraVal2, atleta, row.tecnica, tempoDefinitivoTemp, tempoDecorridoEstimado) || {};
 
       const trabMetabolicoWork = calc.trabMetabolicoWork || 0;
       const trabMetabolicoConcIsom = calc.trabMetabolicoConcIsom || 0;
@@ -118,8 +122,13 @@ export function usePhysics({
     const tempoLiquidoEstimado = Math.max(1, refTempoEstimado - totalTransicaoGlobal);
     const potRealEstimada = tempoLiquidoEstimado > 0 ? (trabalhoMechTotalReal / tempoLiquidoEstimado) : 0;
     const limiarPotencia = potRealEstimada / (atleta?.peso || 80);
+
+    // --- NOVO: Fator Climático baseado na Temperatura ---
+    // Acima de 20°C, o corpo gasta energia extra para resfriar (aumenta o EPOC).
+    // Abaixo de 20°C (até um limite), a dissipação térmica é facilitada.
+    const fatorClimatico = 1.0 + ((temperatura - 20) * 0.015); // +/- 1.5% no EPOC por grau Celsius de diferença
     
-    const fatorEPOC = 1.0 + (0.40 / (1.0 + Math.exp(-1.5 * (limiarPotencia - 3.5))));
+    const fatorEPOC = 1.0 + ((0.40 / (1.0 + Math.exp(-1.5 * (limiarPotencia - 3.5)))) * fatorClimatico);
 
     let logDetalhes = "", lastPhase: string | null = null;
     let tempoTotalExecucaoEfetiva = 0;
@@ -188,6 +197,7 @@ export function usePhysics({
 
   return {
     timelineState, setTimelineState, handleTimelineChange,
-    resultado, setResultado, processarWOD
+    resultado, setResultado, processarWOD,
+    temperatura, setTemperatura // <- EXPORTADO AQUI
   };
 }

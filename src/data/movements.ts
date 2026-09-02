@@ -18,7 +18,7 @@ export const movimentosDB: Record<string, MovimentoConfig> = {
   // === EMPURRADA CARGA ===
   'bench_press': { nome: 'Bench Press', grupo: 'Empurrada Carga', categoria: 'bench_press', usaCarga: true, estilosPermitidos: ['tng', 'drop'] },
   'push_press': { nome: 'Push Press', grupo: 'Empurrada Carga', categoria: 'lpo_jerk', usaCarga: true, estilosPermitidos: ['tng', 'drop'] },
-  'db_strict_press': { nome: 'Dumbbell Strict Press', grupo: 'LPO Assimétrico', categoria: 'db_press', usaCarga: true, estilosPermitidos: ['normal', 'tng'] },
+  'db_strict_press': { nome: 'Dumbbell Strict Press', grupo: 'LPO Assimétrico', categoria: 'db_press', usaCarga: true, estilosPermitidos: ['normal', 'tng'], isUnilateral: true },
   
   // === PUXADA BW E GINÁSTICA AVANÇADA ===
   'ring_row': { nome: 'Ring Row', grupo: 'Puxada BW', categoria: 'alavanca_parcial', usaCarga: false, estilosPermitidos: ['normal'] },
@@ -55,7 +55,7 @@ export const movimentosDB: Record<string, MovimentoConfig> = {
   'lunge_overhead': { nome: 'Lunge (Overhead)', grupo: 'Lunges', categoria: 'lunge_carga', usaCarga: true, estilosPermitidos: ['normal', 'tng'], isUnilateral: true },
   
   // === LPO E FORÇA ===
-  'deadlift': { nome: 'Deadlift', grupo: 'LPO / Força', categoria: 'deadlift', usaCarga: true, estilosPermitidos: ['tng', 'drop'] },
+  'deadlift': { nome: 'Deadlift', grupo: 'LPO / Força', categoria: 'deadlift', usaCarga: true, estilosPermitidos: ['tng', 'drop'], paramExtra: { label: 'Diâm. Pega (mm)', val: '28', type: 'number' } },
   'clean': { nome: 'Squat Clean', grupo: 'LPO / Força', categoria: 'lpo_floor_squat', usaCarga: true, estilosPermitidos: ['tng', 'drop'], fatorH: 0.85, paramExtra: { label: 'VBT (m/s)', val: '0', type: 'number' } },
   'clean_power': { nome: 'Power Clean', grupo: 'LPO / Força', categoria: 'lpo_floor_power', usaCarga: true, estilosPermitidos: ['tng', 'drop'], fatorH: 0.85, paramExtra: { label: 'VBT (m/s)', val: '0', type: 'number' } },
   'clean_hang_squat': { nome: 'Hang Squat Clean', grupo: 'LPO / Força', categoria: 'lpo_hang_squat', usaCarga: true, estilosPermitidos: ['tng', 'drop'], fatorH: 0.60, paramExtra: { label: 'VBT (m/s)', val: '0', type: 'number' } },
@@ -69,18 +69,24 @@ export const movimentosDB: Record<string, MovimentoConfig> = {
   'push_jerk': { nome: 'Push/Split Jerk', grupo: 'LPO / Força', categoria: 'lpo_jerk', usaCarga: true, estilosPermitidos: ['tng', 'drop'] },
   
   // === CARGAS IRREGULARES E ASSIMÉTRICAS ===
-  'db_snatch': { nome: 'Dumbbell Snatch (Alt)', grupo: 'Cargas Irregulares', categoria: 'lpo_floor_power', usaCarga: true, estilosPermitidos: ['tng', 'drop'], fatorH: 1.00 },
-  'db_clean': { nome: 'Dumbbell Clean', grupo: 'Cargas Irregulares', categoria: 'lpo_floor_power', usaCarga: true, estilosPermitidos: ['tng', 'drop'], fatorH: 0.85 },
-  'db_hang_clean': { nome: 'Dumbbell Hang Clean', grupo: 'Cargas Irregulares', categoria: 'lpo_hang_power', usaCarga: true, estilosPermitidos: ['tng', 'drop'], fatorH: 0.60 },
-  'db_jerk': { nome: 'Dumbbell Push Jerk', grupo: 'Cargas Irregulares', categoria: 'lpo_jerk', usaCarga: true, estilosPermitidos: ['tng', 'drop'] },
-  'db_clean_jerk': { nome: 'DB Clean & Jerk', grupo: 'Cargas Irregulares', categoria: 'db_cj', usaCarga: true, estilosPermitidos: ['tng', 'drop'] },
-  'db_hang_clean_jerk': { nome: 'DB Hang Clean & Jerk', grupo: 'Cargas Irregulares', categoria: 'db_hang_cj', usaCarga: true, estilosPermitidos: ['tng', 'drop'] },
+  'db_snatch': { nome: 'Dumbbell Snatch (Alt)', grupo: 'Cargas Irregulares', categoria: 'lpo_floor_power', usaCarga: true, estilosPermitidos: ['tng', 'drop'], fatorH: 1.00, isUnilateral: true },
+  'db_clean': { nome: 'Dumbbell Clean', grupo: 'Cargas Irregulares', categoria: 'lpo_floor_power', usaCarga: true, estilosPermitidos: ['tng', 'drop'], fatorH: 0.85, isUnilateral: true },
+  'db_hang_clean': { nome: 'Dumbbell Hang Clean', grupo: 'Cargas Irregulares', categoria: 'lpo_hang_power', usaCarga: true, estilosPermitidos: ['tng', 'drop'], fatorH: 0.60, isUnilateral: true },
+  'db_jerk': { nome: 'Dumbbell Push Jerk', grupo: 'Cargas Irregulares', categoria: 'lpo_jerk', usaCarga: true, estilosPermitidos: ['tng', 'drop'], isUnilateral: true },
+  'db_clean_jerk': { nome: 'DB Clean & Jerk', grupo: 'Cargas Irregulares', categoria: 'db_cj', usaCarga: true, estilosPermitidos: ['tng', 'drop'], isUnilateral: true },
+  'db_hang_clean_jerk': { nome: 'DB Hang Clean & Jerk', grupo: 'Cargas Irregulares', categoria: 'db_hang_cj', usaCarga: true, estilosPermitidos: ['tng', 'drop'], isUnilateral: true },
   'sandbag_clean': { nome: 'Sandbag Clean (Ombro)', grupo: 'LPO Assimétrico', categoria: 'sandbag_clean', usaCarga: true, estilosPermitidos: ['normal', 'drop'] },
   'dball_over_shoulder': { nome: 'D-Ball/Sandbag Over Shoulder', grupo: 'Hyrox / Strongman', categoria: 'dball_shoulder', usaCarga: true, estilosPermitidos: ['normal', 'drop'], paramExtra: { label: 'Diâmetro(m)', val: '0.35', type: 'number'} },
+  // Novos itens com punição de instabilidade
+  'double_db_snatch': { nome: 'Double DB Snatch', grupo: 'Cargas Irregulares', categoria: 'lpo_floor_power', usaCarga: true, estilosPermitidos: ['tng', 'drop'], fatorH: 1.00, isInstavel: true },
+  'double_db_clean': { nome: 'Double DB Clean', grupo: 'Cargas Irregulares', categoria: 'lpo_floor_power', usaCarga: true, estilosPermitidos: ['tng', 'drop'], fatorH: 0.85, isInstavel: true },
+  'double_db_hang_clean': { nome: 'Double DB Hang Clean', grupo: 'Cargas Irregulares', categoria: 'lpo_hang_power', usaCarga: true, estilosPermitidos: ['tng', 'drop'], fatorH: 0.60, isInstavel: true },
   
   // === HÍBRIDOS COMPLEXOS ===
   'turkish_get_up': { nome: 'TGU', grupo: 'Híbridos Complexos', categoria: 'tgu', usaCarga: true, estilosPermitidos: ['normal'] },
-  'thruster': { nome: 'Thruster', grupo: 'Híbridos Complexos', categoria: 'lpo_floor_squat', usaCarga: true, estilosPermitidos: ['tng', 'drop'], fatorH: 1.00 },
+  'thruster': { nome: 'Thruster', grupo: 'Híbridos Complexos', categoria: 'lpo_cj', usaCarga: true, estilosPermitidos: ['tng', 'drop'], fatorH: 1.00 },
+  'db_thruster': { nome: 'Dumbbell Thruster (Alt)', grupo: 'Híbridos Complexos', categoria: 'lpo_cj', usaCarga: true, estilosPermitidos: ['tng', 'drop'], fatorH: 1.00, isUnilateral: true },
+  'double_db_thruster': { nome: 'Double DB Thruster', grupo: 'Híbridos Complexos', categoria: 'lpo_cj', usaCarga: true, estilosPermitidos: ['tng', 'drop'], fatorH: 1.00, isInstavel: true },
   'wall_ball': { nome: 'Wall Ball', grupo: 'Híbridos Complexos', categoria: 'wall_ball', usaCarga: true, estilosPermitidos: ['normal'], paramExtra: { label: 'Alvo (m)', val: '3.0', type: 'number' } }, 
   'devil_press': { nome: 'Devil Press', grupo: 'Híbridos Complexos', categoria: 'devil_press', usaCarga: true, estilosPermitidos: ['normal', 'tng'] },
   
@@ -139,11 +145,13 @@ export const movimentosDB: Record<string, MovimentoConfig> = {
   // === ERGÔMETROS ===
   'row': { 
     nome: 'Remo (Concept2)', grupo: 'Ergômetros', categoria: 'remo', usaCarga: false, estilosPermitidos: ['normal'], 
-    paramExtra: { label: 'Unidade', val: 'm', type: 'select', options: [{label: 'Metros (m)', value: 'm'}, {label: 'Calorias (cal)', value: 'cal'}] } 
+    paramExtra: { label: 'Drag Factor', val: '115', type: 'number' },
+    paramExtra2: { label: 'Unidade', val: 'm', type: 'select', options: [{label: 'Metros (m)', value: 'm'}, {label: 'Calorias (cal)', value: 'cal'}] } 
   },
   'skierg': { 
     nome: 'SkiErg (Concept2)', grupo: 'Ergômetros', categoria: 'remo', usaCarga: false, estilosPermitidos: ['normal'], 
-    paramExtra: { label: 'Unidade', val: 'm', type: 'select', options: [{label: 'Metros (m)', value: 'm'}, {label: 'Calorias (cal)', value: 'cal'}] } 
+    paramExtra: { label: 'Drag Factor', val: '115', type: 'number' },
+    paramExtra2: { label: 'Unidade', val: 'm', type: 'select', options: [{label: 'Metros (m)', value: 'm'}, {label: 'Calorias (cal)', value: 'cal'}] } 
   },
   'bike_erg': { 
     nome: 'BikeErg (Concept2)', grupo: 'Ergômetros', categoria: 'bike', usaCarga: false, estilosPermitidos: ['normal'], 

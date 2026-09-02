@@ -27,6 +27,7 @@ export interface MovimentoConfig {
   paramExtra?: ParamExtraConfig;
   paramExtra2?: ParamExtraConfig;
   isUnilateral?: boolean;
+  isInstavel?: boolean;
 }
 
 export interface ItemLousa {
@@ -46,7 +47,8 @@ export interface TimelineStateItem {
   reps: number;
   start: string;
   end: string;
-  cargaUsada?: number; // <- ATUALIZADO
+  cargaUsada?: number;
+  extraValUsado?: string; // <- NOVO: Captura adaptações de altura/distância/etc
 }
 
 export interface AtletaPerfil {

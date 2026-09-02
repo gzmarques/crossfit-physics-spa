@@ -17,12 +17,14 @@ interface AnaliseTabProps {
   gerarCardInstagram: () => void;
   roundsPrescritos: number;
   atleta?: AtletaPerfil;
+  temperatura: number;
+  setTemperatura: (val: number) => void;
 }
 
 export function AnaliseTab({
   tipoTreino, tempoReal, setTempoReal, roundsReal, setRoundsReal,
   isScaled, setIsScaled, lousa, timelineState, handleTimelineChange,
-  processarWOD, resultado, gerarCardInstagram, roundsPrescritos, atleta
+  processarWOD, resultado, gerarCardInstagram, roundsPrescritos, atleta, temperatura, setTemperatura
 }: AnaliseTabProps) {
 
   // Resolve a carga correta para a UI
@@ -59,6 +61,20 @@ export function AnaliseTab({
         </div>
       </div>
 
+      {/* --- NOVO: INPUT CLIMÁTICO --- */}
+      <div style={{ backgroundColor: '#111', padding: '15px', borderRadius: '8px', border: '1px solid var(--line-silver)', marginBottom: '25px', display: 'flex', alignItems: 'center', gap: '15px' }}>
+        <div style={{ flex: 1 }}>
+          <label style={{ margin: 0, color: '#ff9800' }}>Temperatura Ambiente (°C)</label>
+          <p style={{ fontSize: '0.75rem', color: '#888', margin: '5px 0 0 0' }}>Afeta o cálculo de EPOC e estresse térmico.</p>
+        </div>
+        <input 
+          type="number" 
+          value={temperatura} 
+          onChange={e => setTemperatura(Number(e.target.value))} 
+          style={{ width: '80px', fontSize: '1.2rem', textAlign: 'center' }} 
+        />
+      </div>
+
       <h2>Timeline Expandida</h2>
       <div className="wod-list">
         {(() => {
@@ -72,9 +88,10 @@ export function AnaliseTab({
             
             const cargaSugerida = getCargaPorSexo(m);
             const inputCarga = st.cargaUsada !== undefined ? st.cargaUsada : cargaSugerida;
+            const inputExtra = st.extraValUsado !== undefined ? st.extraValUsado : (m.extraVal || ''); // <- Lê o estado ou o prescrito
 
             rows.push(
-              <div key={rowId} className="wod-item-analise">
+              <div key={rowId} className="wod-item-analise" style={{ gridTemplateColumns: cfg?.paramExtra ? 'auto 2fr 0.6fr 0.8fr 0.8fr 0.8fr 0.8fr' : 'auto 2fr 0.6fr 0.8fr 0.8fr 0.8fr' }}>
                 <div className={`badge-round ${badgeClass}`}>{badgeText}</div>
                 <div>
                   <div style={{ fontWeight: 'bold' }}>{cfg ? cfg.nome : m.movId}</div>
@@ -91,9 +108,22 @@ export function AnaliseTab({
                     value={inputCarga} 
                     onChange={e => handleTimelineChange(rowId, 'cargaUsada', e.target.value === '' ? '' : Number(e.target.value))}
                     disabled={!(cfg?.usaCarga)}
-                    style={{ border: isScaled && inputCarga < cargaSugerida ? '1px solid var(--dyna-red, #FF2B3D)' : '' }}
+                    style={{ border: isScaled && inputCarga < cargaSugerida ? '1px solid var(--dyna-red)' : '' }}
                   />
                 </div>
+
+                {/* --- NOVO: Campo de Parâmetro Extra Adaptado --- */}
+                {cfg?.paramExtra && (
+                  <div>
+                    <label>{cfg.paramExtra.label}</label>
+                    <input 
+                      type="text" 
+                      value={inputExtra} 
+                      onChange={e => handleTimelineChange(rowId, 'extraValUsado', e.target.value)}
+                      placeholder="Ex: 2.5"
+                    />
+                  </div>
+                )}
 
                 <div><label>Início</label><input type="text" placeholder="mm:ss" value={st.start || ''} onChange={e => handleTimelineChange(rowId, 'start', e.target.value)} /></div>
                 <div><label>Fim</label><input type="text" placeholder="mm:ss" value={st.end || ''} onChange={e => handleTimelineChange(rowId, 'end', e.target.value)} /></div>

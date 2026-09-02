@@ -68,8 +68,9 @@ export function calcularFisica(
       }
   }
 
-  // Degradação exponencial biológica
-  fTec = fTec * Math.exp(-kDegradacao * tempoAcumulado);
+  // Degradação exponencial biológica com piso assintótico (Steady-State)
+  const limite_eficiencia = 0.70; // Previne o colapso do motor em WODs longos
+  fTec = limite_eficiencia + (fTec - limite_eficiencia) * Math.exp(-kDegradacao * tempoAcumulado);
 
   const isM = (atleta.sexo === 'M');
   
@@ -78,9 +79,11 @@ export function calcularFisica(
   if (atleta.usaAntropometriaAvancada && atleta.circTorax) {
       // Tórax largo eleva o centro de massa, exigindo mais equilíbrio e trabalho mecânico global
       const proporcaoToraxAltura = atleta.circTorax / atleta.estatura;
-      if (proporcaoToraxAltura > 0.60) {
-          altCoM *= 1.02; // Sobe o centro de gravidade em 2%
-      }
+      
+      // Nova formulação: transição suave sem saltos binários
+      const baseProporcao = 0.55;
+      const multiplicadorSuave = 1.0 + Math.max(0, (proporcaoToraxAltura - baseProporcao) * 0.4);
+      altCoM *= multiplicadorSuave;
   }
   
   const L_arm = atleta.envergadura * 0.45; 
@@ -139,11 +142,11 @@ export function calcularFisica(
   let fatorTorqueLombar = 1.0 + Math.max(0, (racioFemurTronco - 1.0) * 0.15);
 
   // --- CORREÇÃO IMPLÍCITA: Sobretaxa Computacional por Má Mobilidade (ROM) ---
-  // Se o ROM for inferior a 100%, o atleta luta contra os próprios tecidos conectivos (encurtamento),
-  // gerando atrito interno maciço que aumenta o torque lombar e o desperdício mecânico.
+  // Se o ROM for inferior a 100%, o atleta luta contra os próprios tecidos conectivos (encurtamento)
   const mobilidadeFuncional = (atleta.mobilidade !== undefined && atleta.mobilidade > 0) ? atleta.mobilidade : 100;
   if (mobilidadeFuncional < 100) {
-      const penalidadeROM = (100 - mobilidadeFuncional) * 0.005; // 0.5% a mais de trabalho por cada ponto perdido
+      // Nova formulação exponencial para resistência fascial nos graus finais de amplitude
+      const penalidadeROM = Math.exp(0.04 * (100 - mobilidadeFuncional)) - 1;
       fatorTorqueLombar += penalidadeROM;
   }
 
@@ -158,7 +161,8 @@ export function calcularFisica(
                    (m_thigh * G * ((L_thigh * 0.59) * cosInclinacao));
   }
   
-  const h_puxao = atleta.estatura * 0.60;
+  // O ponto de puxada balística agora deriva diretamente das alavancas do quadril e esterno
+  const h_puxao = L_perna + (L_trunk * 0.20);
   
   // --- NOVA REFATORAÇÃO 2: Injeção de Telemetria VBT no LPO ---
   const loadRatio = pCarga / Math.max(1, atleta.peso);
@@ -214,7 +218,17 @@ export function calcularFisica(
           tMech = pCarga * G * L_arm;
           break;
       case 'wall_ball': {
-          const h_alvo = extra > 0 ? extra : 3.0;
+          let h_alvo = isM ? 3.05 : 2.74; // Padrões base
+
+          // Verifica se o usuário digitou M/F com barra (ex: "3.35/3.05")
+          if (extraV && extraV.toString().includes('/')) {
+              const partes = extraV.toString().split('/');
+              h_alvo = isM ? (Number(partes[0].trim().replace(',', '.')) || 3.05) 
+                           : (Number(partes[1].trim().replace(',', '.')) || 2.74);
+          } else if (extra > 0) {
+              h_alvo = extra; // Se digitou um número só, aplica para todos
+          }
+
           const h_fundo = Math.max(0, atleta.estatura - (0.5 * L_trunk) - L_thigh);
           tMech = W_squat_body + (pCarga * G * Math.max(0, h_alvo - h_fundo)); 
           exL = ` (${h_alvo.toFixed(2)}m)`; 
@@ -329,14 +343,19 @@ export function calcularFisica(
           tMech = (atleta.peso + pCarga) * G * (L_thigh * 0.85); 
           break;
       case 'hinge_carga': 
-      case 'arc_carga': 
-          tMech = pCarga * G * (atleta.estatura * 0.55); 
+      case 'arc_carga': {
+          // O raio do KB aumenta ~1.5mm por cada kg adicional, partindo de uma base de 10cm do punho
+          const raioKB = 0.10 + (pCarga * 0.0015);
+          tMech = pCarga * G * ((atleta.estatura * 0.55) + raioKB); 
           break;
-      case 'arc_carga_parcial': 
-          tMech = pCarga * G * (atleta.estatura * 0.35); 
+      }
+      case 'arc_carga_parcial': {
+          const raioKB = 0.10 + (pCarga * 0.0015);
+          tMech = pCarga * G * ((atleta.estatura * 0.35) + raioKB); 
           break;
+      }
 
-      case 'core_situp': 
+      case 'core_situp':
           tMech = m_sup * G * (L_trunk * 0.45) * Math.sin(75 * Math.PI / 180); 
           break;
       case 'core_vup': 
@@ -506,20 +525,19 @@ export function calcularFisica(
       case 'remo':
       case 'skierg':
       case 'row': {
-          // O parâmetro extra agora define apenas a UNIDADE ('m' ou 'cal').
-          // A quantidade real vem de 'safeReps'.
-          const extraStr = (extraV !== undefined && extraV !== null) ? extraV.toString().toLowerCase() : "m";
+          // O parâmetro extra agora é o Drag Factor. A UNIDADE foi para o extraV2.
+          const dragFactor = extra > 0 ? extra : 115.0;
+          const extraStr = (extraV2 !== undefined && extraV2 !== null) ? extraV2.toString().toLowerCase() : "m";
           const isCal = extraStr.includes('cal');
           
-          // O ecrã da máquina omite o esforço para deslocar a própria massa (1 metro ou 1 cal).
           const fatorTranslacao = (movId === 'remo' || movId === 'row') ? 0.35 : 0.15;
+          const multiplicadorDrag = Math.pow(dragFactor / 115.0, 1.0 / 3.0); // Ajuste fluidodinâmico
 
           if (isCal) {
               // CÁLCULO PARA 1 REP = 1 CALORIA
-              // Assumindo um ritmo médio onde 1 caloria leva ~3.6 segundos exigindo ~200W
               const tempoPorCal = 3.6; 
-              P = 200.0;
-              tMech = P * tempoPorCal; // ~720 Joules mecânicos por caloria
+              P = 200.0 * multiplicadorDrag;
+              tMech = P * tempoPorCal;
               
               // Penalidade cinética invisível
               const penalidadeTranslacao = atleta.peso * fatorTranslacao * tempoPorCal;
@@ -746,6 +764,29 @@ export function calcularFisica(
           E_isom = tMech * tut_default * 0.30; 
       } else if (cfg.categoria.includes('friccao_horizontal')) { 
           E_isom = tMech * tut_default * 0.40; 
+      }
+
+      // --- Custo de Instabilidade Bilateral (Double DB/KB) ---
+      if (cfg.isInstavel) {
+          eta_conc *= 0.85; 
+          E_isom += (pCarga * G * L_arm) * tut_default * 0.40; 
+      }
+
+      // --- NOVA REFATORAÇÃO: Custo Isométrico da Pega (Grip) Dinâmica ---
+      if (['deadlift', 'corrida_carga', 'arc_carga', 'arc_carga_parcial'].includes(cfg.categoria)) {
+          // O usuário preencheu a pega manual? (Deadlift usa extra, Farmer's usa extraV2)
+          let diametroPega = cfg.categoria === 'deadlift' ? extra : Number(extraV2);
+          
+          // Se deixou em branco (valor 0), escalamos dinamicamente a alça assumindo KBs/Halteres de ferro fundido
+          // Base de 28mm + cresce ~0.3mm por kg (Ex: KB de 32kg = alça de ~37.6mm)
+          if (!diametroPega || diametroPega <= 0) {
+              diametroPega = 28 + (pCarga * 0.3);
+          }
+
+          if (diametroPega > 28) {
+              const penalidadeGrip = 1.0 + ((diametroPega - 28) * 0.05); // +5% de fadiga por mm extra
+              E_isom += (pCarga * G * 0.10) * tut_default * penalidadeGrip;
+          }
       }
 
       const W_conc = tMech; 
