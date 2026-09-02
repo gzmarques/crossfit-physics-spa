@@ -1,5 +1,5 @@
-import React, { useRef } from 'react';
-import { Copy, X, Download, Share2, Save } from 'lucide-react';
+import React, { useRef, useState, useEffect } from 'react';
+import { Copy, X, Download, Share2, Save, Edit2 } from 'lucide-react';
 import { SearchableMovementSelect } from '../shared/SearchableMovementSelect';
 import { movimentosDB } from '../../data/movements';
 import { useWodStore } from '../../store/useWodStore';
@@ -16,6 +16,9 @@ interface PrescricaoTabProps {
   carregarDoSupabase: (wod: any) => void; 
 }
 
+// Cores vivas que simulam giz colorido na lousa escura
+const CHALK_COLORS = ['#ffffff', '#ffeb3b', '#81c784', '#64b5f6', '#ff8a65', '#ce93d8', '#ff4081'];
+
 export function PrescricaoTab({
   currentShortCode, currentTemplateId, importarWod, compartilharWod, clonarWod, salvarNoSupabase, carregarDoSupabase
 }: PrescricaoTabProps) {
@@ -23,12 +26,30 @@ export function PrescricaoTab({
   const { 
     nomeTreino, setNomeTreino, tipoTreino, setTipoTreino, tempoAlvo, setTempoAlvo,
     roundsPrescritos, setRoundsPrescritos, lousa, addMovimento, removeMovimento, 
-    updateMovimento, reorderMovimento,
-    hasBuyIn, setHasBuyIn, hasCashOut, setHasCashOut
+    updateMovimento, reorderMovimento, hasBuyIn, setHasBuyIn, hasCashOut, setHasCashOut
   } = useWodStore();
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [colorPalette, setColorPalette] = useState<string[]>([]);
 
   const dragItem = useRef<string | null>(null);
   const dragOverItem = useRef<string | null>(null);
+
+  // Embaralha as cores toda vez que a estrutura do WOD for alterada ou carregada
+  useEffect(() => {
+    const shuffleArray = (array: string[]) => {
+      const shuffled = [...array];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      return shuffled;
+    };
+    setColorPalette(shuffleArray(CHALK_COLORS).slice(0, 4));
+  }, [lousa.length, nomeTreino, tipoTreino, currentTemplateId]);
+
+  // Desestruturando a paleta embaralhada para os elementos específicos
+  const [cTime, cReps, cName, cSpecs] = colorPalette.length === 4 ? colorPalette : CHALK_COLORS.slice(0,4);
 
   const handleDragStart = (id: string) => { dragItem.current = id; };
   const handleDragEnter = (id: string) => { dragOverItem.current = id; };
@@ -42,14 +63,71 @@ export function PrescricaoTab({
     dragOverItem.current = null;
   };
 
+  const handleSaveAndExit = (isExporting: boolean) => {
+    salvarNoSupabase(isExporting);
+    setIsEditing(false); // Fecha a edição ao salvar
+  };
+
+  const carregarEDesabilitarEdicao = (wod: any) => {
+    carregarDoSupabase(wod);
+    setIsEditing(false); // Se importou um wod, vai para o modo leitura
+  }
+
+  const renderChalkItem = (item: ItemLousa) => {
+    const cfg = movimentosDB[item.movId];
+    const nome = cfg ? cfg.nome : item.movId;
+    const isDesconhecido = !cfg;
+    
+    const cM = item.cargaMasc !== undefined ? item.cargaMasc : (item.carga || 0);
+    const cF = item.cargaFem !== undefined ? item.cargaFem : (item.carga || 0);
+    
+    // --- CORREÇÃO DO SCRAPER VS MANUAL ---
+    let sufixo = "";
+    let extraParaExibir = item.extraVal ? item.extraVal.trim().toLowerCase() : "";
+
+    // 1. Se o scraper colocou 'cal' ou 'm' direto no extraVal, interceptamos aqui
+    if (extraParaExibir === 'cal' || extraParaExibir === 'm') {
+      sufixo = extraParaExibir;
+      extraParaExibir = ""; // Limpa para não aparecer entre parênteses duplicado
+    } 
+    // 2. Caso contrário, tenta ler do extraVal2 (padrão quando você cria o treino manualmente)
+    else if (cfg?.paramExtra2?.label === 'Unidade') {
+      const unidade = item.extraVal2 || cfg.paramExtra2.val;
+      sufixo = unidade;
+    } 
+    // 3. Fallback para corrida tradicional
+    else if (cfg?.categoria === 'corrida' || cfg?.categoria === 'air_runner') {
+      sufixo = 'm'; 
+    }
+
+    // Formatação visual: 'cal' ganha um espaço ("30 cal"), 'm' fica colado ("500m")
+    if (sufixo === 'cal') sufixo = ' cal';
+
+    const specs = [];
+    if (cM || cF) specs.push(`${cM > 0 ? cM : '--'}/${cF > 0 ? cF : '--'}kg`);
+    if (extraParaExibir) specs.push(item.extraVal); // Restaura maiúsculas/minúsculas originais se for outro texto
+    if (item.tecnica !== 'normal') specs.push(item.tecnica.toUpperCase());
+
+    return (
+      <div key={item.originalId} className="chalk-item">
+        <span style={{ color: cReps }}>
+          {item.reps}{sufixo}
+        </span>
+        <span style={{ color: cName, textDecoration: isDesconhecido ? 'underline wavy red' : 'none' }}>
+          {nome}
+        </span>
+        {specs.length > 0 && (
+          <span style={{ color: cSpecs }}>({specs.join(' | ')})</span>
+        )}
+      </div>
+    );
+  };
+
   const renderMovimento = (item: ItemLousa) => {
     const cfg = movimentosDB[item.movId];
-    const isDesconhecido = !cfg; // <- Verifica se o movimento existe no dicionário
-    
-    // Fallback de segurança para não quebrar os inputs de renderização
+    const isDesconhecido = !cfg; 
     const safeCfg = cfg || movimentosDB['pushup'];
     
-    // Tratamento de compatibilidade caso o DB velho traga apenas 'carga'
     const cM = item.cargaMasc !== undefined ? item.cargaMasc : (item.carga || 0);
     const cF = item.cargaFem !== undefined ? item.cargaFem : (item.carga || 0);
 
@@ -67,12 +145,12 @@ export function PrescricaoTab({
         onDragOver={(e) => e.preventDefault()}
         style={{ 
           gridTemplateColumns: '1.5fr 0.6fr 1fr 1.2fr 0.8fr auto',
-          border: isDesconhecido ? '2px dashed #ff9800' : 'none' // <- Destaque visual
+          border: isDesconhecido ? '2px dashed #ff9800' : 'none' 
         }} 
       >
         {isDesconhecido && (
           <div style={{ gridColumn: '1 / -1', color: '#ff9800', fontWeight: 'bold', fontSize: '0.9rem', marginBottom: '10px' }}>
-            ⚠️ Atenção: O movimento "{item.movId}" não está mapeado no motor. Os cálculos usarão um perfil genérico até ser atualizado.
+            ⚠️ Atenção: O movimento "{item.movId}" não está mapeado no motor. Os cálculos usarão um perfil genérico.
           </div>
         )}
       
@@ -103,7 +181,6 @@ export function PrescricaoTab({
         <div>
           <label>Carga ♂ / ♀</label>
           <div style={{ display: 'flex', gap: '5px' }}>
-            {/* Substituir cfg por safeCfg aqui */}
             <input type="number" placeholder="Masc" disabled={!safeCfg.usaCarga} value={cM} onChange={e => updateMovimento(item.originalId, 'cargaMasc', Number(e.target.value))} style={{ flex: 1 }} />
             <input type="number" placeholder="Fem" disabled={!safeCfg.usaCarga} value={cF} onChange={e => updateMovimento(item.originalId, 'cargaFem', Number(e.target.value))} style={{ flex: 1 }} />
           </div>
@@ -112,6 +189,7 @@ export function PrescricaoTab({
         <div>
           <label>Técnica</label>
           <select value={item.tecnica} onChange={e => updateMovimento(item.originalId, 'tecnica', e.target.value)}>
+            <option value="normal">Normal</option>
             <option value="tng">T&G</option>
             <option value="drop">Drop</option>
             <option value="strict">Strict</option>
@@ -148,16 +226,76 @@ export function PrescricaoTab({
     );
   };
 
+  // --- MODO VISUALIZAÇÃO (LOUSA) ---
+  if (!isEditing) {
+    return (
+      <div className="panel">
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '15px' }}>
+           <button onClick={() => setIsEditing(true)} style={{ width: 'auto', display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: '#333' }}>
+             <Edit2 size={18} /> Editar Lousa
+           </button>
+        </div>
+
+        <div className="blackboard-wrapper">
+          <div className="chalk-header">
+            <h2 className="chalk-title" style={{ color: cTime }}>{nomeTreino || "WOD do Dia"}</h2>
+            <div className="chalk-meta" style={{ color: cTime }}>
+              {tipoTreino === 'FOR_TIME' 
+                ? (roundsPrescritos > 0 ? `${roundsPrescritos} Rounds For Time • Cap: ${tempoAlvo}` : `For Time • Cap: ${tempoAlvo}`)
+                : `${tipoTreino} ${tempoAlvo}`
+              }
+            </div>
+          </div>
+
+          {hasBuyIn && lousa.filter(m => m.phase === 'buyin').length > 0 && (
+            <div className="chalk-section">
+              <div className="chalk-section-title" style={{ color: cTime }}>Buy-in</div>
+              {lousa.filter(m => m.phase === 'buyin').map(renderChalkItem)}
+            </div>
+          )}
+
+          <div className="chalk-section">
+            <div className="chalk-section-title" style={{ color: cTime }}>WOD Principal</div>
+            {lousa.filter(m => m.phase === 'round').map(renderChalkItem)}
+          </div>
+
+          {hasCashOut && lousa.filter(m => m.phase === 'cashout').length > 0 && (
+            <div className="chalk-section">
+              <div className="chalk-section-title" style={{ color: cTime }}>Cash-out</div>
+              {lousa.filter(m => m.phase === 'cashout').map(renderChalkItem)}
+            </div>
+          )}
+        </div>
+
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '20px' }}>
+          <button onClick={importarWod} style={{ flex: '1 1 140px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', backgroundColor: 'var(--bg-card)', border: '1px solid var(--line-silver)' }}>
+            <Download size={22} /> Importar WOD
+          </button>
+          <button onClick={() => setIsEditing(true)} style={{ flex: '1 1 140px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', backgroundColor: '#388e3c' }}>
+            <Edit2 size={22} /> Editar Treino Atual
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // --- MODO EDIÇÃO ---
   return (
     <div className="panel">
-      <h2>Estrutura do Treino</h2>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+        <h2 style={{ borderBottom: 'none', margin: 0 }}>Modo Edição</h2>
+        <button onClick={() => setIsEditing(false)} style={{ width: 'auto', padding: '8px 12px', backgroundColor: '#333' }}>
+          Voltar para Lousa
+        </button>
+      </div>
+
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', marginBottom: '15px' }}>
         <div className="form-group" style={{ marginBottom: 0 }}>
           <label>Nome do Treino (Opcional)</label>
           <SearchableWodSelect 
             value={nomeTreino} 
             onChange={setNomeTreino} 
-            onSelectWod={carregarDoSupabase} 
+            onSelectWod={carregarEDesabilitarEdicao} 
           />
         </div>
         <div className="form-group" style={{ marginBottom: 0 }}>
@@ -252,9 +390,9 @@ export function PrescricaoTab({
             <span>Duplicar</span>
           </button>
         )}
-        <button onClick={() => salvarNoSupabase(false)} style={{ flex: '1 1 140px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '1rem', backgroundColor: 'var(--dyna-red, #FF2B3D)', color: '#fff', border: 'none', fontWeight: 'bold' }}>
+        <button onClick={() => handleSaveAndExit(false)} style={{ flex: '1 1 140px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '1rem', backgroundColor: 'var(--dyna-red, #FF2B3D)', color: '#fff', border: 'none', fontWeight: 'bold' }}>
           <Save size={22} style={{ flexShrink: 0 }} /> 
-          <span>{currentTemplateId ? 'Atualizar WOD' : 'Salvar WOD'}</span>
+          <span>{currentTemplateId ? 'Atualizar WOD' : 'Salvar Lousa'}</span>
         </button>
       </div>
     </div>

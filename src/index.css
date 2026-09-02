@@ -661,3 +661,51 @@ button:hover {
 .tabs {
   display: none;
 }
+
+/* --- ESTILOS DO QUADRO NEGRO (BLACKBOARD) --- */
+.blackboard-wrapper {
+  background-color: #0a0a0a; /* Preto profundo simulando lousa preta */
+  border: 10px solid #1a1a1a; /* Borda escura e discreta */
+  border-radius: 8px;
+  padding: 30px;
+  margin-bottom: 20px;
+  box-shadow: inset 0 0 50px rgba(0,0,0,0.9), 0 4px 15px rgba(0,0,0,0.5);
+  color: #fff;
+}
+
+/* Força a fonte do giz em todos os elementos internos */
+.blackboard-wrapper,
+.blackboard-wrapper div,
+.blackboard-wrapper span,
+.blackboard-wrapper h2 {
+  font-family: 'Walter Turncoat', cursive !important;
+}
+
+.chalk-title {
+  font-size: 2.2rem;
+  margin: 0 0 10px 0;
+  letter-spacing: 1px;
+}
+
+.chalk-meta {
+  font-size: 1.3rem;
+}
+
+.chalk-section-title {
+  font-size: 1.5rem;
+  text-transform: uppercase;
+  margin-bottom: 15px;
+  text-decoration: underline;
+  text-decoration-style: dashed;
+  text-decoration-thickness: 1px;
+}
+
+.chalk-item {
+  font-size: 1.4rem;
+  margin-bottom: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: baseline;
+  line-height: 1.4;
+}

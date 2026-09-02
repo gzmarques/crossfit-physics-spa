@@ -23,6 +23,14 @@ export function parseClockTime(str: string | number): number {
   return -1;
 }
 
+// ============================================================================
+// HELPER: CONVERSÃO DE CAIXAS (POLEGADAS PARA METROS)
+// ============================================================================
+function getAlturaCaixaMetros(extraVal: number, isMasc: boolean): number {
+    const h = extraVal > 0 ? extraVal : (isMasc ? 0.61 : 0.51); // 24" / 20" padrão
+    return h > 3.0 ? h * 0.0254 : h; // Acima de 3, assume que o input foi em polegadas
+}
+
 export function calcularFisica(
   movId: string,
   cfg: MovimentoConfig,
@@ -204,7 +212,6 @@ export function calcularFisica(
   const des = (cfg.paramExtra && cfg.categoria.includes('vertical_bw_total') && extra > 0) 
               ? extra : (atleta.estatura * (cfg.fatorH || 0.40));
   
-  const h_box = extra > 0 ? extra : (isM ? 0.60 : 0.50);
   const safeReps = Math.max(1, reps); // Aqui a variável 'reps' volta a ser utilizada
 
   switch(cfg.categoria) {
@@ -232,6 +239,70 @@ export function calcularFisica(
           const h_fundo = Math.max(0, atleta.estatura - (0.5 * L_trunk) - L_thigh);
           tMech = W_squat_body + (pCarga * G * Math.max(0, h_alvo - h_fundo)); 
           exL = ` (${h_alvo.toFixed(2)}m)`; 
+          break;
+      }
+
+      // ============================================================================
+      // BLOCO UNIVERSAL DE SALTOS, SUBIDAS E VARIAÇÕES DE CAIXA
+      // ============================================================================
+      case 'box_jump':
+      case 'box_jump_over':
+      case 'box_step_up':
+      case 'step_up':
+      case 'db_step_up':
+      case 'double_db_step_up':
+      case 'kb_step_up':
+      case 'weighted_step_up':
+      case 'box_step_over':
+      case 'step_over':
+      case 'db_step_over':
+      case 'double_db_step_over':
+      case 'kb_step_over':
+      case 'burpee_box_jump':
+      case 'burpee_box_jump_over':
+      case 'box_facing_burpee_box_jump_over':
+      case 'burpee_box_step_up':
+      case 'burpee_box_step_over': {
+          // 1. Constantes Biomecânicas e de Conversão
+          const h_caixa = getAlturaCaixaMetros(extra, isM);
+          const h_fundo_jump = 0.20; // Pouso padrão em semi-squat no salto
+          const desconto_crouch = 0.35; // Economia de ROM nos movimentos "Over"
+          const W_pushup_body = atleta.peso * G * (L_arm * 0.65);
+          const W_burpee = W_squat_body + (W_pushup_body * 1.2); 
+          const W_rotacao = atleta.peso * G * 0.15; // Custo de torção/giro no "Facing"
+          const cargaTotal = atleta.peso + pCarga; // Absorve BW e variações com peso
+          
+          // 2. Roteamento Termodinâmico
+          if (movId === 'box_jump') {
+              tMech = cargaTotal * G * Math.max(0, h_caixa - h_fundo_jump);
+          } 
+          else if (['box_jump_over'].includes(movId)) {
+              tMech = cargaTotal * G * Math.max(0.10, h_caixa - desconto_crouch);
+          } 
+          else if (['box_step_up', 'step_up', 'db_step_up', 'double_db_step_up', 'kb_step_up', 'weighted_step_up'].includes(movId)) {
+              tMech = cargaTotal * G * h_caixa;
+          } 
+          else if (['box_step_over', 'step_over', 'db_step_over', 'double_db_step_over', 'kb_step_over'].includes(movId)) {
+              tMech = cargaTotal * G * Math.max(0.10, h_caixa - desconto_crouch);
+          } 
+          else if (movId === 'burpee_box_jump') {
+              tMech = W_burpee + (cargaTotal * G * Math.max(0, h_caixa - h_fundo_jump));
+          } 
+          else if (movId === 'burpee_box_jump_over') {
+              tMech = W_burpee + (cargaTotal * G * Math.max(0.10, h_caixa - desconto_crouch));
+          } 
+          else if (movId === 'box_facing_burpee_box_jump_over') {
+              tMech = W_burpee + (cargaTotal * G * Math.max(0.10, h_caixa - desconto_crouch)) + W_rotacao;
+          } 
+          else if (movId === 'burpee_box_step_up') {
+              tMech = W_burpee + (cargaTotal * G * h_caixa);
+          } 
+          else if (movId === 'burpee_box_step_over') {
+              tMech = W_burpee + (cargaTotal * G * Math.max(0.10, h_caixa - desconto_crouch));
+          }
+
+          // 3. Formatação da UI
+          exL = ` (${(h_caixa / 0.0254).toFixed(0)}")`;
           break;
       }
       case 'lpo_floor_squat': 
@@ -401,16 +472,6 @@ export function calcularFisica(
           break;
       }
 
-      case 'box_step_up': 
-      case 'box_jump': 
-          tMech = atleta.peso * G * h_box; 
-          exL = ` (${h_box.toFixed(2)}m)`; 
-          break;
-      case 'box_jump_over': 
-          tMech = atleta.peso * G * (h_box * 0.85); 
-          exL = ` (${h_box.toFixed(2)}m)`; 
-          break;
-
       case 'vertical_hibrido': 
           tMech = ((atleta.peso - m_arms) * G * L_arm) + (atleta.peso * G * altCoM); 
           break;
@@ -429,14 +490,6 @@ export function calcularFisica(
           exL = ` (${h_obj.toFixed(2)}m)`; 
           break;
       }
-      case 'burpee_box_jump': 
-          tMech = ((atleta.peso - m_arms) * G * L_arm) + (atleta.peso * G * h_box); 
-          exL = ` (${h_box.toFixed(2)}m)`; 
-          break;
-      case 'burpee_box_jump_over': 
-          tMech = ((atleta.peso - m_arms) * G * L_arm) + (atleta.peso * G * (h_box * 0.85)); 
-          exL = ` (${h_box.toFixed(2)}m)`; 
-          break;
       case 'burpee_pullup': 
           tMech = ((atleta.peso - m_arms) * G * L_arm) + (atleta.peso * G * altCoM) + ((atleta.peso - m_arms) * G * L_arm); 
           break;
