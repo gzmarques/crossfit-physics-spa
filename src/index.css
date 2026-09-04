@@ -662,6 +662,73 @@ button:hover {
   display: none;
 }
 
+/* ========================================= */
+/* BARRA LATERAL FIXA NO RODAPÉ (MOBILE)     */
+/* ========================================= */
+@media (max-width: 950px) {
+  /* 1. Adiciona um espaçamento no final do conteúdo para não ficar escondido pela barra */
+  .main-content {
+    padding-bottom: 80px !important;
+  }
+  
+  /* 2. Transforma a Sidebar em uma Bottom Nav Fixa */
+  .sidebar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100vw !important; /* Ignora as classes collapsed/expanded */
+    height: 70px;
+    flex-direction: row;
+    border-right: none;
+    border-top: 1px solid var(--line-silver);
+    z-index: 999; /* Fica abaixo dos modais que usam 1000 */
+    transition: none;
+  }
+  
+  /* 3. Esconde o cabeçalho (onde fica o botão de expandir e o logo) */
+  .sidebar-header {
+    display: none;
+  }
+  
+  /* 4. 'display: contents' remove a caixa ao redor dos grupos, 
+     fazendo os botões virarem filhos diretos do flexbox da .sidebar */
+  .sidebar-nav,
+  .sidebar-footer {
+    display: contents;
+  }
+  
+  /* 5. Esconde as infos textuais do rodapé e o botão duplicado de configurações */
+  .sidebar-user-info,
+  .sidebar-item[title="Configurações de Perfil"] {
+    display: none !important;
+  }
+  
+  /* 6. Estiliza cada item do menu para dividir o espaço horizontalmente (flex: 1) */
+  .sidebar-item {
+    flex: 1;
+    padding: 0;
+    justify-content: center;
+    border-right: none !important;
+  }
+  
+  /* 7. Centraliza o ícone (remove a margem direita que existia no desktop) */
+  .sidebar-icon {
+    margin-right: 0;
+  }
+  
+  /* 8. Ajusta a indicação visual de 'aba ativa' para a borda superior */
+  .sidebar-item.active {
+    border-right: none !important;
+    border-top: 3px solid var(--dyna-red);
+    background-color: rgba(255, 43, 61, 0.1);
+  }
+  
+  /* 9. Força a ocultação de qualquer texto dos botões no mobile para manter um visual limpo */
+  .sidebar-item span {
+    display: none !important;
+  }
+}
+
 /* --- ESTILOS DO QUADRO NEGRO (BLACKBOARD) --- */
 .blackboard-wrapper {
   background-color: #0a0a0a; /* Preto profundo simulando lousa preta */

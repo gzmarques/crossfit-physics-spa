@@ -1,6 +1,12 @@
 import { create } from 'zustand';
 import type { ItemLousa, Modalidade, Phase } from '../types';
 
+const generateSafeId = () => {
+  return typeof crypto !== 'undefined' && crypto.randomUUID
+    ? crypto.randomUUID()
+    : Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
+};
+
 interface WodState {
   nomeTreino: string;
   tipoTreino: Modalidade;
@@ -31,7 +37,7 @@ export const useWodStore = create<WodState>((set, get) => ({
   tipoTreino: 'FOR_TIME',
   tempoAlvo: '05:00',
   roundsPrescritos: 3,
-  lousa: [{ originalId: crypto.randomUUID(), movId: 'thruster', phase: 'round', reps: 21, cargaMasc: 43, cargaFem: 29, tecnica: 'tng', extraVal: '' }],
+  lousa: [{ originalId: generateSafeId(), movId: 'thruster', phase: 'round', reps: 21, cargaMasc: 43, cargaFem: 29, tecnica: 'tng', extraVal: '' }],
   
   hasBuyIn: false,
   hasCashOut: false,
@@ -59,7 +65,7 @@ export const useWodStore = create<WodState>((set, get) => ({
 
   addMovimento: (baseId = null, phase = 'round') => {
     const { lousa } = get();
-    const newId = crypto.randomUUID();
+    const newId = generateSafeId();
     let newItem: ItemLousa = { originalId: newId, movId: 'air_squat', phase, reps: 10, cargaMasc: 0, cargaFem: 0, tecnica: 'tng', extraVal: '' };
     
     if (baseId) {
