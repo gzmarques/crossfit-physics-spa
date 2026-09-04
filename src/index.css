@@ -289,13 +289,13 @@ button:hover {
   }
 
   .wod-item-analise {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr !important;
     gap: 10px;
   }
 
   .wod-item-analise > div:first-child,
   .wod-item-analise > div:nth-child(2) {
-    grid-column: span 2;
+    grid-column: span 2 !important;
   }
 }
 
