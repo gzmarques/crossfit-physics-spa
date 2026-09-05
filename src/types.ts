@@ -64,6 +64,7 @@ export interface AtletaPerfil {
   circTorax?: number; 
   circCoxa?: number;  
   mobilidade?: number; 
+  fenotipo?: 'endurance' | 'normal' | 'power';
 }
 
 export interface ResultadoProcessamento {

@@ -108,7 +108,11 @@ export function calcularFisica(
       // --- VIA AVANÇADA (Alometria Volumétrica Dinâmica) ---
       // 1. Densidade corporal (rho) calculada pelo percentual de gordura.
       // Indivíduos magros têm densidade próxima a 1060 kg/m³, caindo para ~1000 kg/m³ com alto BF.
-      const densidadeKgM3 = 1060 - (atleta.bf * 1.5); 
+      let fatorOsseo = 1.0;
+      if (atleta.fenotipo === 'power') fatorOsseo = 1.04; // Maior densidade mineral
+      else if (atleta.fenotipo === 'endurance') fatorOsseo = 0.97; // Menor densidade relativa
+      
+      const densidadeKgM3 = (1060 - (atleta.bf * 1.5)) * fatorOsseo;
       
       // 2. Volume da coxa cilíndrica: V = (C^2 / 4π) * Altura
       const volumeCoxaM3 = (Math.pow(atleta.circCoxa, 2) / (4 * Math.PI)) * L_thigh;
@@ -781,9 +785,30 @@ export function calcularFisica(
       else if ((movId === 'bmu' || movId === 'ring_dip') && tecnica === 'strict') eta_conc = 0.08 * fTec;
       else if (cfg.categoria === 'pullover') eta_conc = 0.09 * fTec;
       else if (tecnica === 'strict' && (cfg.categoria === 'vertical_bw' || cfg.categoria === 'core_t2b' || cfg.categoria === 'core_k2e' || cfg.categoria === 'alavanca_inferior')) eta_conc = 0.10 * fTec;
-      else if (tecnica === 'butterfly') eta_conc = 0.22 * fTec;
-      else if (tecnica === 'kipping' && cfg.categoria === 'vertical_bw') eta_conc = 0.14 * fTec;
-      else if (tecnica === 'kipping' && (cfg.categoria === 'core_t2b' || cfg.categoria === 'core_k2e' || cfg.categoria === 'alavanca_inferior')) eta_conc = 0.12 * fTec;
+      // NOVO: Modelo de Pêndulo Composto para Ginástica Balística
+      if (tecnica === 'butterfly' || (tecnica === 'kipping' && cfg.categoria === 'vertical_bw')) {
+          // 1. O raio do pêndulo vai das mãos (barra) até o centro de massa do tronco
+          const raioPendulo = L_arm + (L_trunk * 0.50);
+          
+          // 2. Momento de Inércia (I = m * r^2) usando a massa superior suspensa
+          const momentoInercia = m_sup * Math.pow(raioPendulo, 2);
+          
+          // 3. Velocidade angular estimada na base do arco (rad/s)
+          const omegaRad = tecnica === 'butterfly' ? 3.8 : 2.5;
+          
+          // 4. Energia Cinética Rotacional (Ek = 0.5 * I * ω^2)
+          const energiaRotacional = 0.5 * momentoInercia * Math.pow(omegaRad, 2);
+          
+          // 5. O trabalho mecânico é drasticamente reduzido pois o momento angular empurra o corpo para cima
+          // (Garantimos um piso mínimo de 10% do trabalho original para o atrito articular)
+          tMech = Math.max(tMech * 0.10, tMech - energiaRotacional);
+          
+          // 6. Eficiência base restaurada (o desconto já foi dado na cinemática)
+          eta_conc = 0.18 * fTec;
+      }
+      else if (tecnica === 'kipping' && (cfg.categoria === 'core_t2b' || cfg.categoria === 'core_k2e' || cfg.categoria === 'alavanca_inferior')) {
+          eta_conc = 0.12 * fTec;
+      }
       else if (cfg.categoria === 'devil_press' || movId === 'overhead_squat' || cfg.categoria === 'core_ghd' || cfg.categoria === 'sandbag_clean') eta_conc = 0.12 * fTec;
       else if (cfg.categoria === 'dball_shoulder') eta_conc = 0.11 * fTec;
       else if (cfg.categoria === 'rope_climb' || cfg.categoria === 'rope_ascend_floor') eta_conc = 0.15 * fTec;

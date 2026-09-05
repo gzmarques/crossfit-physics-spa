@@ -79,6 +79,17 @@ export function AtletaTab({ selectedAthleteId, atleta, setAtleta, salvarPerfilAt
                   <span>Perfeita (100%)</span>
                 </div>
               </div>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label>Fenótipo / Histórico</label>
+                <select 
+                  value={atleta.fenotipo || 'normal'} 
+                  onChange={e => setAtleta({ ...atleta, fenotipo: e.target.value as any })}
+                >
+                  <option value="endurance">Endurance (Corredor/Ciclista)</option>
+                  <option value="normal">Normal (Misto)</option>
+                  <option value="power">Power (LPO/Strongman)</option>
+                </select>
+              </div>
             </div>
           </>
         )}

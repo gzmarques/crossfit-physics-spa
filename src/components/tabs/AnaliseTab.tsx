@@ -13,6 +13,7 @@ interface AnaliseTabProps {
   timelineState: Record<string, TimelineStateItem>;
   handleTimelineChange: (rowId: string, field: keyof TimelineStateItem, val: any) => void;
   processarWOD: () => void;
+  isCalculating: boolean;
   resultado: ResultadoProcessamento | null;
   gerarCardInstagram: () => void;
   roundsPrescritos: number;
@@ -26,7 +27,7 @@ interface AnaliseTabProps {
 export function AnaliseTab({
   tipoTreino, tempoReal, setTempoReal, roundsReal, setRoundsReal,
   isScaled, setIsScaled, lousa, timelineState, handleTimelineChange,
-  processarWOD, resultado, gerarCardInstagram, roundsPrescritos, atleta, temperatura, setTemperatura, umidade, setUmidade
+  processarWOD, isCalculating, resultado, gerarCardInstagram, roundsPrescritos, atleta, temperatura, setTemperatura, umidade, setUmidade
 }: AnaliseTabProps) {
 
   // Resolve a carga correta para a UI
@@ -151,8 +152,24 @@ export function AnaliseTab({
         })()}
       </div>
 
-      <button onClick={processarWOD} style={{ fontSize: '1.1rem', padding: '15px', backgroundColor: 'var(--dyna-red, #FF2B3D)', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', width: '100%', cursor: 'pointer', marginBottom: '20px', marginTop: '10px' }}>
-        ⚡ Processar Dinâmica e Termodinâmica
+      <button 
+        onClick={processarWOD} 
+        disabled={isCalculating}
+        style={{ 
+          fontSize: '1.1rem', 
+          padding: '15px', 
+          backgroundColor: isCalculating ? '#555' : 'var(--dyna-red, #FF2B3D)', 
+          color: '#fff', 
+          border: 'none', 
+          borderRadius: '8px', 
+          fontWeight: 'bold', 
+          width: '100%', 
+          cursor: isCalculating ? 'not-allowed' : 'pointer', 
+          marginBottom: '20px', 
+          marginTop: '10px' 
+        }}
+      >
+        {isCalculating ? '⏳ Simulando Biomecânica...' : '⚡ Processar Dinâmica e Termodinâmica'}
       </button>
 
       {resultado && (

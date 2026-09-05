@@ -294,11 +294,14 @@ export default function App() {
               timelineState={timelineState}
               handleTimelineChange={handleTimelineChange}
               processarWOD={processarWOD}
+              isCalculating={false}
               resultado={resultado}
               gerarCardInstagram={gerarCardInstagram}
               roundsPrescritos={roundsPrescritos}
               temperatura={temperatura}
               setTemperatura={setTemperatura}
+              umidade={umidade} // <- INJETAR AQUI
+              setUmidade={setUmidade}
             />
           )}
 
