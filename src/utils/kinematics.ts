@@ -15,7 +15,6 @@ export interface KinematicsContext {
   corpo: CorpoFisico;
   energiaCineticaBarra: number;
   W_squat_body: number;
-  deltaT: number;
 }
 
 export interface KinematicsResult {
@@ -29,7 +28,7 @@ export interface KinematicsResult {
 export function calcularTrabalhoMecanico(ctx: KinematicsContext): KinematicsResult {
   const {
     movId, cfg, pCarga, extraV, extraV2, extra, extraSafe, safeReps,
-    atleta, corpo, energiaCineticaBarra, W_squat_body, deltaT
+    atleta, corpo, energiaCineticaBarra, W_squat_body
   } = ctx;
 
   const { 
@@ -39,13 +38,11 @@ export function calcularTrabalhoMecanico(ctx: KinematicsContext): KinematicsResu
   } = corpo;
 
   let tMech = 0, exL = "", P = 0, isErgo = false, isCalorieErgo = false;
-  const sErgo = 0; // Utilizado para lógicas internas de ergômetros
 
   // A variável 'des' original do código
   const des = (cfg.paramExtra && cfg.categoria.includes('vertical_bw_total') && extra > 0) 
               ? extra : (atleta.estatura * (cfg.fatorH || 0.40));
 
-  // Cole o SEU SWITCH GIGANTE inteiro aqui (desde "switch(cfg.categoria) {" até o "}")
   switch(cfg.categoria) {
       case 'deadlift': 
           tMech = (pCarga * G * Math.max(0.05, L_perna - 0.225)) + (m_sup * G * (L_trunk * 0.35)); 
