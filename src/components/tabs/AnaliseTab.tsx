@@ -19,12 +19,14 @@ interface AnaliseTabProps {
   atleta?: AtletaPerfil;
   temperatura: number;
   setTemperatura: (val: number) => void;
+  umidade: number;
+  setUmidade: (val: number) => void;
 }
 
 export function AnaliseTab({
   tipoTreino, tempoReal, setTempoReal, roundsReal, setRoundsReal,
   isScaled, setIsScaled, lousa, timelineState, handleTimelineChange,
-  processarWOD, resultado, gerarCardInstagram, roundsPrescritos, atleta, temperatura, setTemperatura
+  processarWOD, resultado, gerarCardInstagram, roundsPrescritos, atleta, temperatura, setTemperatura, umidade, setUmidade
 }: AnaliseTabProps) {
 
   // Resolve a carga correta para a UI
@@ -61,18 +63,30 @@ export function AnaliseTab({
         </div>
       </div>
 
-      {/* --- NOVO: INPUT CLIMÁTICO --- */}
-      <div style={{ backgroundColor: '#111', padding: '15px', borderRadius: '8px', border: '1px solid var(--line-silver)', marginBottom: '25px', display: 'flex', alignItems: 'center', gap: '15px' }}>
-        <div style={{ flex: 1 }}>
-          <label style={{ margin: 0, color: '#ff9800' }}>Temperatura Ambiente (°C)</label>
-          <p style={{ fontSize: '0.75rem', color: '#888', margin: '5px 0 0 0' }}>Afeta o cálculo de EPOC e estresse térmico.</p>
+      {/* --- INPUT CLIMÁTICO --- */}
+      <div style={{ backgroundColor: '#111', padding: '15px', borderRadius: '8px', border: '1px solid var(--line-silver)', marginBottom: '25px', display: 'flex', alignItems: 'center', gap: '15px', flexWrap: 'wrap' }}>
+        <div style={{ flex: 1, minWidth: '200px' }}>
+          <label style={{ margin: 0, color: '#ff9800' }}>Clima (Temp. °C / Umidade %)</label>
+          <p style={{ fontSize: '0.75rem', color: '#888', margin: '5px 0 0 0' }}>Afeta o cálculo de EPOC e estresse térmico/cardiovascular.</p>
         </div>
-        <input 
-          type="number" 
-          value={temperatura} 
-          onChange={e => setTemperatura(Number(e.target.value))} 
-          style={{ width: '80px', fontSize: '1.2rem', textAlign: 'center' }} 
-        />
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <input 
+            type="number" 
+            value={temperatura} 
+            onChange={e => setTemperatura(Number(e.target.value))} 
+            placeholder="°C"
+            style={{ width: '80px', fontSize: '1.2rem', textAlign: 'center' }} 
+            title="Temperatura (°C)"
+          />
+          <input 
+            type="number" 
+            value={umidade} 
+            onChange={e => setUmidade(Number(e.target.value))}
+            placeholder="%"
+            style={{ width: '80px', fontSize: '1.2rem', textAlign: 'center' }} 
+            title="Umidade Relativa (%)"
+          />
+        </div>
       </div>
 
       <h2>Timeline Expandida</h2>

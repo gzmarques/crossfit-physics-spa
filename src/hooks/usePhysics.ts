@@ -23,6 +23,7 @@ export function usePhysics({
   const [timelineState, setTimelineState] = useState<Record<string, TimelineStateItem>>({});
   const [resultado, setResultado] = useState<ResultadoProcessamento | null>(null);
   const [temperatura, setTemperatura] = useState<number>(20);
+  const [umidade, setUmidade] = useState<number>(50);
 
   const handleTimelineChange = (rowId: string, field: keyof TimelineStateItem, val: any) => {
     setTimelineState(prev => ({ ...prev, [rowId]: { ...(prev[rowId] || {}), [field]: val } }));
@@ -126,8 +127,13 @@ export function usePhysics({
     // --- NOVO: Fator Climático baseado na Temperatura ---
     // Acima de 20°C, o corpo gasta energia extra para resfriar (aumenta o EPOC).
     // Abaixo de 20°C (até um limite), a dissipação térmica é facilitada.
-    const fatorClimatico = 1.0 + ((temperatura - 20) * 0.015); // +/- 1.5% no EPOC por grau Celsius de diferença
-    
+    let fatorClimatico = 1.0 + ((temperatura - 20) * 0.015);
+    if (temperatura > 20 && umidade > 50) {
+      const penalidadeUmidade = (umidade - 50) * 0.003; // +0.3% de estresse por cada 1% de umidade acima de 50%
+      fatorClimatico += penalidadeUmidade;
+    }
+  
+ 
     const fatorEPOC = 1.0 + ((0.40 / (1.0 + Math.exp(-1.5 * (limiarPotencia - 3.5)))) * fatorClimatico);
 
     let logDetalhes = "", lastPhase: string | null = null;
@@ -198,6 +204,7 @@ export function usePhysics({
   return {
     timelineState, setTimelineState, handleTimelineChange,
     resultado, setResultado, processarWOD,
-    temperatura, setTemperatura // <- EXPORTADO AQUI
+    temperatura, setTemperatura,
+    umidade, setUmidade // <- NOVO EXPORT
   };
 }

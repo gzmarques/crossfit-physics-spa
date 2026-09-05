@@ -80,16 +80,26 @@ function gerarNomeCompacto(tipoTreino, tempoAlvo, roundsPrescritos, movimentos, 
 const generateShortCode = () => Math.random().toString(36).substring(2, 8).toUpperCase();
 
 // ============================================================================
+// 2.5 BUSCA DINÂMICA DE MOVIMENTOS
+// ============================================================================
+async function buscarMovimentosAtivos() {
+  // Substitua 'movimentos' pelo nome real da sua tabela de dicionário no Supabase, caso seja diferente.
+  const { data, error } = await supabase.from('movimentos').select('id');
+  
+  if (error) {
+    console.error('⚠️ Falha ao buscar dicionário de movimentos no Supabase. Usando fallback.', error.message);
+    // Fallback de segurança para não quebrar o scraper caso a tabela falhe
+    return ['air_squat', 'front_squat', 'pullup', 'run', 'row', 'burpee']; 
+  }
+  
+  return data.map(m => m.id);
+}
+
+// ============================================================================
 // 3. MÓDULO DE INTELIGÊNCIA ARTIFICIAL (Gemini 3.6 Flash)
 // ============================================================================
-async function extrairTreinosEmLoteComIA(loteBruto) {
-  const movimentosConhecidos = [
-    'air_squat', 'front_squat', 'back_squat', 'overhead_squat', 'thruster', 'wall_ball', 
-    'deadlift', 'clean', 'clean_power', 'clean_jerk', 'snatch', 'snatch_power',
-    'pushup', 'hspu', 'ring_dip', 'pullup', 'c2b', 'bmu', 'rmu', 't2b',
-    'burpee', 'burpee_box_jump', 'box_jump', 'walking_lunge', 'double_under',
-    'run', 'row', 'assault_bike', 'db_snatch', 'kettlebell_swing'
-  ].join(', ');
+async function extrairTreinosEmLoteComIA(loteBruto, listaMovimentosAtivos) {
+  const movimentosConhecidosStr = listaMovimentosAtivos.join(', ');
 
   const prompt = `Você é um Head Coach de CrossFit analisando textos do site oficial.
   Extraia os treinos do lote de textos fornecido e converta-os estritamente para um ARRAY JSON.
@@ -187,10 +197,10 @@ function validarPayloadEstrito(treinosArray) {
 
     treino.movimentos = treino.movimentos.filter(mov => {
       // 1. Se for desconhecido, MANTÉM no array, mas avisa e flagra o treino!
-      if (!movimentosConhecidos.has(mov.movId)) {
+      if (!setMovimentosAtivos.has(mov.movId)) {
         console.warn(`\n🚨 ALERTA: Movimento não mapeado [${mov.movId}]. Salvo como PENDENTE.`);
         treino.needs_review = true; 
-        return true; // <- MUDANÇA AQUI: Mantém o movimento!
+        return true; 
       }
 
       if (mov.extraVal && typeof mov.extraVal === 'string') {
@@ -340,6 +350,11 @@ async function extrairTextoBruto(browser, url) {
 // ============================================================================
 async function iniciarSistema() {
   console.log("🚀 Iniciando Motor de Extração Profunda em Lote (MODO DEBUG)...");
+
+  // 1. Sincroniza o dicionário com o banco de dados
+  const arrayMovimentosAtivos = await buscarMovimentosAtivos();
+  const setMovimentosAtivos = new Set(arrayMovimentosAtivos);
+  console.log(`📚 Sincronizado: ${arrayMovimentosAtivos.length} movimentos conhecidos.`);
   
   const dataMaisAntiga = await obterDataMaisAntigaCrossfit();
   console.log(`🕰️ Viajando para trás a partir de: ${dataMaisAntiga}`);
@@ -375,15 +390,14 @@ async function iniciarSistema() {
   await browser.close();
 
   if (loteParaIA.length > 0) {
-    console.log(`\n🕵️ Salvando 'debug_lote.json' localmente para inspeção do HTML processado...`);
-    fs.writeFileSync('debug_lote.json', JSON.stringify(loteParaIA, null, 2), 'utf-8');
-    
     console.log(`\n🧠 Enviando ${loteParaIA.length} treinos para o Gemini 3.6 Flash...`);
-    const treinosProcessados = await extrairTreinosEmLoteComIA(loteParaIA);
+    // Passa a lista dinâmica para o Gemini
+    const treinosProcessados = await extrairTreinosEmLoteComIA(loteParaIA, arrayMovimentosAtivos);
     
     if (treinosProcessados !== 'FATAL' && Array.isArray(treinosProcessados)) {
       console.log(`\n🛡️ Executando validação estrita de runtime...`);
-      const treinosSeguros = validarPayloadEstrito(treinosProcessados);
+      // Passa o Set dinâmico para o validador
+      const treinosSeguros = validarPayloadEstrito(treinosProcessados, setMovimentosAtivos);
       await salvarTreinosEmLote(treinosSeguros);
     } else {
       console.log("🛑 Falha fatal na IA. Nenhum treino salvo neste lote.");

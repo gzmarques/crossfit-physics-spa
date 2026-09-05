@@ -45,7 +45,8 @@ export default function App() {
 
   const {
     timelineState, setTimelineState, handleTimelineChange,
-    resultado, processarWOD, temperatura, setTemperatura
+    resultado, processarWOD, temperatura, setTemperatura,
+    umidade, setUmidade
   } = usePhysics({
     tipoTreino, tempoAlvo, tempoReal, roundsPrescritos, roundsReal, lousa, atleta
   });
