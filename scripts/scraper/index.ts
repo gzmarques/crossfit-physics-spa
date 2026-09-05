@@ -3,7 +3,8 @@ import { createClient } from '@supabase/supabase-js';
 import { GoogleGenAI, Type } from '@google/genai';
 import dotenv from 'dotenv';
 import fs from 'fs';
-import crypto from 'crypto'; 
+import crypto from 'crypto';
+import { movimentosDB } from '../../src/data/movements.ts';
 
 if (fs.existsSync('.env.local')) {
   dotenv.config({ path: '.env.local' });
@@ -16,14 +17,14 @@ if (fs.existsSync('.env.local')) {
 // ============================================================================
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY; 
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase = createClient(supabaseUrl as string, supabaseKey as string);
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY as string });
 
 // ============================================================================
 // 2. LÓGICA DE NOMEAÇÃO COMPACTA E UTILITÁRIOS
 // ============================================================================
-function gerarNomeCompacto(tipoTreino, tempoAlvo, roundsPrescritos, movimentos, url) {
+function gerarNomeCompacto(tipoTreino: string, tempoAlvo: string, roundsPrescritos: number, movimentos: any[], url: string) {
   if (!movimentos || movimentos.length === 0) {
     const dataStr = url.split('/').pop();
     return `WOD ${dataStr}`;
@@ -42,7 +43,7 @@ function gerarNomeCompacto(tipoTreino, tempoAlvo, roundsPrescritos, movimentos, 
   }
 
   const siglas = [];
-  const classicos = {
+  const classicos:Record <string, string> = {
     'double_under': 'DU', 'single_under': 'SU', 'overhead_squat': 'OHS', 'wall_ball': 'WB',
     'hspu': 'HSPU', 'c2b': 'C2B', 't2b': 'T2B', 'bmu': 'BMU', 'rmu': 'RMU',
     'push_press': 'PP', 'push_jerk': 'PJ', 'deadlift': 'DL', 'pullup': 'PU',
@@ -50,7 +51,7 @@ function gerarNomeCompacto(tipoTreino, tempoAlvo, roundsPrescritos, movimentos, 
     'thruster': 'THR', 'burpee': 'BRP', 'walking_lunge': 'WLK-LNG', 'burpee_box_jump_over': 'BBJO'
   };
 
-  const movsUnicos = [...new Set(movimentos.map(m => m.movId))];
+  const movsUnicos = [...new Set(movimentos.map((m: any) => m.movId))];
 
   for (const movId of movsUnicos) {
     if (classicos[movId]) {
@@ -59,18 +60,18 @@ function gerarNomeCompacto(tipoTreino, tempoAlvo, roundsPrescritos, movimentos, 
     }
 
     const nome = movId.replace(/_/g, ' ');
-    const palavras = nome.split(' ').filter(p => p.length > 0);
+    const palavras = nome.split(' ').filter((p: string) => p.length > 0);
 
     if (palavras.length === 1) {
       siglas.push(palavras[0].substring(0, 3).toUpperCase());
     } else if (palavras.length === 2) {
-      const get3Consonantes = (word) => {
+      const get3Consonantes = (word: string) => {
         const cons = word.replace(/[aeiouAEIOU]/gi, '');
         return (cons + word).substring(0, 3).toUpperCase();
       };
       siglas.push(`${get3Consonantes(palavras[0])}-${get3Consonantes(palavras[1])}`);
     } else {
-      siglas.push(palavras.map(p => p[0].toUpperCase()).join(''));
+      siglas.push(palavras.map((p: string) => p[0].toUpperCase()).join(''));
     }
   }
 
@@ -98,22 +99,24 @@ async function buscarMovimentosAtivos() {
 // ============================================================================
 // 3. MÓDULO DE INTELIGÊNCIA ARTIFICIAL (Gemini 3.6 Flash)
 // ============================================================================
-async function extrairTreinosEmLoteComIA(loteBruto, listaMovimentosAtivos) {
-  const movimentosConhecidosStr = listaMovimentosAtivos.join(', ');
+async function extrairTreinosEmLoteComIA(loteBruto: any[]) {
+  // Puxa as chaves diretamente do arquivo importado e junta numa string
+  const movimentosConhecidosStr = Object.keys(movimentosDB).join(', ');
 
   const prompt = `Você é um Head Coach de CrossFit analisando textos do site oficial.
   Extraia os treinos do lote de textos fornecido e converta-os estritamente para um ARRAY JSON.
   
   Regras de conversão:
   1. 'tipo_treino' deve ser "FOR_TIME", "AMRAP" ou "EMOM".
-  2. Mapeie os exercícios para a chave 'movId'. Use estes IDs exatos se aplicável: ${movimentosConhecidos}. SE o movimento for uma variação física diferente (ex: "burpee over plate" ou "kettlebell snatch"), NÃO force o encaixe na lista. Crie um novo ID descritivo em minúsculas com underscores (ex: 'burpee_over_plate').
+  2. Mapeie os exercícios para a chave 'movId'. Use estes IDs exatos se aplicável: ${movimentosConhecidosStr}. 
+     - ATENÇÃO A TRADUÇÕES DE LPO: Traduza "hang power clean" para 'clean_hang_power', "power snatch" para 'snatch_power'.
+     - ATENÇÃO A HALTERES (Dumbbell/DB): Se o exercício usar halteres, use as chaves com prefixo 'db_' ou 'double_db_'.
+     - SE o movimento for uma variação física diferente, crie um novo ID descritivo em minúsculas com underscores.
   3. 'cargaMasc' e 'cargaFem' devem ser números puros em KG. Se for só peso corporal, use 0.
   4. 'phase' deve ser "buyin", "round" ou "cashout".
   5. 'tecnica' deve ser "normal", "tng", "drop", "strict" ou "kipping". Na dúvida, use "normal".
-  6. REGRA DE MONOSTRUTURAIS: Para corrida contínua (run), remo (row), bikes e corda, o valor (em metros ou cal) DEVE ir obrigatoriamente no campo 'reps'. EXCEÇÃO: Para 'shuttle_run', o campo 'reps' é o número de idas/vindas, e o campo 'extraVal' é a distância de cada tiro.
-  7. Use 'extraVal' APENAS para métricas secundárias (ex: altura de caixa, target do wall ball, ou para especificar se a repetição no ergômetro é "cal" ou "m").
-  8. Mantenha a 'url' original em cada treino.
-  9. O campo 'extraVal' DEVE conter APENAS números puros (ex: "3.0" para altura, "115" para drag factor) ou as strings exatas "cal" ou "m". NUNCA inclua descrições, textos, ou unidades junto com o número (errado: "target 10ft/9ft" ou "60 cal", certo: "3.0" ou "60").
+  6. REGRA DE MONOSTRUTURAIS: Para corrida contínua (run), remo, bikes e corda, o valor DEVE ir obrigatoriamente no campo 'reps'.
+  7. Use 'extraVal' APENAS para métricas secundárias numéricas exatas (ex: "3.0" para altura, "115" para drag).
   
   Textos brutos: ${JSON.stringify(loteBruto)}`;
   
@@ -158,10 +161,10 @@ async function extrairTreinosEmLoteComIA(loteBruto, listaMovimentosAtivos) {
         }
       });
       
-      const textoResposta = typeof response.text === 'function' ? response.text() : response.text;
+      const textoResposta = response.text || '';
       return JSON.parse(textoResposta);
       
-    } catch (error) {
+    } catch (error: any) {
       tentativas++;
       console.error(`\n⚠️ [FALHA NA IA - TENTATIVA ${tentativas}/3]: ${error.message}`);
       await new Promise(res => setTimeout(res, 15000));
@@ -173,31 +176,23 @@ async function extrairTreinosEmLoteComIA(loteBruto, listaMovimentosAtivos) {
 // ============================================================================
 // 3.5 VALIDAÇÃO DE RUNTIME E DETECÇÃO DE ANOMALIAS
 // ============================================================================
-function validarPayloadEstrito(treinosArray) {
+function validarPayloadEstrito(treinosArray: any[]) {
   const tecnicasPermitidas = ['normal', 'tng', 'drop', 'strict', 'kipping', 'butterfly'];
   const fasesPermitidas = ['buyin', 'round', 'cashout'];
   const tiposTreinoPermitidos = ['FOR_TIME', 'AMRAP', 'EMOM'];
   
-  // Lista espelhada do src/data/movements.ts (inclua os novos aqui)
-  const movimentosConhecidos = new Set([
-    'air_squat', 'front_squat', 'back_squat', 'overhead_squat', 'thruster', 'db_thruster', 
-    'double_db_thruster', 'wall_ball', 'deadlift', 'clean', 'clean_power', 'clean_jerk', 
-    'snatch', 'snatch_power', 'pushup', 'hspu', 'ring_dip', 'pullup', 'c2b', 'bmu', 'rmu', 
-    't2b', 'burpee', 'burpee_box_jump', 'box_jump', 'walking_lunge', 'double_under', 'run', 
-    'row', 'assault_bike', 'bike_erg', 'echo_bike', 'skierg', 'db_snatch', 'double_db_snatch', 
-    'farmers_carry', 'yoke_carry', 'turkish_get_up', 'devil_press'
-  ]);
+  // Lê as chaves oficiais para montar o validador
+  const movimentosConhecidos = new Set(Object.keys(movimentosDB));
 
-  // Usamos map para poder injetar uma flag 'needs_review' no treino
   return treinosArray.map(treino => {
     if (!treino.movimentos || !Array.isArray(treino.movimentos)) return null;
     if (!tiposTreinoPermitidos.includes(treino.tipo_treino)) return null;
 
     treino.needs_review = false;
 
-    treino.movimentos = treino.movimentos.filter(mov => {
-      // 1. Se for desconhecido, MANTÉM no array, mas avisa e flagra o treino!
-      if (!setMovimentosAtivos.has(mov.movId)) {
+    treino.movimentos = treino.movimentos.filter((mov: any) => {
+      // Faz a validação contra a lista oficial
+      if (!movimentosConhecidos.has(mov.movId)) {
         console.warn(`\n🚨 ALERTA: Movimento não mapeado [${mov.movId}]. Salvo como PENDENTE.`);
         treino.needs_review = true; 
         return true; 
@@ -248,7 +243,7 @@ async function obterDataMaisAntigaCrossfit() {
   }
 }
 
-function gerarLinksHistoricosCrossfit(dataBaseYYMMDD, diasParaTras = 15) {
+function gerarLinksHistoricosCrossfit(dataBaseYYMMDD: string, diasParaTras = 15) {
   const links = [];
   const ano = 2000 + parseInt(dataBaseYYMMDD.substring(0, 2));
   const mes = parseInt(dataBaseYYMMDD.substring(2, 4)) - 1; 
@@ -266,11 +261,11 @@ function gerarLinksHistoricosCrossfit(dataBaseYYMMDD, diasParaTras = 15) {
   return links;
 }
 
-async function salvarTreinosEmLote(treinosArray) {
+async function salvarTreinosEmLote(treinosArray: any[]) {
   if (!treinosArray || treinosArray.length === 0) return;
 
   // Filtra descartando alucinações vazias
-  const treinosValidos = treinosArray.filter(t => 
+  const treinosValidos = treinosArray.filter((t: any) => 
     t.movimentos && Array.isArray(t.movimentos) && t.movimentos.length > 0
   );
 
@@ -279,8 +274,8 @@ async function salvarTreinosEmLote(treinosArray) {
     return;
   }
 
-  const payload = treinosValidos.map(t => {
-    const movimentosSeguros = t.movimentos.map(m => ({
+  const payload = treinosValidos.map((t: any) => {
+    const movimentosSeguros = t.movimentos.map((m: any) => ({
       ...m,
       originalId: crypto.randomUUID(), 
       reps: m.reps || 0,
@@ -291,7 +286,7 @@ async function salvarTreinosEmLote(treinosArray) {
       extraVal: m.extraVal || ""
     }));
 
-    const nomeCompacto = gerarNomeCompacto(t.tipo_treino, t.tempo_alvo, t.rounds_prescritos, movimentosSeguros, t.url);
+    let nomeCompacto = gerarNomeCompacto(t.tipo_treino, t.tempo_alvo, t.rounds_prescritos, movimentosSeguros, t.url);
 
     // Se a IA inventou um movimento, colamos uma etiqueta de aviso no título
     if (t.needs_review) {
@@ -321,7 +316,7 @@ async function salvarTreinosEmLote(treinosArray) {
 // ============================================================================
 // 5. MÓDULO DE NAVEGAÇÃO WEB (Puppeteer com Anti-Bot)
 // ============================================================================
-async function extrairTextoBruto(browser, url) {
+async function extrairTextoBruto(browser: any, url: string) {
   const page = await browser.newPage();
   try {
     await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
@@ -337,7 +332,7 @@ async function extrairTextoBruto(browser, url) {
     console.log(`   └─ Preview: ${textoLimpo.substring(0, 100).replace(/\n/g, ' ')}...`);
     
     return textoLimpo;
-  } catch (error) {
+  } catch (error: any) {
     console.error(`⚠️ Erro ao raspar página ${url}`);
     return null;
   } finally {
@@ -392,12 +387,11 @@ async function iniciarSistema() {
   if (loteParaIA.length > 0) {
     console.log(`\n🧠 Enviando ${loteParaIA.length} treinos para o Gemini 3.6 Flash...`);
     // Passa a lista dinâmica para o Gemini
-    const treinosProcessados = await extrairTreinosEmLoteComIA(loteParaIA, arrayMovimentosAtivos);
+    const treinosProcessados = await extrairTreinosEmLoteComIA(loteParaIA);
     
     if (treinosProcessados !== 'FATAL' && Array.isArray(treinosProcessados)) {
       console.log(`\n🛡️ Executando validação estrita de runtime...`);
-      // Passa o Set dinâmico para o validador
-      const treinosSeguros = validarPayloadEstrito(treinosProcessados, setMovimentosAtivos);
+      const treinosSeguros = validarPayloadEstrito(treinosProcessados);
       await salvarTreinosEmLote(treinosSeguros);
     } else {
       console.log("🛑 Falha fatal na IA. Nenhum treino salvo neste lote.");

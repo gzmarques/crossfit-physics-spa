@@ -31,4 +31,4 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           BOT_USER_ID: ${{ secrets.BOT_USER_ID }}
-        run: npx tsx scripts/scraper/index.js
+        run: npx tsx scripts/scraper/index.ts
