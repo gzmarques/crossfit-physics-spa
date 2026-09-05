@@ -81,22 +81,6 @@ function gerarNomeCompacto(tipoTreino: string, tempoAlvo: string, roundsPrescrit
 const generateShortCode = () => Math.random().toString(36).substring(2, 8).toUpperCase();
 
 // ============================================================================
-// 2.5 BUSCA DINÂMICA DE MOVIMENTOS
-// ============================================================================
-async function buscarMovimentosAtivos() {
-  // Substitua 'movimentos' pelo nome real da sua tabela de dicionário no Supabase, caso seja diferente.
-  const { data, error } = await supabase.from('movimentos').select('id');
-  
-  if (error) {
-    console.error('⚠️ Falha ao buscar dicionário de movimentos no Supabase. Usando fallback.', error.message);
-    // Fallback de segurança para não quebrar o scraper caso a tabela falhe
-    return ['air_squat', 'front_squat', 'pullup', 'run', 'row', 'burpee']; 
-  }
-  
-  return data.map(m => m.id);
-}
-
-// ============================================================================
 // 3. MÓDULO DE INTELIGÊNCIA ARTIFICIAL (Gemini 3.6 Flash)
 // ============================================================================
 async function extrairTreinosEmLoteComIA(loteBruto: any[]) {
@@ -323,7 +307,7 @@ async function extrairTextoBruto(browser: any, url: string) {
     
     await page.evaluate(() => {
       const seletoresInuteis = ['header', 'footer', 'nav', '.sidebar', '.menu', 'iframe', 'script', 'style'];
-      seletoresInuteis.forEach(s => document.querySelectorAll(s).forEach(el => el.remove()));
+      seletoresInuteis.forEach(s => document.querySelectorAll(s).forEach((el: any) => el.remove()));
     });
     
     const texto = await page.evaluate(() => document.body.innerText);
@@ -345,11 +329,6 @@ async function extrairTextoBruto(browser: any, url: string) {
 // ============================================================================
 async function iniciarSistema() {
   console.log("🚀 Iniciando Motor de Extração Profunda em Lote (MODO DEBUG)...");
-
-  // 1. Sincroniza o dicionário com o banco de dados
-  const arrayMovimentosAtivos = await buscarMovimentosAtivos();
-  const setMovimentosAtivos = new Set(arrayMovimentosAtivos);
-  console.log(`📚 Sincronizado: ${arrayMovimentosAtivos.length} movimentos conhecidos.`);
   
   const dataMaisAntiga = await obterDataMaisAntigaCrossfit();
   console.log(`🕰️ Viajando para trás a partir de: ${dataMaisAntiga}`);

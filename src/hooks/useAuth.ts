@@ -83,7 +83,10 @@ export function useAuth() {
     setAtleta({
       estatura: prof.estatura, peso: prof.peso, sexo: prof.sexo,
       nivelTecnico: prof.nivel_tecnico, envergadura: prof.envergadura,
-      perna: prof.perna, bf: prof.bf, dataNascimento: prof.data_nascimento
+      perna: prof.perna, bf: prof.bf, dataNascimento: prof.data_nascimento,
+      usaAntropometriaAvancada: prof.usa_antropometria_avancada,
+      circTorax: prof.circ_torax, circCoxa: prof.circ_coxa,
+      mobilidade: prof.mobilidade, fenotipo: prof.fenotipo
     });
   };
 
@@ -116,12 +119,15 @@ export function useAuth() {
 
   const salvarPerfilAtleta = async () => {
     if (!session) return;
-    
     const targetId = selectedAthleteId === 'me' ? session.user.id : selectedAthleteId;
+
     const payload = {
       estatura: atleta.estatura, peso: atleta.peso, sexo: atleta.sexo,
       nivel_tecnico: atleta.nivelTecnico, envergadura: atleta.envergadura,
-      perna: atleta.perna, bf: atleta.bf, data_nascimento: atleta.dataNascimento
+      perna: atleta.perna, bf: atleta.bf, data_nascimento: atleta.dataNascimento,
+      usa_antropometria_avancada: atleta.usaAntropometriaAvancada || false,
+      circ_torax: atleta.circTorax || null, circ_coxa: atleta.circCoxa || null,
+      mobilidade: atleta.mobilidade || 100, fenotipo: atleta.fenotipo || 'normal'
     };
 
     try {

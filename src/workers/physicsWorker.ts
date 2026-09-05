@@ -1,5 +1,6 @@
 import { movimentosDB } from '../data/movements';
-import { calcularFisica, parseClockTime } from '../utils/physicsEngine';
+import { calcularFisica } from '../utils/physicsEngine';
+import { parseClockTime } from '../utils/mathHelpers';
 
 // Função auxiliar movida do hook para o worker
 const getCargaPorSexo = (m: any, atleta: any) => {
